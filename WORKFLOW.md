@@ -12,7 +12,7 @@ This is the recommended workflow as it is robust and every change you make is ba
 
 When developing locally you don't need to have Nginx installed, but simply start your Node.js http server which will handle static files. Very convenient:
 
-    bin/gatordata-httpd
+    bin/snpviewer-httpd
 
 And your site is accessible at localhost:3000
 
@@ -23,49 +23,49 @@ The update script usage: `update [restart|noop [<refspec>]]`
 
 Make some changes and push them live, but don't restart services:
 
-    cd src/gatordata
+    cd src/snpviewer
     git commit ...
-    ssh -i ~/.ssh/gatordata.pem ubuntu@gatordata.com:/var/gatordata/update
+    ssh -i ~/.ssh/snpviewer.pem ubuntu@snpviewer.com:/var/snpviewer/update
     # some status output here
 
 Make some changes and push them live, also restarting services (Node.js server):
 
-    cd src/gatordata
+    cd src/snpviewer
     git commit ...
-    ssh -i ~/.ssh/gatordata.pem ubuntu@gatordata.com:/var/gatordata/update restart
+    ssh -i ~/.ssh/snpviewer.pem ubuntu@snpviewer.com:/var/snpviewer/update restart
 
 Revert to an older version on the server:
 
-    ssh -i ~/.ssh/gatordata.pem ubuntu@gatordata.com:/var/gatordata/update restart v0.1.2
+    ssh -i ~/.ssh/snpviewer.pem ubuntu@snpviewer.com:/var/snpviewer/update restart v0.1.2
 
 > Note: `v0.1.2` in this example is a tag but can be replaced by any git refspec, like a commit hash or branch name.
 
 You can simplify the "update" call by creating an alias in your `~/.bash_rc` (or other shell startup file):
 
-    alias gatordata-update='ssh -i ~/.ssh/gatordata.pem ubuntu@gatordata.com:/var/gatordata/update'
+    alias snpviewer-update='ssh -i ~/.ssh/snpviewer.pem ubuntu@snpviewer.com:/var/snpviewer/update'
 
 Then, the above example could instead be executed as:
 
-    gatordata-update restart v0.1.2
+    snpviewer-update restart v0.1.2
 
 
 ## Workflow 2: Live hack with git
 
-- Hack directly on the server in the `/var/gatordata` git repository
+- Hack directly on the server in the `/var/snpviewer` git repository
 - Only recommended if you are alone (i.e. no one else is editing)
 
-To get going with this you need to setup the `/var/gatordata` git repository for pushing upstream.
+To get going with this you need to setup the `/var/snpviewer` git repository for pushing upstream.
 
 1. Add your SSH key to `/var/www/.ssh/id_rsa` (the one which you are using to access your git repository)
-2. Change the repository URI for `/var/gatordata` to your read-write URI (i.e. your git@github... URI) with `git remote set-url origin git@github...`
+2. Change the repository URI for `/var/snpviewer` to your read-write URI (i.e. your git@github... URI) with `git remote set-url origin git@github...`
 
 Now, hack away as the `www-data` user and `git push origin` when you feel like it.
 
 Example:
 
-    cd /var/gatordata
+    cd /var/snpviewer
     # hack hack hack
-    sudo invoke-rc.d gatordata-httpd restart
+    sudo invoke-rc.d snpviewer-httpd restart
     # check if it works
     sudo -uH www-data git push origin
 
@@ -73,14 +73,14 @@ Example:
 
 ## Workflow 3: Live hack
 
-- Hack directly on the server in `/var/gatordata`
+- Hack directly on the server in `/var/snpviewer`
 - No git involved and thus no backup or ability to revert from a b0rked server
 
-Simply make a copy of this repo into `/var/gatordata` on your server and follow the guide in `INSTALL.md` with exception of checking out your repo.
+Simply make a copy of this repo into `/var/snpviewer` on your server and follow the guide in `INSTALL.md` with exception of checking out your repo.
 
 Example:
 
-    cd /var/gatordata
+    cd /var/snpviewer
     # hack hack hack
-    sudo invoke-rc.d gatordata-httpd restart
+    sudo invoke-rc.d snpviewer-httpd restart
     # it probably works, let's have a beer and relax

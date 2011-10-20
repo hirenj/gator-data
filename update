@@ -23,6 +23,6 @@ fi
 sudo -Hu www-data git submodule update --init
 
 if [ "$1" == "restart" ]; then
-  [ -f /etc/init.d/gatordata-httpd ] && invoke-rc.d gatordata-httpd restart
-  [ -f /etc/init.d/gatordata-processor ] && invoke-rc.d gatordata-processor restart
+  [ -f /etc/init.d/snpviewer-httpd ] && invoke-rc.d snpviewer-httpd restart
+  [ -f /etc/init.d/snpviewer-processor ] && invoke-rc.d snpviewer-processor restart
 fi

@@ -1,6 +1,6 @@
 # Setup and installation
 
-First of all, make a clone or [fork of this repository](http://help.github.com/fork-a-repo/) and replace all occurrences of `gatordata` with a name of your choice.
+First of all, make a clone or [fork of this repository](http://help.github.com/fork-a-repo/) and replace all occurrences of `snpviewer` with a name of your choice.
 
 ## Launch an EC2 instance
 
@@ -13,11 +13,11 @@ First of all, make a clone or [fork of this repository](http://help.github.com/f
 
 > These AMIs where taken from <http://uec-images.ubuntu.com/releases/10.10/release/>
 
-Go with the defaults in the "wizard" presented. Chose to create a new key pair when asked and **be sure to make a secure backup of the private key** that you will download. A good place to put your private key is in `~/.ssh/gatordata.pem` and then `chmod 0600 ~/.ssh/gatordata.pem` so no one else can read it but you.
+Go with the defaults in the "wizard" presented. Chose to create a new key pair when asked and **be sure to make a secure backup of the private key** that you will download. A good place to put your private key is in `~/.ssh/snpviewer.pem` and then `chmod 0600 ~/.ssh/snpviewer.pem` so no one else can read it but you.
 
 When the instance is green and "started", log in to the machine:
 
-    ssh -i ~/.ssh/gatordata.pem ubuntu@XXX.amazonaws.com
+    ssh -i ~/.ssh/snpviewer.pem ubuntu@XXX.amazonaws.com
 
 *Note: Replace `XXX.amazonaws.com` with the hostname or address of your instance.*
 
@@ -49,34 +49,34 @@ NPM:
 
 ## Checkout your source
 
-    sudo mkdir /var/gatordata
-    sudo chown www-data:www-data /var/gatordata
+    sudo mkdir /var/snpviewer
+    sudo chown www-data:www-data /var/snpviewer
 
 If your git repository is public (i.e. viewable by anyone):
 
-    sudo -Hu www-data git clone https://github.com/you/gatordata.git /var/gatordata
+    sudo -Hu www-data git clone https://github.com/you/snpviewer.git /var/snpviewer
 
 If your git repository is private:
 
     sudo -Hu www-data ssh-keygen -t rsa  # chose "no passphrase"
     sudo cat /var/www/.ssh/id_rsa.pub
-    # Add the key as a "deploy key" at https://github.com/you/gatordata/admin
-    sudo -Hu www-data git clone git@github.com:you/gatordata.git /var/gatordata
+    # Add the key as a "deploy key" at https://github.com/you/snpviewer/admin
+    sudo -Hu www-data git clone git@github.com:you/snpviewer.git /var/snpviewer
 
 
 ## Configure & start your services
 
 Your Node.js web server:
 
-    sudo ln -s /var/gatordata/init.d/gatordata-httpd /etc/init.d/
-    sudo update-rc.d gatordata-httpd defaults
-    sudo invoke-rc.d gatordata-httpd start
+    sudo ln -s /var/snpviewer/init.d/gatordata-httpd /etc/init.d/snpviewer-httpd
+    sudo update-rc.d snpviewer-httpd defaults
+    sudo invoke-rc.d snpviewer-httpd start
     
-Optional `gatordata-processor`:
+Optional `snpviewer-processor`:
     
-    sudo ln -s /var/gatordata/init.d/gatordata-processor /etc/init.d/
-    sudo update-rc.d gatordata-processor defaults
-    sudo invoke-rc.d gatordata-processor start
+    sudo ln -s /var/snpviewer/init.d/gatordata-processor /etc/init.d/snpviewer-processor
+    sudo update-rc.d snpviewer-processor defaults
+    sudo invoke-rc.d snpviewer-processor start
 
 
 ## Configure Nginx
@@ -87,12 +87,12 @@ There are three different kinds of setups to chose from:
 2. `gatordata-https` -- HTTPS with HTTP redirecting to HTTPS
 3. `gatordata-https-http` -- HTTPS and HTTP
 
-If you are using HTTPS, make sure you have added your SSL certificate and key at `/var/gatordata/ssl/ssl.crt` and `/var/gatordata/ssl/ssl.key`.
+If you are using HTTPS, make sure you have added your SSL certificate and key at `/var/snpviewer/ssl/ssl.crt` and `/var/snpviewer/ssl/ssl.key`.
 
 Replace `gatordata-https` below with the configuration of your choice:
 
-    sudo ln -sf /var/gatordata/etc/nginx/sites-available/gatordata-https \
-                /etc/nginx/sites-enabled/default
+    sudo ln -sf /var/snpviewer/etc/nginx/sites-available/gatordata-https \
+                /etc/nginx/sites-enabled/snpviewer-https
     sudo invoke-rc.d nginx restart
 
 
@@ -100,6 +100,6 @@ Replace `gatordata-https` below with the configuration of your choice:
 
 Your web app should now be operational.
 
-Note that the programs `gatordata-httpd` and `gatordata-processor` are written in the Move programming language (like JavaScript but simpler). [Learn more at movelang.org](http://movelang.org/).
+Note that the programs `snpviewer-httpd` and `snpviewer-processor` are written in the Move programming language (like JavaScript but simpler). [Learn more at movelang.org](http://movelang.org/).
 
 If everything works, **continue by reading [WORKFLOW.md](https://github.com/hirenj/gator-data/blob/master/WORKFLOW.md#readme)**

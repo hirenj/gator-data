@@ -1,27 +1,27 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          gatordata-httpd
+# Provides:          snpviewer-httpd
 # Required-Start:    $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: gatordata HTTP server
-# Description:       gatordata HTTP server
+# Short-Description: snpviewer HTTP server
+# Description:       snpviewer HTTP server
 ### END INIT INFO
 #
 # Installation:
 #   1. Put a copy of or make a symlink to this script in /etc/init.d
-#   2. update-rc.d gatordata-httpd defaults
+#   2. update-rc.d snpviewer-httpd defaults
 #
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-NAME=gatordata-httpd
-DESC="gatordata HTTP server"
-RUNDIR=/var/run/gatordata
-LOGDIR=/var/log/gatordata
-CWDIR=/var/gatordata
+NAME=snpviewer-httpd
+DESC="snpviewer HTTP server"
+RUNDIR=/var/run/snpviewer
+LOGDIR=/var/log/snpviewer
+CWDIR=/var/snpviewer
 SCRIPTNAME=/etc/init.d/$NAME
 USER=www-data
 GROUP=www-data
@@ -29,7 +29,7 @@ GROUP=www-data
 
 # Node.js
 NODE_PROGRAM=/usr/local/bin/node
-NODE_SCRIPT=/var/gatordata/bin/gatordata-httpd
+NODE_SCRIPT=/var/snpviewer/bin/gatordata-httpd
 NODE_ARGS="$NODE_SCRIPT"
 
 # Daemon supervisor config

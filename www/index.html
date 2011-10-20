@@ -5,7 +5,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>GATOR</title>
+    <title>1001 Proteomes</title>
 
     <link rel="stylesheet" type="text/css" href="css/no-theme/jquery-ui-1.7.2.custom.css"/>
     <link rel="stylesheet" type="text/css" href="css/gator.css"/>
@@ -24,34 +24,141 @@
 
     <script type="text/javascript" src="js/jquery-ui-1.7.2.min.js"></script>
     <script type="text/javascript" src="js/jquery-masonry-1.2.0.min.js"></script>
-    <script type="text/javascript" src="js/gator-conf.js"></script>
-    <script type="text/javascript" src="js/gator.js"></script>
+    <script type="text/javascript" src="js/snpviewer-conf.js"></script>
+    <script type="text/javascript" src="js/snpviewer.js"></script>
     <script type="text/javascript" src="js/filetojson.js"></script>
 </head>
+<style type="text/css">
+div.headline { 
+    position: relative;
+    background:white none repeat scroll 0%;
+    border-bottom:1px solid #b5dfde;
+    color:#31669B;
+    font-size:3em;
+    font-weight:normal;
+    margin:0pt;
+    padding:5px 14px;
+    height: 75px;
+    text-align:left;
+}
+div.headline > div {
+    left: 110px;
+    width: auto;
+    position: absolute;
+    z-index: 1;
+}
+div.headline img {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+div.headline a, div.toolbar a {
+    color:#2b478c;    
+}
+div.headline a {
+    font-weight: bold;    
+}
+div.toolbar a {
+    font-weight: normal;
+}
 
+div.headline a, div.headline a:link, div.headline a:visited, div.toolbar a, div.toolbar a:link, div.toolbar a:visited  {
+    text-decoration:none;
+}
+div.subheadline {
+/*  font-size: 0.6em; */
+    font-family:Arial,Verdana,sans-serif;
+    font-size:20px;
+    font-weight:normal;
+    margin-top:-5px;
+}
+#headlink {
+    /*font-weight:bold;
+    color: #31669B;*/
+
+    color:#31669B;
+    font-family:Arial,Verdana,sans-serif;
+    font-size:32px;
+    font-weight:bold;
+}
+#headlink:hover {
+    text-decoration: none;
+}
+div.toolbar {
+    margin: 0px;
+    font-family: Verdana, Arial, sans-serif;    
+    font-weight: normal;
+    margin: 0 0 0em; padding: 0; 
+    padding-left: 14px;
+    text-align: left;
+    background-color: #E6F2F2;
+    background:white url(/img/toolbar_gradient.png) repeat-x 0 -5px;
+    color: black;
+    border-top: 1px solid white;
+    border-bottom: 1px solid #8CACBB;
+}
+/* Tabbar */
+div.tabbar_table { display:table; border-collapse:collapse; margin-top: 2px; margin-bottom: 3px; }
+div.tabbar_tr { display:table-row; }
+.tabbar_td { display:table-cell; 
+    /* border:thin solid red; */
+    padding-left:12px; padding-right:12px;
+}
+a.tabbar_link:link, a.tabbar_link:visited {
+    text-decoration: none; font-weight: normal; white-space: nowrap; 
+}
+a.tabbar_link:hover { text-decoration: underline; color: rgb(41, 61, 107); white-space: nowrap; }
+/*span.toolbar_divider { background-image: url('toolbar_divider.gif'); background-repeat: no-repeat; background-position: 50% 60%; }*/
+span.toolbar_divider { background-repeat: no-repeat; background-position: 50% 60%; }
+/* /Tabbar */
+
+#gator {
+    padding-top: 20px;
+}
+#agi_input {
+    left: 10px;
+}
+#description_container {
+    left: 200px !important;
+}
+.rounded_box {
+    background: #F0F7F9;
+}
+.rounded_box .inset {
+    background: #93B0B7;
+    color: #FFFFFF;
+    font-weight: bold;
+}
+</style>
 <body>
-    
-<div id="log" style="position: fixed; top: 0px; left: 0px;">
+<div class="headline">
+    <div>
+        <a href="#" id="headlink">1001 Proteomes</a>
+        <br/>
+        <div class="subheadline">A Catalog of <i>Arabidopsis thaliana</i> Proteomic Variation</div>
+    </div>
+    <img class="logo" src="/img/logo_1001genomes_v5.png" height="75px">
 </div>
-
 <a style="display: block; position: absolute; top: 10px; left: 10px; width: 90px; height: 68px; background-image: url(http://www.masc-proteomics.org/mascp/skins/common/images/mascp_logo.png);" href="http://www.masc-proteomics.org/" title="MASC Proteomics portal"></a>
+<div class="toolbar">
+    <div class="tabbar_table">
+            <div class="tabbar_tr">
+            
+                <span class="tabbar_td"><a class="tabbar_link" href="#">Home</a></span> <span class="toolbar_divider">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span class="tabbar_td"><a class="tabbar_link" href="http://1001genomes.org">Collaborators</a></span> <span class="toolbar_divider">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <span class="tabbar_td"><a class="tabbar_link" href="/datacenter/">Data Center</a></span> <span class="toolbar_divider">&nbsp;&nbsp;&nbsp;&nbsp;</span>                
+                <span class="tabbar_td"><a class="tabbar_link" href="http://www.masc-proteomics.org/mascp/index.php/Gator">Help</a></span> <span class="toolbar_divider">&nbsp;&nbsp;&nbsp;&nbsp;</span>                
+                <span class="tabbar_td"><a class="tabbar_link" href="http://gator.masc-proteomics.org/source">Code</a></span> <span class="toolbar_divider">&nbsp;&nbsp;&nbsp;&nbsp;</span>                
+            </div>
+        </div>
+</div>
+<div id="gator">
 <div id="agi_input" class="rounded_box" style="">
-    <label class="inset" for="agi">AGI </label><input size="12" id="agi" type="text" name="agi" value="at3g15450.1"/><a href="multiple.html" target="_new">Advanced</a><input type="button" value="Retrieve"/>
+    <label class="inset" for="agi">AGI </label><input size="12" id="agi" type="text" name="agi" value="at3g15450.1"/><input type="button" value="Retrieve"/>
 </div>
 <div id="description_container" class="rounded_box">
 <div class="inset">Protein description</div>
 <div id="description">
-</div>
-</div>
-<div id="help_container" class="rounded_box">
-<div class="inset">Help</div>
-<div id="help">
-    <p>
-    <a href="http://www.masc-proteomics.org/mascp/index.php/Gator">Help</a>
-    </p>
-    <p>
-        <a href="http://www.masc-proteomics.org/mascp/index.php/Gator#Citation">Cite</a><a href="http://gator.masc-proteomics.org/source">Code</a>
-    </p>
 </div>
 </div>
 <div style="top: 100px; position: relative;">
@@ -73,35 +180,13 @@
     </div>
 </div>
 
-<div style="position: relative;">
-    <div id="suba" class="rounded_box">
-        <div class="inset">Subcellular localisation</div>
-        <p><span style="color: #00ff00; font-weight: bolder;">GREEN</span>: Fluorescent Protein data, <span style="color: #ff0000; font-weight: bolder;">RED</span>: Proteomic data, <span style="color: #999999; font-weight: bolder;">GRAY</span>: Predicted</p>
-        <div id="suba_results">
-        </div>
-    </div>
-    <div id="tissue" class="rounded_box">
-        <div class="inset">Organ evidence</div>
-        <div id="tissue_results">
-        </div>
-    </div>
-</div>
-
 <div id="links_container" class="rounded_box">
-<div class="inset">Data sources <button onclick="jQuery('#user_container').toggleClass('disabled');">Add</button></div>
-<div id="user_container" class="disabled">
-<ul id="user_existingsets">
-</ul>
-<div id="user_data_container">
-<textarea id="user_data"></textarea>
-</div>
-<input type="text" id="user_name" placeholder="Dataset name"/>
-<input type="button" id="user_loaddata" value="Load"/>
-</div>
+<div class="inset">Data sources</div>
 <div id="links"></div>
 <div style="clear: both; float: none; width: 100%; height: 0px;"></div>
 </div>
 
+</div>
 </div>
 <script type="text/javascript">
 //<[CDATA[ 

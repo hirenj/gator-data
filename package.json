@@ -1,8 +1,8 @@
 {
-   "name": "gator-data",
+   "name": "snpviewer",
    "version": "1.0.0",
    "homepage" : "http://hirenj.github.com/gator-data/",
-   "description": "GATOR web server",
+   "description": "nsSNP web server",
    "keywords": [
        "bioinformatics",
        "node",
@@ -33,11 +33,10 @@
        "carrier" : "0.1.x",
        "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/develop"
    },
-   "main" : "bin/gatordata-httpd",
+   "main" : "bin/snpviewer-httpd",
    "bin" : {
-       "httpd" : "bin/gator-httpd"
+       "httpd" : "bin/snpviewer-httpd"
    },
-   "implements": ["mascp-jstools-1.0","cli"],
    "os": ["linux", "macos", "win"],
    "cpu": ["x86", "ppc", "x86_64"],
    "engines": ["v8", "node >= 0.4.11"],
