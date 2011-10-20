@@ -58,6 +58,8 @@ If your git repository is public (i.e. viewable by anyone):
     
     sudo -Hu www-data npm install
 
+    sudo -Hu www-data sqlite3 -init cached.db "select *"
+
 ## Configure & start your services
 
 Your Node.js web server:
