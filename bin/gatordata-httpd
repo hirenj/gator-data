@@ -2,6 +2,10 @@
 
 MASCP = require('mascp-jstools');
 
+var argv =  require('optimist').argv;
+
+var port = argv.port || 3000;
+
 var resource_map = {
     'tair'      : MASCP.TairReader,
     'atchloro'  : MASCP.AtChloroReader,
@@ -30,6 +34,12 @@ MASCP.events.once('ready',function() {
         app.use(express.static(__dirname + '/../node_modules/mascp-jstools/dist'));
         app.use(app.router);
     });
+    
+    if (argv.static) {
+        app.listen(port,'127.0.0.1');
+        console.log('Server running at http://127.0.0.1:'+port+'/');
+        return;
+    }
 
     app.get("/", function(req, res) {
       res.redirect("/index.html");
@@ -126,9 +136,8 @@ MASCP.events.once('ready',function() {
         get_latest(req.param('agi'), service_object(req), res);
     });
 
-
-    app.listen(3000); //Change back for production?
-    console.log('Server running at http://127.0.0.1:3000/');
+    app.listen(port,'127.0.0.1');
+    console.log('Server running at http://127.0.0.1:'+port+'/');
 });
 
 MASCP.events.emit('ready');

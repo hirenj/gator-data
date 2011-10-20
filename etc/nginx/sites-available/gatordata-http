@@ -3,6 +3,7 @@ server {
   listen        80;
   listen        [::]:80 default ipv6only=on;
   access_log    /var/log/nginx/access.log;
+  #server_name  *gator.glycocode.com;
   location / {
     root        /var/gatordata/www;
     index       index.html;
