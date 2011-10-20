@@ -44,8 +44,6 @@ Node.js:
 NPM:
 
     sudo true && curl http://npmjs.org/install.sh | sudo sh
-    sudo npm install connect connect_json move
-
 
 ## Checkout your source
 
@@ -55,6 +53,10 @@ NPM:
 If your git repository is public (i.e. viewable by anyone):
 
     sudo -Hu www-data git clone https://hirenj@github.com/hirenj/gator-data.git -branch snpviewer /var/snpviewer
+    
+    cd /var/snpviewer
+    
+    sudo -Hu www-data npm install
 
 ## Configure & start your services
 
