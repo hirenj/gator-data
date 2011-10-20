@@ -17,7 +17,7 @@
 
     <script type="text/javascript">
       // We should try to load data from the local server.
-      MASCP.LOCALSERVER = true;
+      MASCP.LOCALSERVER = false;
     </script>
     
     <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
@@ -292,7 +292,7 @@ span.toolbar_divider { background-repeat: no-repeat; background-position: 50% 60
         
         MASCP.renderer.refresh();
         
-        var reader = new MASCP.TairReader(agi,MASCP.LOCALSERVER ? '/data/latest/gator' : null);
+        var reader = new MASCP.TairReader(agi,MASCP.LOCALSERVER ? 'http://gator.glycocode.com/data/latest/gator' : null);
         reader.bind('resultReceived',function() {
             if (this.result.getSequence() == null || this.result.getSequence() == '') {
                 document._screen.hide();

@@ -7,6 +7,8 @@ var READER_CONF = (function() {
         vals[arguments[i]] = arguments[i+1];
         if (MASCP.LOCALSERVER) {        
             vals[arguments[i]].url = ((vals[arguments[i]].url || arguments[i].SERVICE_URL).indexOf('?') >= 0) ? '/data/latest/gator' : '/data/latest/gator/';
+        } else {
+            vals[arguments[i]].url = ((vals[arguments[i]].url || arguments[i].SERVICE_URL).indexOf('?') >= 0) ? 'http://gator.glycocode.com/data/latest/gator' : 'http://gator.glycocode.com/data/latest/gator/';
         }
     }
     return vals;
