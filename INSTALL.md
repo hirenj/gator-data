@@ -52,11 +52,13 @@ NPM:
 
 If your git repository is public (i.e. viewable by anyone):
 
-    sudo -Hu www-data git clone https://hirenj@github.com/hirenj/gator-data.git -branch snpviewer /var/snpviewer
+    sudo -Hu www-data git clone https://hirenj@github.com/hirenj/gator-data.git --branch snpviewer /var/snpviewer
     
     cd /var/snpviewer
     
     sudo -Hu www-data npm install
+
+    sudo apt-get install sqlite3
 
     sudo -Hu www-data sqlite3 -init cached.db "select *"
 
