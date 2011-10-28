@@ -27,6 +27,7 @@ When the instance is green and "started", log in to the machine:
 
     sudo apt-get update
     sudo apt-get install nginx git-core daemon
+    sudo chown www-data:www-data /var/www
     sudo chown -R www-data:www-data /var/www
 
 Node.js:
@@ -55,7 +56,7 @@ If your git repository is public (i.e. viewable by anyone):
     sudo -Hu www-data git clone https://hirenj@github.com/hirenj/gator-data.git --branch snpviewer /var/snpviewer
     
     cd /var/snpviewer
-    
+        
     sudo -Hu www-data npm install
 
     sudo apt-get install sqlite3
