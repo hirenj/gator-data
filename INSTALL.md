@@ -61,7 +61,7 @@ If your git repository is public (i.e. viewable by anyone):
 
     sudo apt-get install sqlite3
 
-    sudo -Hu www-data sqlite3 -init cached.db "select *"
+    sudo -Hu www-data sqlite3 cached.db "select *"
 
 ## Configure & start your services
 
