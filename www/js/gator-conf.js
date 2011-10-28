@@ -206,10 +206,10 @@ var READER_CONF = (function() {
         'layers'        : ['atpeptide_experimental'],
         'placeholder'   : true
     },
-    MASCP.AtProteomeReader, {
-        'definition'    : MASCP.AtProteomeReader,
+    MASCP.Pep2ProReader, {
+        'definition'    : MASCP.Pep2ProReader,
         'nicename'      : 'Pep2Pro',
-        'error_url'     : 'http://fgcz-atproteome.unizh.ch/',
+        'error_url'     : 'http://fgcz-pep2pro.uzh.ch/',
         'success_url'   : 'http://fgcz-pep2pro.uzh.ch/locus.php?#locus=true',
         'result'        : function() {
                                 if (this.result === null) {
@@ -225,9 +225,9 @@ var READER_CONF = (function() {
                                     }
                                 }
                                 document.getElementById('tissue_tags').updateTags();
-                                jQuery('#atproteome_placeholder').show();
+                                jQuery('#pep2pro_placeholder').show();
                             },
-        'layers'        : ['atproteome'],
+        'layers'        : ['pep2pro'],
         'placeholder'   : true
     },
     MASCP.P3dbReader, {

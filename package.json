@@ -31,12 +31,13 @@
        "express" : "2.4.x",
        "optimist": "0.2.x",
        "carrier" : "0.1.x",
-       "mascp-jstools" : "git://github.com/hirenj/mascp-jstools.git#8c16c71c87"
+       "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/mascp-jstools-2.0"
    },
    "main" : "bin/snpviewer-httpd",
    "bin" : {
        "httpd" : "bin/snpviewer-httpd"
    },
+   "implements": ["snpviewer-httpd"],
    "os": ["linux", "macos", "win"],
    "cpu": ["x86", "ppc", "x86_64"],
    "engines": ["v8", "node >= 0.4.11"],

@@ -10,7 +10,7 @@ var resource_map = {
     'tair'      : MASCP.TairReader,
     'atchloro'  : MASCP.AtChloroReader,
     'atpeptide' : MASCP.AtPeptideReader,
-    'pep2pro'   : MASCP.AtProteomeReader,
+    'pep2pro'   : MASCP.Pep2ProReader,
     'gelmap'    : MASCP.GelMapReader,
     'interpro'  : MASCP.InterproReader,
     'p3db'      : MASCP.P3dbReader,
