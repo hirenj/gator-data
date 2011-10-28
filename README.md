@@ -17,12 +17,14 @@ By default, GATOR will try to load data from the local server. If you don't want
 It's possible to load up data directly from a data dump into the database for 
 when you're trying to bootstrap your own install of GATOR
 
+
+
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.TairReader.txt' | bin/data-manager.js --reader MASCP.TairReader
-    curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.SnpReader.txt' | bin/data-manager.js --reader MASCP.SnpReader
+    curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.SnpReader-11-10-20.txt' | bin/data-manager.js --reader MASCP.SnpReader --date 2011/10/20
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.InterproReader.txt' | bin/data-manager.js --reader MASCP.InterproReader
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.AtChloroReader-11-09-30.txt' | bin/data-manager.js --reader MASCP.AtChloroReader --date 2011/09/30
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.AtPeptideReader.txt' | bin/data-manager.js --reader MASCP.AtPeptideReader
-    curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.AtProteomeReader-11-10-03.txt' | bin/data-manager.js --reader MASCP.AtProteomeReader --date 2011/10/03
+    curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.Pep2ProReader-11-10-03.txt' | bin/data-manager.js --reader MASCP.Pep2ProReader --date 2011/10/03
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.GelMapReader-11-09-30.txt' | bin/data-manager.js --reader MASCP.GelMapReader --date 2011/09/30
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.P3dbReader-11-09-30.txt' | bin/data-manager.js --reader MASCP.P3dbReader --date 2011/09/30
     curl --silent 'https://s3.amazonaws.com/gator-data/MASCP.PhosphatReader-11-09-30.txt' | bin/data-manager.js --reader MASCP.PhosphatReader --date 2011/09/30
