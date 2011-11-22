@@ -99,10 +99,10 @@
      </defs>
 
 <mask id="arabidopsis">
-    <use x="0" y="0" width="100%" height="100%" fill="#ffffff" filter="url(#whitemask)" xlink:href="#ara_outline"/>
+    <use x="0" y="0" width="100%" height="100%" fill="#ffffff"  xlink:href="#ara_outline"/>
 </mask>
 
-<text transform="matrix(0.9389 -0.3442 0.3442 0.9389 23.2271 54.3887)"><tspan x="0" y="0" font-family="'GillSans'" font-size="37.6095">M</tspan><tspan x="28.055" y="0.095" font-family="'GillSans'" font-size="37.6095" rotate="12.449">A</tspan><tspan x="51.472" y="5.513" font-family="'GillSans'" font-size="37.6095" rotate="22.075">S</tspan><tspan x="66.683" y="11.14" font-family="'GillSans'" font-size="37.6095" rotate="32.068">C</tspan><tspan x="88.172" y="24.885" font-family="'GillSans'" font-size="37.6095" rotate="42.572">P</tspan></text>
+<text transform="matrix(0.9389 -0.3442 0.3442 0.9389 23.2271 54.3887)"><tspan x="0" y="0" font-family="'Gill Sans'" font-size="37.6095">M</tspan><tspan x="28.055" y="0.095" font-family="'Gill Sans'" font-size="37.6095" rotate="12.449">A</tspan><tspan x="51.472" y="5.513" font-family="'Gill Sans'" font-size="37.6095" rotate="22.075">S</tspan><tspan x="66.683" y="11.14" font-family="'Gill Sans'" font-size="37.6095" rotate="32.068">C</tspan><tspan x="88.172" y="24.885" font-family="'Gill Sans'" font-size="37.6095" rotate="42.572">P</tspan></text>
 <g mask="url(#arabidopsis)">
 <rect x="0" y="0" width="100%" height="100%" fill="#B5CAF5"/>
 <g filter="url(#blurxy)">
