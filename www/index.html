@@ -19,7 +19,7 @@
       // We should try to load data from the local server.
       MASCP.LOCALSERVER = true;
     </script>
-    
+   
     <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
 
     <script type="text/javascript" src="js/jquery-ui-1.7.2.min.js"></script>
@@ -193,11 +193,11 @@ span.toolbar_divider { background-repeat: no-repeat; background-position: 50% 60
 <script type="text/javascript">
 //<[CDATA[ 
     window.onload = null;
-        
+    window.norun = false;
+
     var showIESplash = function() {
         var splash = document.getElementById('ie_splash');
         splash.style.display = 'block';
-        
         splash.hideForever = function() {
             var date = new Date();
             date.setTime(date.getTime()+(365*24*60*60*1000));
@@ -209,11 +209,18 @@ span.toolbar_divider { background-repeat: no-repeat; background-position: 50% 60
         splash.hide = function() {
             splash.style.display = 'none';
         };
-        
+        window.location = window.location+'#';
+        jQuery('#agi').unbind('change');
+        window.norun = true;
+        if (document._screen) {
+          document._screen.hide();
+        }
     };
     
     jQuery(document).ready(function() {
-                        
+        if (window.norun) {
+          return;
+        }
         if(!Array.indexOf){
             Array.prototype.indexOf = function(obj){
                 for(var i=0; i<this.length; i++){
@@ -226,6 +233,7 @@ span.toolbar_divider { background-repeat: no-repeat; background-position: 50% 60
         }
         
         //Trigger the change event on page load
+        
         var hash = (window.location.hash + ""), hash = hash.replace(/#/g,'');
         var user_data;
         if (user_data = hash.match(/,user_data=(.*)/ig)) {
