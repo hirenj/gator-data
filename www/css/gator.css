@@ -280,17 +280,43 @@ h1, h2 {
     }
 
     #zoomin, #zoomout {
-        background: none;
-        border: 0px;
         font-weight: bolder;
         font-family: Helvetica;
         font-size: 11pt;
         cursor: pointer;
+        position: absolute;
+        right: 10px;
+        background: white;
+        border: solid #AAA 1px;
+        box-shadow: 2px 3px 3px #AAA;
     }
+    #zoomlabel {
+        top: 2em;
+        position: absolute;
+        top: 2em;
+        right: 0px;
+        font-size: 12pt;
+        font-weight: bolder;
+        z-index: 1;
+        text-shadow: #fff 0px 0px 4px;
+    }
+    #zoomin {
+        top: 4em;
+        z-index: 1;
+        border-radius: 5px 5px 0px 0px;
+    }
+
+    #zoomout {
+        top: 6em;
+        z-index: 2;
+        border-radius: 0px 0px 5px 5px;
+    }
+
     
     #search_box {
         position: absolute;
         right: 10px;
+        z-index: 1;
     }
     
     #suba {
