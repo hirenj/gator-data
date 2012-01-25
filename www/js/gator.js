@@ -192,19 +192,23 @@ jQuery(document).ready(function() {
         var curr_zoom = start_zoom;
         var count = 0;
         while (start_zoom === MASCP.renderer.zoom && count < 5) {
-            curr_zoom *= 1.1;
+            curr_zoom += 0.5;
+            MASCP.renderer.zoomCenter = 'center';
             MASCP.renderer.zoom = curr_zoom;
+            MASCP.renderer.zoomCenter = null;
             count++;
         }
     });
 
-    jQuery('#zoomout').click(function() {
+    jQuery('#zoomout').click(function(e) {
         var start_zoom = MASCP.renderer.zoom;
         var curr_zoom = start_zoom;
         var count = 0;
         while (start_zoom === MASCP.renderer.zoom && count < 5) {
-            curr_zoom *= 0.9;
+            curr_zoom -= 0.5;
+            MASCP.renderer.zoomCenter = 'center';
             MASCP.renderer.zoom = curr_zoom;
+            MASCP.renderer.zoomCenter = null;
             count++;
         }
     });
