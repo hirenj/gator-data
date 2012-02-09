@@ -18,7 +18,10 @@ var argv =  require('optimist')
                    'Usage:\n'+
                    ' cat [file] | $0 --reader [Reader class] --date YYYY/MM/DD --verbose\n'+
                    'OR\n '+
-                   '$0 --file [file] --reader [Reader class] --date YYYY/MM/DD --verbose\n\n'+
+                   '$0 --file [file] --reader [Reader class] --date YYYY/MM/DD --verbose\n'+
+                   'OR\n '+
+                   'To load up data with an alternative class\n'+
+                   '$0 --file [file] --reader [Reader class] --writeclass [Class] --date YYYY/MM/DD --verbose\n\n'+
                    'For large data loading, use the pipe format, which runs a lot faster.\n\n'+
                    'Write data from the cache\n'+
                    '$0 --reader [Reader class] --date YYYY/MM/DD --write --verbose\n')
@@ -135,6 +138,11 @@ MASCP.events.once('ready',function() {
         if (MASCP.hasOwnProperty(reader_class) && classname == MASCP[reader_class].toString()) {
 
             var clazz = MASCP[reader_class];
+            
+            if (argv.writeclass) {
+                clazz = MASCP.cloneService(clazz,argv.writeclass);
+            }
+
             if (argv.write) {
                 write_out_data(clazz);
             } else {
