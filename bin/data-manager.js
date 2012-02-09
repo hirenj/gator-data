@@ -57,8 +57,9 @@ MASCP.events.once('ready',function() {
     var classname = argv.reader;
 
     var retrieve_func = function(current_agi,cback) {
-        if (current_agi === null || typeof current_agi == 'undefined') {
-            cback.call(this);
+        if (current_agi === null || current_agi == '' || typeof current_agi == 'undefined') {
+            this.requestComplete();
+            return;
         }
         var current_data = this._data;
         var data_block = JSON.parse(current_data);
@@ -69,7 +70,10 @@ MASCP.events.once('ready',function() {
         this._dataReceived(data_block);
         data_block = {};
         this.result = {};
-        cback.call(this);
+        if (cback) {
+            cback.call(this);
+        }
+        this.requestComplete();
     };
 
     var make_new_reader = function(clazz) {
@@ -93,15 +97,17 @@ MASCP.events.once('ready',function() {
         var end_func = MASCP.Service.BulkOperation();
         if (argv.file) {
             var data = read_csv(argv.file);
-            reader.retrieve(null, function() {
-                if (data.length > 0) {
+            var request_complete = function() {
+                if (data.length > 0 && data[0][0] != '') {
                     var row = data.shift();
                     this._data = row[1];
-                    this.retrieve(row[0],arguments.callee);
-                } else if (data.length == 0) {
+                    this.retrieve(row[0]);
+                } else if (data.length == 0 || data[0][0] == '') {
                     end_func();
                 }
-            });
+            };
+            reader.bind('requestComplete',request_complete);
+            request_complete.call(reader);
         } else {
             get_stdin(function(line) {
                 var rdr = make_new_reader(clazz);
