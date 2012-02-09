@@ -219,6 +219,16 @@ jQuery(document).ready(function() {
 
             }
             
+            MASCP.cloneService(MASCP.TairReader,'CdsReader');
+
+            (new MASCP.CdsReader(null,'http://localhost:3000/data/latest/cds')).retrieve(agi,function() {
+                MASCP.registerLayer('cds',{'fullname':'CDS','color':'#ff00ff'});
+                MASCP.renderer.renderTextTrack('cds',this.result.getSequence().slice(0,-3));
+                MASCP.renderer.trackOrder.push('cds');
+                MASCP.renderer.showLayer('cds');
+                MASCP.renderer.refresh();
+            });
+
             setTimeout(function() {
                 jQuery('#agi').focus();            
             },1000);

@@ -26,6 +26,9 @@ var resource_map = {
 repl = require('repl');
 
 MASCP.events.once('ready',function() {
+
+    resource_map['cds'] = MASCP.cloneService(MASCP.TairReader,'CdsReader');
+
     MASCP.Service.BeginCaching();
     var express = require('express'),
         app = express.createServer();
