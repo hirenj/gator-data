@@ -21,7 +21,9 @@ var resource_map = {
     'suba'      : MASCP.SubaReader,
     'ArbitraryData' : MASCP.ArbitraryDataReader,
     'nssnps'    : MASCP.SnpReader    
-}
+};
+
+repl = require('repl');
 
 MASCP.events.once('ready',function() {
     MASCP.Service.BeginCaching();
@@ -132,12 +134,25 @@ MASCP.events.once('ready',function() {
         });        
     }
     
+    app.get('/data/latest/:resource',function(req,res,next) {
+        get_latest(req.param('agi'), service_object(req),res);
+    });
+    
     app.get('/data/latest/:resource/:agi',function(req,res,next) {
         get_latest(req.param('agi'), service_object(req), res);
     });
 
     app.listen(port,'127.0.0.1');
     console.log('Server running at http://127.0.0.1:'+port+'/');
+
+    if (! require('tty').isatty(process.stdin)) {
+        var vm = require('vm');
+        vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module }, "<stdin>");
+    } else {
+        repl.start("Gator data server >");
+        repl.repl.context.resource_map = resource_map;
+    }
+
 });
 
 MASCP.events.emit('ready');
