@@ -219,15 +219,52 @@ jQuery(document).ready(function() {
 
             }
             
+            function zeroFill( number, width )
+            {
+              width -= number.toString().length;
+              if ( width > 0 )
+              {
+                return new Array( width + (/\./.test( number ) ? 2 : 1) ).join( '0' ) + number;
+              }
+              return number;
+            };
+            
             MASCP.cloneService(MASCP.TairReader,'CdsReader');
+            document.getElementById('showcds').onclick = function() {
+                (new MASCP.CdsReader(null,'/data/latest/cds')).retrieve(agi,function() {
+                    var wind = window.open();
+                    var div = wind.document.createElement('div');
+                    div.style.fontFamily = 'Courier';
+                    var in_text = this.result.getSequence();
+                    var grps = in_text.match(new RegExp( ".{3}", "g"));
+                    for (var i = 0; i < grps.length; i++) {
+                        var a_node;
+                        var a_txt = wind.document.createTextNode(grps[i]);
+                        if (MASCP.positions.indexOf(i+1) >= 0) {
+                            a_node = wind.document.createElement('span');
+                            a_node.style.background = '#ff00ff';
+                            a_node.appendChild(a_txt);
+                        } else {
+                            a_node = a_txt;
+                        }
+                        
+                        if (((i+1) % 10) == 1) {
+                            div.appendChild(wind.document.createTextNode(zeroFill((i+1),6)+" "));                            
+                        }                        
+                        div.appendChild(a_node);
+                        if (((i+1) % 10) == 0) {
+                            div.appendChild(wind.document.createTextNode(" "+zeroFill((i+1),6)));                            
+                        }
 
-            (new MASCP.CdsReader(null,'/data/latest/cds')).retrieve(agi,function() {
-                MASCP.registerLayer('cds',{'fullname':'CDS','color':'#ff00ff'});
-                MASCP.renderer.renderTextTrack('cds',this.result.getSequence().slice(0,-3));
-                MASCP.renderer.trackOrder.push('cds');
-                MASCP.renderer.showLayer('cds');
-                MASCP.renderer.refresh();
-            });
+                        div.appendChild(wind.document.createTextNode(' '));
+                        
+                    }
+                    div.style.width = '550px';
+                    wind.document.body.appendChild(wind.document.createElement('h1'));
+                    wind.document.body.firstChild.appendChild(wind.document.createTextNode('CDS'));
+                    wind.document.body.appendChild(div);
+                });
+            };
 
             setTimeout(function() {
                 jQuery('#agi').focus();            

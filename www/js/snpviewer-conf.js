@@ -17,6 +17,17 @@ var READER_CONF = (function() {
         'definition'    : MASCP.SnpReader,
         'nicename'      : 'Snps',
         'result'        : function() {
+                var positions = [];
+                var self = this;
+                self.result.getAccessions().forEach(function(acc) {
+                    var posns = self.result.getSnp(acc);
+                    for (var i = 0; i < posns.length; i++) {
+                        if (positions.indexOf(posns[i][0]) < 0) {
+                            positions.push(posns[i][0]);
+                        }
+                    }
+                });
+                MASCP.positions = positions.sort();
         },
         'layers'        : ['insertions_controller','insertions']
     }
