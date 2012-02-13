@@ -235,6 +235,8 @@ jQuery(document).ready(function() {
                     var wind = window.open();
                     var div = wind.document.createElement('div');
                     div.style.fontFamily = 'Courier';
+                    var aa_seq = MASCP.renderer.sequence;
+                    var aa_seq_grps = aa_seq.match(new RegExp(".{1,10}","g"));
                     var in_text = this.result.getSequence();
                     var grps = in_text.match(new RegExp( ".{3}", "g"));
                     for (var i = 0; i < grps.length; i++) {
@@ -253,7 +255,13 @@ jQuery(document).ready(function() {
                         }                        
                         div.appendChild(a_node);
                         if (((i+1) % 10) == 0) {
-                            div.appendChild(wind.document.createTextNode(" "+zeroFill((i+1),6)));                            
+                            div.appendChild(wind.document.createTextNode(" "+zeroFill((i+1),6)));
+                            div.appendChild(wind.document.createTextNode(' .......'+aa_seq_grps[parseInt(i/10)].split('').join('...')+'......... '));
+                            div.appendChild(wind.document.createElement('br'));
+                            div.appendChild(wind.document.createElement('br'));
+                        } else if (i == grps.length - 1) {
+                            div.appendChild(wind.document.createElement('br'));
+                            div.appendChild(wind.document.createTextNode(' .......'+aa_seq_grps[parseInt(i/10)].split('').join('...')+'......... '));                            
                         }
 
                         div.appendChild(wind.document.createTextNode(' '));
@@ -261,8 +269,9 @@ jQuery(document).ready(function() {
                     }
                     div.style.width = '550px';
                     wind.document.body.appendChild(wind.document.createElement('h1'));
-                    wind.document.body.firstChild.appendChild(wind.document.createTextNode('CDS'));
+                    wind.document.body.firstChild.appendChild(wind.document.createTextNode(agi+' CDS (Col-0 TAIR10)'));
                     wind.document.body.appendChild(div);
+                    wind.resizeTo(500,500);
                 });
             };
 
