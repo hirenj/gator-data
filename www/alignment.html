@@ -38,9 +38,6 @@
         border-radius: 0px 0px 5px 5px;
     }
     </style>
-    <input type="text" value="at3g15450.1" id="acc_1"/>
-    <input type="text" value="at3g15460.1" id="acc_2"/>
-    <input type="text" value="at3g15470.1" id="acc_3"/>
     <input type="button" value="Go" id="run"/>
     <div style="position: relative; height: 2em;">
         <div id="zoomlabel">Zoom</div>
@@ -64,6 +61,7 @@
       var dragger = new GOMap.Diagram.Dragger();
       widget_rend.zoom = 0.81;
       widget_rend.padding = 10;
+      widget_rend.trackGap = 3;
 
       jQuery('#zoomin').click(function() {
         var start_zoom = widget_rend.zoom;
@@ -99,34 +97,40 @@
         GOMap.Diagram.addScrollZoomControls(widget_rend, widget_rend._canvas);
         widget_rend.navigation.hide();
       });
-      
+      var all_accs = [];
+
+function gup( name ){
+name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");  
+var regexS = "[\\?&]"+name+"=([^&#]*)";  
+var regex = new RegExp( regexS );  
+var results = regex.exec( window.location.href ); 
+ if( results == null )    return "";  
+else    return results[1];}
+
       function get_seqs() {
-          var accs = [  document.getElementById('acc_1').value,
-                        document.getElementById('acc_2').value,
-                        document.getElementById('acc_3').value
-                     ];
+          var accs = gup('accs').split(",");
+          all_accs = all_accs.concat(accs);
           var results = [];
-          var tair_reader = new MASCP.TairReader(null,"http://gator.masc-proteomics.org/data/latest/gator");
+          var seq_reader = new MASCP.UniprotReader(null,"/data/latest/gator");
           var runner = function() {
               results.push(this.result.getSequence());
               if (accs.length > 0) {
-                  tair_reader.retrieve(accs.shift());
+                  seq_reader.retrieve(accs.shift());
               } else {
                   do_clustal(results.join(','));
               }
           };
-          tair_reader.bind('resultReceived',runner);
-          tair_reader.retrieve(accs.shift());
+          seq_reader.bind('resultReceived',runner);
+          seq_reader.retrieve(accs.shift());
       }
       var xmlhttp;
       
       var do_stuff_with = function(seqs,alignment) {
           var a_seq = seqs[0];
-
           widget_rend.setSequence(Array(a_seq.length+1).join("."));
           widget_rend.grow_container = true;
           for (var i = 0; i < seqs.length; i++) {
-              MASCP.registerLayer('lay'+i,{'fullname':'lay'+i, 'color' : '#ff0000'});
+              MASCP.registerLayer('lay'+i,{'fullname': all_accs[i] || ' ', 'color' : '#ff0000'});
               widget_rend.renderTextTrack('lay'+i,seqs[i]);
               widget_rend.trackOrder.push('lay'+i);
           }
@@ -159,8 +163,9 @@
             }
             var width =  right - left;
             var top = 25;
-            if (widget_rend.zoom > 3.6) {
-              top = (seqs.length+1)*5 + 5;
+            if (widget_rend.zoom > 3.6) {  
+              top = 10;            
+//              top = (seqs.length+1)*5 + 5;
             }
             under.setAttribute('transform','translate('+left*50+','+top*50+')');
             var wind = alignment.substr(left,width);
@@ -168,7 +173,7 @@
             for (var i = 0; i < aas.length; i++) {
               var a_rect = under.childNodes[i];
               if ( ! a_rect ) {
-                a_rect = under.parentNode.rect(i,0,1,30);
+                a_rect = under.parentNode.rect(i,0,1,seqs.length*100);
                 under.push(a_rect);
               }
               var fill = 'none'
@@ -183,6 +188,7 @@
               }
               a_rect.setAttribute('stroke','none');
               a_rect.setAttribute('fill',fill);
+              a_rect.setAttribute('opacity','0.5');
             }
             while (aas.length < under.childNodes.length) {
               under.removeChild(under.lastChild);
@@ -190,7 +196,7 @@
 
           };
 
-          widget_rend._canvas.addEventListener('panend',updater);
+          bean.add(widget_rend._canvas,'panend',updater);
 
           widget_rend.addUnderlayRenderer(function(zoom,canvas) {
             if (under) {
@@ -198,6 +204,7 @@
               under = null;
             }
             under = canvas.group();
+            canvas.insertBefore(under,canvas.firstChild.nextSibling);
             updater();
           });
           widget_rend.refresh();
