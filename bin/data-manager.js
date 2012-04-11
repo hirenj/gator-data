@@ -16,9 +16,12 @@ In UTF8 format
 var argv =  require('optimist')
             .usage('Load data into the cache\n'+
                    'Usage:\n'+
-                   ' cat [file] | $0 --reader [Reader class] --date YYYY/MM/DD --verbose\n'+
+                   ' cat [file] | $0 --reader [Reader class] --date YYYY/MM/DD --verbose --test\n'+
                    'OR\n '+
-                   '$0 --file [file] --reader [Reader class] --date YYYY/MM/DD --verbose\n'+
+                   '$0 --file [file] --reader [Reader class] --date YYYY/MM/DD --verbose --test\n'+
+                   'OR\n '+
+                   'To load data directly from a FASTA file\n'+
+                   '$0 --file [file] --reader [Reader class] --date YYYY/MM/DD --fasta\n'+
                    'OR\n '+
                    'To load up data with an alternative class\n'+
                    '$0 --file [file] --reader [Reader class] --writeclass [Class] --date YYYY/MM/DD --verbose\n\n'+
@@ -51,6 +54,64 @@ var get_stdin = function(cback,endcback) {
         cback.call(null,line.split(/,(.+)/));
     });
 };
+
+if (argv.fasta) {
+    (function() {
+        var normal_read_csv = read_csv;
+        var normal_get_stdin = get_stdin;
+        var seq = "";
+        var id;
+        var handle_line = function(line) {
+            var match = line.match(/^>(.*)/);
+            var dat;
+            if (match) {
+                if (id) {
+                    dat = [id, JSON.stringify({ 'data' : [ seq+"", "" ] }) ];
+                    seq = "";
+                }
+                id = match[1];
+                return dat;
+            } else {
+                seq += line;
+            }
+        };
+        read_csv = function(filename) {
+            var lines = fs.readFileSync(filename,"utf8").split("\n").reverse();
+            lines.unshift(">");
+            var data = [];
+            var block;
+            for (var i = lines.length - 1; i >= 0; i-- ) {
+                block = handle_line(lines[i]);
+                if (block) {
+                    data.push(block);
+                }
+            }
+            return data;
+        };
+
+        get_stdin = function(cback,endcback) {
+            process.stdin.resume();
+            process.stdin.on('end',function(line) {
+                if (! line) {
+                    line = ">";
+                }
+                var block = handle_line(line);
+                if (block) {
+                    cback.call(null,block);
+                }
+                setTimeout(endcback,100);
+            });
+            carrier.carry(process.stdin,function(line) {
+                var block = handle_line(line);
+                if (block) {
+                    cback.call(null,block);
+                }
+            });
+        };
+
+    })();
+}
+
 MASCP = require('mascp-jstools');
 MASCP.events.once('ready',function() {
     var date = argv.date ? new Date(Date.parse(argv.date + " 0:00 GMT")) : new Date();
@@ -82,7 +143,9 @@ MASCP.events.once('ready',function() {
         rdr._dataReceived = function() {
             return true;
         };
-        MASCP.Service.CacheService(rdr);
+        if ( ! argv.test ) {
+            MASCP.Service.CacheService(rdr);
+        }
         return rdr;
     }
 
