@@ -116,6 +116,51 @@
       }
       var xmlhttp;
       
+      var get_snps = function(an_id,a_seq,layer) {
+        MASCP.SnpReader.SERVICE_URL = '/data/latest/gator';
+        var reader = new MASCP.SnpReader();
+        reader.retrieve(an_id,function(err) {
+          if ( err )  {
+            return;
+          }
+          var a_result = reader.result;
+          widget_rend.withoutRefresh(function() {
+            var accessions = a_result.getAccessions().slice(0,2);
+            while (accessions.length > 0) {
+
+              var acc = accessions.shift();
+              var diffs = a_result.getSnp(acc).slice(0,2);
+
+              var ins = [];
+              var i;
+              for (i = diffs.length - 1; i >= 0 ; i-- ){
+                  ins.push( { 'insertBefore' : diffs[i][0] + 1, 'delta' : diffs[i][2] });
+              }
+              for (i = ins.length - 1; i >= 0 ; i-- ) {
+                var wanted_pos = ins[i].insertBefore - 1;
+                var end = 0;
+                var chars_found = 0;
+
+                while (chars_found != wanted_pos) {
+                  var missing = wanted_pos - chars_found;
+                  var subbit = a_seq.substr(end,missing);
+                  end += missing;
+                  chars_found += subbit.replace(/-/g,'').length;
+                }
+                var pos = end;
+
+                console.log("Done");
+                widget_rend.getAA(pos).addAnnotation(layer,1, { 'border' : 'rgb(150,0,0)', 'content' : ins[i].delta, 'angle': 'auto' });
+              }
+
+            }
+
+          });
+          widget_rend._layer_containers[layer].fixed_track_height = 1;
+          widget_rend.redrawAnnotations(layer);
+        });
+      };
+
       var do_stuff_with = function(seqs,alignment) {
           var a_seq = seqs[0];
           widget_rend.setSequence(Array(a_seq.length+1).join("."));
@@ -123,6 +168,9 @@
           for (var i = 0; i < seqs.length; i++) {
               MASCP.registerLayer('lay'+i,{'fullname': all_accs[i] || ' ', 'color' : '#ff0000'});
               widget_rend.renderTextTrack('lay'+i,seqs[i]);
+
+              get_snps(all_accs[i],seqs[i],'lay'+i);
+
               widget_rend.trackOrder.push('lay'+i);
           }
           for (var i = 0; i < seqs.length; i++) {
