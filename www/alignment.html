@@ -38,7 +38,7 @@
         border-radius: 0px 0px 5px 5px;
     }
     </style>
-    <input type="button" value="Go" id="run"/>
+    <input type="button" value="Waiting.." id="run"/>
     <div style="position: relative; height: 2em;">
         <div id="zoomlabel">Zoom</div>
         <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
@@ -99,17 +99,8 @@
       });
       var all_accs = [];
 
-function gup( name ){
-name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");  
-var regexS = "[\\?&]"+name+"=([^&#]*)";  
-var regex = new RegExp( regexS );  
-var results = regex.exec( window.location.href ); 
- if( results == null )    return "";  
-else    return results[1];}
-
       function get_seqs() {
-          var accs = gup('accs').split(",");
-          all_accs = all_accs.concat(accs);
+          var accs = all_accs.concat([]);
           var results = [];
           var seq_reader = new MASCP.UniprotReader(null,"/data/latest/gator");
           var runner = function() {
@@ -230,6 +221,27 @@ else    return results[1];}
               "application/x-www-form-urlencoded");
           xmlhttp.send('sequences='+seqs);
       }
+
+      (function() {
+          var family = window.location.href.split('/').reverse().shift();
+          xmlhttp =  new XMLHttpRequest();
+          if (xmlhttp) {
+              xmlhttp.onreadystatechange = function() {
+                if (xmlhttp.readyState == 4) {
+                    if (xmlhttp.status == 200) {
+                        all_accs = JSON.parse(xmlhttp.responseText);
+                        document.getElementById('run').value="Go";
+                    }
+                }
+              };
+          }
+          xmlhttp.open("GET", '/data/latest/cazy/'+family, true);         
+          xmlhttp.setRequestHeader("Content-type",
+              "application/x-www-form-urlencoded");
+          xmlhttp.send('');
+      })();
+
+
       document.getElementById('run').addEventListener('click',get_seqs);
       
       

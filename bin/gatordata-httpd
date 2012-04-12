@@ -51,6 +51,14 @@ MASCP.events.once('ready',function() {
       res.redirect("/index.html");
     });
 
+    (function() {
+        var middle = express.static(__dirname + '/../www');
+        app.get("/cazy/*", function(req, res, next) {
+            req.url = '/alignment.html';
+            middle(req,res,next);
+        });
+    })();
+
     var data_headers = function(req,res,next) {
         res.header('Content-type', 'application/json');
         res.header('Access-Control-Allow-Headers','x-requested-with');
@@ -93,6 +101,23 @@ MASCP.events.once('ready',function() {
             } else {
                 res.send(this.result ? this.result._raw_data : {},200);
             }
+        });
+    });
+
+    app.get('/data/latest/cazy/:family',function(req,res,next) {
+        var opts = {'host' : 'www.uniprot.org',
+                    'port' : 80,
+                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b40674%5d%22&format=list'
+                    };
+        var client = require('http').get(opts,
+        function(response) {
+            response.on('data', function (chunk) {
+                var ids = chunk.toString().replace(/\n/g,',');
+                ids = ids.replace(/,$/,'');
+                res.send(ids.split(','),200);
+            });
+        }).on('error', function(e) {
+            res.send({"error" : "Could not contact Uniprot"},200);
         });
     });
     
@@ -159,20 +184,6 @@ MASCP.events.once('ready',function() {
             } else {
                 res.send(this.result ? this.result._raw_data : {"error" : "No data"},200);
             }
-        });
-    });
-
-    app.get('/cazy/:family',function(req,res,next) {
-        var client = require('http').get({'host' : 'www.uniprot.org',
-                                          'port' : 80,
-                                          'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b40674%5d%22&format=list'
-                                         },
-        function(response) {
-            response.on('data', function (chunk) {
-                var ids = chunk.toString().replace(/\n/g,',');
-                ids = ids.replace(/,$/,'');
-                res.redirect("/alignment.html?accs="+ids);
-            });
         });
     });
 
