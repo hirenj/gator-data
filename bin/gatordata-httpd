@@ -27,6 +27,59 @@ var resource_map = {
     'nssnps'    : MASCP.SnpReader,
 };
 
+var enable_id_translation = function(clazz) {
+    (function(serv) {
+        var defaultDataReceived = serv.prototype._dataReceived;
+
+        serv.prototype._dataReceived = function(data,status)
+        {
+            if (data === null) {
+                return defaultDataReceived.call(this,null,status);
+            }
+            if (typeof data == "object") {
+                return defaultDataReceived.call(this,data,status);
+            }
+
+            if (typeof data == "string") {
+                if (data.toLowerCase().match(/^at/)) {
+                    this.agi = data.toLowerCase().replace(/(\n|\r)+$/,'')+'.1';
+                    this.retrieve(this.agi);
+                    return;
+                } else {
+                    return defaultDataReceived.call(this,null,status);
+                }
+            }
+        };
+    })(clazz);
+    var old_request = clazz.prototype.requestData;
+
+    clazz.prototype.requestData = function()
+    {
+        var self = this;
+        var agi = this.agi || '';
+        if (! agi.toLowerCase().match(/^at/)) {
+            return {
+                type: "GET",
+                dataType: "txt",
+                url: "http://uniprot.org/mapping/",
+                data : {
+                    "from" : "ACC+ID",
+                    "to" : "TAIR_ID",
+                    "format" : "list",
+                    "query" : agi
+                }
+            }
+        }
+        return old_request.call(this);
+    };
+
+};
+
+if (port == 3702) {
+    enable_id_translation(MASCP.SnpReader);
+}
+
+
 repl = require('repl');
 
 MASCP.events.once('ready',function() {
@@ -105,9 +158,14 @@ MASCP.events.once('ready',function() {
     });
 
     app.get('/data/latest/cazy/:family',function(req,res,next) {
+        var tax = '40674';
+        if (app.address().port != 3000) {
+            tax = app.address().port;
+        }
+
         var opts = {'host' : 'www.uniprot.org',
                     'port' : 80,
-                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b40674%5d%22&format=list'
+                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b'+tax+'%5d%22&format=list'
                     };
         var client = require('http').get(opts,
         function(response) {
@@ -187,8 +245,8 @@ MASCP.events.once('ready',function() {
         });
     });
 
-    app.listen(port,'127.0.0.1');
-    console.log('Server running at http://127.0.0.1:'+port+'/');
+    app.listen(port);//,'127.0.0.1');
+    console.log('Server running at http://127.0.0.1:'+app.address().port+'/');
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
