@@ -28,7 +28,7 @@
        } 
    ],
    "dependencies": {
-       "express" : "2.4.x",
+       "express" : "2.5.x",
        "optimist": "0.2.x",
        "carrier" : "0.1.x",
        "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/mascp-jstools-2.0"
