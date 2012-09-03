@@ -79,8 +79,12 @@
         border-radius: 0px 0px 5px 5px;
     }
     </style>
+    <script type="text/html" id="insertion_tmpl">
+        <div><%=insert%>
+        </div>
+    </script>
     <img src="img/red.png" style="display: none;"/>
-    <input type="text" id="acc" value="p02671"/><input type="button" value="Import sites" id="getdocs"/>
+    <input type="text" id="acc" value="p02751"/><input type="button" value="Import sites" id="getdocs"/>
     <div style="position: relative; height: 2em;">
         <div id="zoomlabel">Zoom</div>
         <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
@@ -204,6 +208,8 @@
         return 1 - (positives / (seqs.length - 1));
       }
 
+      var seq_callout = null;
+
       var do_clustal = function(seqs) {
         MASCP.ClustalRunner.SERVICE_URL = '/tools/clustalw/';
         var runner = new MASCP.ClustalRunner();
@@ -230,7 +236,35 @@
             }
 
             if (aligned[i].insertions) {
-              console.log(aligned[i].insertions);
+              for (var insert in aligned[i].insertions) {
+                var insertions = aligned[i].insertions;
+                var layname = 'lay'+i;
+                var an_anno = widget_rend.getAA(insert).addAnnotation('lay'+i,10,
+                  { 'content' : '+'+insertions[insert].length,
+                    // 'no_scale' : false,
+                    // 'height' : 8,
+                    'height' : 1,
+                    'offset' : 6,
+                    'angle'  : -45, 
+                    'border' : 'rgb(0,0,255)'
+                  });
+                (function(layname,insert,insertions) {
+                an_anno.addEventListener('click',function() {
+                  console.log(layname);
+                  if (seq_callout !== null && seq_callout.parentNode !== null) {
+                    seq_callout.parentNode.removeChild(seq_callout);
+                  }
+                  seq_callout = null;
+                  seq_callout = widget_rend.getAA(insert).callout(layname,'insertion_tmpl', { 'width' : insertions[insert].length, 'height' : 1, 'insert' : insertions[insert]});
+                  console.log(seq_callout);
+                  seq_callout.addEventListener('click',function() {
+                    this.parentNode.removeChild(this);
+                  });
+                });
+                })(layname,insert,insertions);
+               // var an_anno = widget_rend.getAA(insert).callout('lay'+i,'insertion_tmpl', { 'width' : aligned[i].insertions[insert].length*10, 'height' : 12, 'insert' : aligned[i].insertions[insert]});
+                // console.log(an_anno);
+              }
             }
           }
           widget_rend.createGroupController('isoform_controller','isoforms');
