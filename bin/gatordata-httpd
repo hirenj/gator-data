@@ -158,7 +158,7 @@ MASCP.events.once('ready',function() {
     });
 
     app.get('/data/latest/cazy/:family',function(req,res,next) {
-        var tax = '40674';
+        var tax = '9606';
         if (app.address().port != 3000) {
             tax = app.address().port;
         }
@@ -237,6 +237,9 @@ MASCP.events.once('ready',function() {
         clustal.sequences = sequences;
         clustal.agi = MASCP.ClustalRunner.hash(clustal.sequences.join(','))+'';
         clustal.retrieve(clustal.agi,function(err) {
+            if ( err && ! err.error ) {
+                err.error  = err.message;
+            }
             if (err || this.result && this.result._raw_data && this.result._raw_data.nodeName) {
                 res.send(err.error ? { "error" : err.error } : { "error" : err },200);
             } else {
