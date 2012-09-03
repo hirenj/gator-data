@@ -5,6 +5,16 @@
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-ui-1.7.2.min.js"></script>
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-masonry-1.2.0.min.js"></script>
     <style type="text/css">
+    @media print {
+      @page {
+        size: landscape;
+      }
+
+      #zoomin, #zoomout, #zoomlabel, .noprint {
+        display: none;
+      }
+    }
+
     #zoomin, #zoomout {
         font-weight: bolder;
         font-family: Helvetica;
@@ -38,8 +48,8 @@
         border-radius: 0px 0px 5px 5px;
     }
     </style>
-    <input type="button" value="Waiting.." id="run"/>
-    <div style="position: relative; height: 2em;">
+    <input class="noprint" type="button" value="Waiting.." id="run"/>
+    <div class="noprint" style="position: relative; height: 2em;">
         <div id="zoomlabel">Zoom</div>
         <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
     </div>
@@ -150,13 +160,13 @@
                 var pos = end;
 
                 console.log("Done");
-                widget_rend.getAA(pos).addAnnotation(layer,1, { 'border' : 'rgb(150,0,0)', 'content' : ins[i].delta, 'angle': 'auto' });
+                widget_rend.getAA(pos).addAnnotation(layer,1, { 'border' : 'rgb(0,0,150)', 'offset' : 0, 'height' : 2, 'content' : ins[i].delta, 'angle': -45 });
               }
 
             }
 
           });
-          widget_rend._layer_containers[layer].fixed_track_height = 1;
+          // widget_rend._layer_containers[layer].fixed_track_height = 1;
           widget_rend.redrawAnnotations(layer);
         });
       };
