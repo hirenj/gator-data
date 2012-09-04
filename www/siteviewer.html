@@ -200,7 +200,7 @@
 
       var check_values = function(seq,idx,seqs) {
         var positives = 0;
-        var aa = seq.charAt(idx);
+        var aa = seq.toString().charAt(idx);
         for (var i = 1; i < seqs.length; i++) {
           if (seqs[i].toString().charAt(idx) == aa) {
             positives += 1;
@@ -230,7 +230,7 @@
             widget_rend.getAA(i+1).addBoxOverlay('isoform_controller',1,check_values(aligned[0],i,aligned));
           }
           for (var i = 1 ; i < aligned.length; i++) {
-            MASCP.registerLayer('lay'+i,{'fullname': 'Isoform '+i, 'group' : 'isoforms', 'color' : '#ff0000'});
+            MASCP.registerLayer('lay'+i,{'fullname': 'Isoform '+(i+1), 'group' : 'isoforms', 'color' : '#ff0000'});
             widget_rend.renderTextTrack('lay'+i,aligned[i].toString());
             if (widget_rend.trackOrder.indexOf('lay'+i) < 0) {
               widget_rend.trackOrder.push('lay'+i);
