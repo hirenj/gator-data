@@ -29,12 +29,19 @@ var resource_map = {
     'promex'    : MASCP.PromexReader,
     'rippdb'    : MASCP.RippdbReader,
     'suba'      : MASCP.SubaReader,
+    'user'      : MASCP.UserdataReader,
     'ArbitraryData' : MASCP.ArbitraryDataReader,
     'rnaedit'   : MASCP.RnaEditReader,
     'ubiquitin' : MASCP.UbiquitinReader,
     'processing': MASCP.ProcessingReader,
     'nssnps'    : MASCP.SnpReader,
 };
+
+
+MASCP.UserdataReader.datasets(function(service) {
+    resource_map[service] = MASCP.UserdataReader;
+});
+
 
 var google_client_id = nconf.get('google:client_id');
 var google_client_secret = nconf.get('google:client_secret');
@@ -356,6 +363,9 @@ MASCP.events.once('ready',function() {
         var obj = new clazz(null,null);
         if (clazz == MASCP.ArbitraryDataReader) {
             obj = obj._extend(req.query.dataset || req.body.dataset);
+        }
+        if (clazz == MASCP.UserdataReader) {
+            obj.datasetname = resource;
         }
         return obj;
     };
