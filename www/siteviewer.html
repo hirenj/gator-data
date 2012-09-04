@@ -144,7 +144,9 @@
         var counter = 2;
         var got_error = false;
         a_reader.bind('resultReceived',function(e) {
-          sequences.push(this.result.getSequence());
+          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi };
+          bit.toString = function() { return this.sequence; };
+          sequences.push(bit);
         });
         a_reader.bind('error',function(e) {
           got_error = true;
@@ -215,6 +217,9 @@
         MASCP.ClustalRunner.SERVICE_URL = '/tools/clustalw/';
         var runner = new MASCP.ClustalRunner();
         runner.sequences = seqs;
+        
+        runner.registerSequenceRenderer(widget_rend);
+
         runner.retrieve("dummy",function() {
           this.result.alignToSequence(0);
           var aligned = this.result.getSequences();
@@ -229,7 +234,7 @@
           for (var i = 0 ; i < alignments.length; i++ ) {
             widget_rend.getAA(i+1).addBoxOverlay('isoform_controller',1,check_values(aligned[0],i,aligned));
           }
-          for (var i = 1 ; i < aligned.length; i++) {
+          for (var i = 0 ; i < aligned.length; i++) {
             MASCP.registerLayer('lay'+i,{'fullname': 'Isoform '+(i+1), 'group' : 'isoforms', 'color' : '#ff0000'});
             widget_rend.renderTextTrack('lay'+i,aligned[i].toString());
             if (widget_rend.trackOrder.indexOf('lay'+i) < 0) {
@@ -240,6 +245,12 @@
               for (var insert in aligned[i].insertions) {
                 var insertions = aligned[i].insertions;
                 var layname = 'lay'+i;
+                if (insert == 0 && insertions[insert] == "") {
+                  continue;
+                }
+                if (insert == 0) {
+                  insert = 1;
+                }
                 var an_anno = widget_rend.getAA(insert).addAnnotation('lay'+i,10,
                   { 'content' : '+'+insertions[insert].length,
                     // 'no_scale' : false,
