@@ -46,6 +46,9 @@
         display: none;
       }
     }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+    }
     #zoomin, #zoomout {
         font-weight: bolder;
         font-family: Helvetica;
@@ -80,7 +83,7 @@
     }
     </style>
     <script type="text/html" id="insertion_tmpl">
-        <div><%=insert%>
+        <div style="font-family: Courier;"><%=insert%>
         </div>
     </script>
     <img src="img/red.png" style="display: none;"/>
@@ -254,24 +257,22 @@
                 var an_anno = widget_rend.getAA(insert).addAnnotation('lay'+i,10,
                   { 'content' : '+'+insertions[insert].length,
                     // 'no_scale' : false,
-                    // 'height' : 8,
-                    'height' : 1,
+                    'height' : 4,
                     'offset' : 5,
                     'angle'  : -45, 
                     'border' : 'rgb(0,0,255)'
                   });
                 (function(layname,insert,insertions) {
                 an_anno.addEventListener('click',function() {
-                  console.log(layname);
                   if (seq_callout !== null && seq_callout.parentNode !== null) {
                     seq_callout.parentNode.removeChild(seq_callout);
                   }
                   seq_callout = null;
-                  seq_callout = widget_rend.getAA(insert).callout(layname,'insertion_tmpl', { 'width' : insertions[insert].length, 'height' : 1, 'insert' : insertions[insert]});
-                  console.log(seq_callout);
+                  seq_callout = widget_rend.getAA(insert).callout(layname,'insertion_tmpl', { 'width' : insertions[insert].length, 'height' : 3, 'insert' : insertions[insert].match(/(\w{1,10})/g).join(' ')});
                   seq_callout.addEventListener('click',function() {
                     this.parentNode.removeChild(this);
                   });
+                  widget_rend.refresh();
                 });
                 })(layname,insert,insertions);
                // var an_anno = widget_rend.getAA(insert).callout('lay'+i,'insertion_tmpl', { 'width' : aligned[i].insertions[insert].length*10, 'height' : 12, 'insert' : aligned[i].insertions[insert]});
