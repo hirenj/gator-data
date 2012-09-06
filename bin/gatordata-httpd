@@ -43,147 +43,12 @@ MASCP.UserdataReader.datasets(function(service) {
 });
 
 
-var google_client_id = nconf.get('google:client_id');
-var google_client_secret = nconf.get('google:client_secret');
-
-var access_token = null;
-var refresh_token = nconf.get('google:refresh_token');
-
 nconf.save(function(err) {
     if (err) {
         console.log("Could not write config");
     }
 });
 
-var with_google_authentication = function(callback) {
-    if (access_token) {
-        if (access_token.expiration < (new Date()) ) {
-            access_token = null;
-        }
-    }
-
-    if (access_token) {
-        callback(access_token);
-        return;
-    }
-    if (refresh_token) {
-        refresh_authenticate(refresh_token,function(auth_details) {
-            var expiration = new Date();
-            expiration.setSeconds(expiration.getSeconds() + auth_details.expires_in);
-            access_token = {
-                "token": auth_details.access_token,
-                "expiration": expiration
-            };
-            callback(access_token);
-        });
-        return;
-    }
-    new_authenticate(function(auth_details) {
-        var expiration = new Date();
-        expiration.setSeconds(expiration.getSeconds() + auth_details.expires_in);
-        access_token = {
-            "token": auth_details.access_token,
-            "expiration": expiration
-        };
-        refresh_token = auth_details.refresh_token;
-        nconf.set('google:refresh_token',refresh_token);
-        nconf.save(function(err) {
-            if (err) {
-                console.log("Could not write config");
-            }
-        });
-        callback(access_token);
-    });
-};
-
-var new_authenticate = function(auth_done) {
-    var base = "https://accounts.google.com/o/oauth2/auth?";
-    var scope = encodeURIComponent("https://docs.google.com/feeds/ https://spreadsheets.google.com/feeds/");
-    var redirect_uri = encodeURIComponent("urn:ietf:wg:oauth:2.0:oob");
-    var client_id = encodeURIComponent(google_client_id);
-    var state = "login";
-    console.log("Go to this URL:");
-    console.log(base+"scope="+scope+"&redirect_uri="+redirect_uri+"&response_type=code&client_id="+client_id);
-    var old_eval = repl.repl.eval;
-    repl.repl.prompt = "Authentication code : ";
-    repl.repl.eval = function(cmd,context,filename,callback) {
-        repl.repl.prompt = "Gator data server > ";
-        repl.repl.eval = old_eval;
-
-        var re = /\n.*/m;
-        cmd = cmd.replace(/\(/,'');
-        cmd = cmd.replace(re,'');
-        var querystring = require('querystring');
-        var post_data = querystring.stringify({
-            'code' : cmd,
-            'client_id' : google_client_id,
-            'client_secret' : google_client_secret,
-            'redirect_uri' : "urn:ietf:wg:oauth:2.0:oob",
-            'grant_type' : 'authorization_code'
-        });
-        var req = require('https').request(
-            {
-                host: "accounts.google.com",
-                path: "/o/oauth2/token",
-                method: "POST",
-
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                  'Content-Length': post_data.length
-                }
-            },function(res) {
-                res.setEncoding('utf8');
-                var data = "";
-                res.on('data',function(chunk) {
-                    data += chunk;
-                });
-                res.on('end',function() {
-                    var response = JSON.parse(data);
-
-                    callback(null,"Authentication code validated");
-
-                    auth_done(response);
-                });
-            }
-        );
-        req.write(post_data);
-        req.end();
-    }
-};
-
-var refresh_authenticate = function(refresh_token,auth_done) {
-    var querystring = require('querystring');
-    var post_data = querystring.stringify({
-        'client_id' : google_client_id,
-        'client_secret' : google_client_secret,
-        'refresh_token' : refresh_token,
-        'grant_type' : 'refresh_token'
-    });
-    var req = require('https').request(
-        {
-            host: "accounts.google.com",
-            path: "/o/oauth2/token",
-            method: "POST",
-
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'Content-Length': post_data.length
-            }
-        },function(res) {
-            res.setEncoding('utf8');
-            var data = "";
-            res.on('data',function(chunk) {
-                data += chunk;
-            });
-            res.on('end',function() {
-                var response = JSON.parse(data);
-                auth_done(response);
-            });
-        }
-    );
-    req.write(post_data);
-    req.end();
-};
 
 
 var enable_id_translation = function(clazz) {
@@ -415,20 +280,10 @@ MASCP.events.once('ready',function() {
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
-        if (refresh_token) {
-            with_google_authentication(function(auth) {
-                MASCP.GOOGLE_AUTH_TOKEN = auth.token;
-            });
-        }
         vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module }, "<stdin>");
     } else {
         repl.start("Gator data server >");
         repl.repl.context.resource_map = resource_map;
-        repl.repl.context.authenticate = function() {
-            with_google_authentication(function(auth) {
-                MASCP.GOOGLE_AUTH_TOKEN = auth.token;
-            });
-        };
     }
 
 });
