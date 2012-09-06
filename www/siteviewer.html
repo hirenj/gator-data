@@ -4,7 +4,7 @@
     <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-ui-1.7.2.min.js"></script>
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-masonry-1.2.0.min.js"></script>
-    <!--<script type="text/javascript" src="http://www.google.com/jsapi?autoload=%7B%22modules%22%3A%5B%7B%22name%22%3A%22gdata%22%2C%22version%22%3A%222%22%7D%5D%7D">-->
+    <script type="text/javascript" src="http://www.google.com/jsapi?autoload=%7B%22modules%22%3A%5B%7B%22name%22%3A%22gdata%22%2C%22version%22%3A%222%22%7D%5D%7D">
     </script>
     <script type="text/javascript">
       var getDocsFeed = function(callback) {
@@ -86,8 +86,15 @@
         <div style="font-family: Courier;"><%=insert%>
         </div>
     </script>
+    <script type="text/html" id="description_tmpl">
+        <div><%=desc%>
+        </div>
+    </script>
     <img src="img/red.png" style="display: none;"/>
+    <img src="" id="submitter"/>
     <input type="text" id="acc" value="p02751"/><input type="button" value="Import sites" id="getdocs"/>
+    <input type="button" value="Reset domains" id="reset"/>
+    <input type="button" value="Accept domains" id="submit"/>
     <div style="position: relative; height: 2em;">
         <div id="zoomlabel">Zoom</div>
         <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
@@ -158,7 +165,7 @@
             do_clustal(sequences);
             return;
           }
-          widget_rend.setSequence(sequences[0]);          
+          widget_rend.setSequence(sequences[0].toString());
           widget_rend.grow_container = true;
         });
         a_reader.retrieve(accession);
@@ -170,6 +177,36 @@
         });
       });
 
+      var formkey = "dDNMc2tvRmE0QU9OelhPU3dwSWNjYkE6MQ";
+
+      document.getElementById('reset').addEventListener('click',function() {
+        document.getElementById('submitter').
+        setAttribute('src',
+            'https://docs.google.com/a/glycocode.com/'+
+            'spreadsheet/formResponse?formkey='+formkey+
+            '&entry.0.single='+document.getElementById('acc').value+
+            '&entry.1.single='
+        );
+      });
+
+      document.getElementById('submit').addEventListener('click',function() {
+        var wanted = {};
+        widget_rend.trackOrder.forEach(function(track) {
+          if (track.match(/^dom\:/) && widget_rend.isLayerActive(track)) {
+            wanted[track] = 1;
+          }
+        });
+        var wanted_domains = JSON.stringify(wanted);
+        document.getElementById('submitter').
+        setAttribute('src',
+            'https://docs.google.com/a/glycocode.com/'+
+            'spreadsheet/formResponse?formkey='+formkey+
+            '&entry.0.single='+document.getElementById('acc').value+
+            '&entry.1.single='+wanted_domains
+        );
+      });
+
+
       jQuery(widget_rend).bind('sequenceChange', function() {
         var zoomFactor = 0.95 * window.innerWidth / (2 * widget_rend.sequence.length);
         widget_rend.zoom = zoomFactor;
@@ -178,6 +215,7 @@
         GOMap.Diagram.addScrollZoomControls(widget_rend, widget_rend._canvas);
         widget_rend.navigation.hide();
         get_sites();
+        get_domains();
       });
       
       var pretty_print = function(seq) {
@@ -201,6 +239,76 @@
           datareader.retrieve(document.getElementById('acc').value,function() {
             widget_rend.showLayer(doc_id);
           });
+      }
+      var get_domains= function() {
+          MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+          var datareader = new MASCP.UserdataReader();
+          datareader.datasetname = "domains";
+          datareader.retrieve(document.getElementById('acc').value,function() {
+            var domains = this.result._raw_data.data;
+            for (var dom in domains) {
+              var lay_name = "dom:"+dom;
+              MASCP.registerLayer(lay_name, { 'fullname' : domains[dom].name || dom, 'color' : '#aaaaaa' });
+              widget_rend.trackOrder.push(lay_name);
+              domains[dom].peptides.forEach(function(pos) {
+                var start = parseInt(pos[0]);
+                var end = parseInt(pos[1]);
+                var box = widget_rend.getAA(start).addBoxOverlay(lay_name,end-start,1);
+                var desc = domains[dom].description;
+                if (domains[dom].description) {
+                  var cout;
+                  var thing = lay_name;
+                  box.addEventListener('mouseover',function() {
+                    cout = widget_rend.getAA(parseInt(0.5*(start+end))).callout(thing,'description_tmpl',{ 'width' : 25, 'height' : 3, 'desc' : desc });
+                    widget_rend.refresh();
+                  });
+                  box.addEventListener('mouseout',function() {
+                    if (cout) {
+                      cout.parentNode.removeChild(cout);
+                      cout = null;
+                    }
+                  });
+                }
+              });
+              widget_rend.showLayer(lay_name);
+            }
+            widget_rend.refresh();
+            widget_rend.navigation.show();
+            get_current_data();
+          });
+      }
+
+      var get_current_data = function() {
+        var doc_id = "spreadsheet:0Ai48KKDu9leCdDNMc2tvRmE0QU9OelhPU3dwSWNjYkE";
+        MASCP.UserdataReader.SERVICE_URL = null;
+        var greader = new MASCP.GoogledataReader();
+        var datareader = greader.createReader(doc_id,function(datas) {
+          var dataset = {};
+          console.log(datas);
+          datas.data.shift();
+          datas.data.forEach(function(row) {
+            dataset[row[1].toLowerCase()] = row[2] ? JSON.parse(row[2]) : null;
+          });
+          if (dataset[document.getElementById('acc').value.toLowerCase()] !== null ) {
+            var accepted = dataset[document.getElementById('acc').value.toLowerCase()];
+            var tracks = widget_rend.trackOrder;
+            var new_tracks = [];
+            tracks.forEach(function(track) {
+              if (track.match(/^dom\:/)) {
+                if (accepted[track]) {
+                  new_tracks.push(track);
+                } else {
+                  widget_rend.hideLayer(track);
+                }
+              } else {
+                new_tracks.push(track);
+              }
+            });
+            widget_rend.trackOrder = new_tracks;
+            widget_rend.refresh();
+          }
+          return {};
+        });
       }
 
       var check_values = function(seq,idx,seqs) {
