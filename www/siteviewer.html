@@ -1,11 +1,11 @@
 <html>
 <head>
+    <script type="text/javascript" src="https://apis.google.com/js/auth.js?onload=init">
+    </script>
     <script type="text/javascript" src="/js/mascp-jstools.js"></script>
     <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-ui-1.7.2.min.js"></script>
     <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-masonry-1.2.0.min.js"></script>
-    <script type="text/javascript" src="http://www.google.com/jsapi?autoload=%7B%22modules%22%3A%5B%7B%22name%22%3A%22gdata%22%2C%22version%22%3A%222%22%7D%5D%7D">
-    </script>
     <script type="text/javascript">
       var getDocsFeed = function(callback) {
         var feedUrl = "https://docs.google.com/feeds/documents/private/full";
@@ -180,6 +180,7 @@
       var formkey = "dDNMc2tvRmE0QU9OelhPU3dwSWNjYkE6MQ";
 
       document.getElementById('reset').addEventListener('click',function() {
+        return;
         document.getElementById('submitter').
         setAttribute('src',
             'https://docs.google.com/a/glycocode.com/'+
@@ -215,7 +216,7 @@
         GOMap.Diagram.addScrollZoomControls(widget_rend, widget_rend._canvas);
         widget_rend.navigation.hide();
         get_sites();
-        get_domains();
+        //get_domains();
       });
       
       var pretty_print = function(seq) {
@@ -228,9 +229,11 @@
       }
 
       var get_sites = function() {
-        var doc_id = "spreadsheet:0Ai48KKDu9leCdFFITjlHVmdEN1Q3QmVpM1hOY3loV1E";
+        var doc_id = "spreadsheet:0Ai48KKDu9leCdHlXWGdGLVZOX05KeExicHBmRWpRR0E";
           var greader = new MASCP.GoogledataReader();
           MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+          // var datareader = new MASCP.UserdataReader();
+          // datareader.datasetname = doc_id;
           var datareader = greader.createReader(doc_id,{ "id" : "uniprot_id", "sites" : "site" });
           datareader.registerSequenceRenderer(widget_rend);
           if (widget_rend.trackOrder.indexOf(doc_id) < 0) {
@@ -274,7 +277,7 @@
             }
             widget_rend.refresh();
             widget_rend.navigation.show();
-            get_current_data();
+            // get_current_data();
           });
       }
 
