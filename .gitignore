@@ -2,3 +2,4 @@ etc/myapp/config.js
 ssl/ssl.key
 cached.db
 node_modules
+webdata/*

@@ -501,11 +501,11 @@ h1, h2 {
     
     #condensed_container *::selection {
         color: #ffffff;
-        background: #ffffff;
+        background: #2d7e99;
     }
     #condensed_container *::-moz-selection {
         color: #ffffff;
-        background: #ffffff;            
+        background: #2d7e99;            
     }
     
     .data_reload { 
