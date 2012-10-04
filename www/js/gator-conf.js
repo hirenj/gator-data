@@ -207,6 +207,17 @@ var READER_CONF = (function() {
                                 }
                             },
         'layers'        : ['proteotypic_experimental'],
+    MASCP.PubmedReader, {
+        'definition'    : MASCP.PubmedReader,
+        'nicename'      : 'Pubmed',
+        'error_url'     : 'http://ppdb.tc.cornell.edu',
+        'success_url'   : 'http://ppdb.tc.cornell.edu/?refagi=',
+        'result'        : function() {
+                                if (this.result.getPeptides().length > 0) {
+                                    jQuery('#pubmed_placeholder').show();
+                                }
+                            },
+        'layers'        : ['pubmed'],
         'placeholder'   : true
     },
     MASCP.SnpReader, {
@@ -261,6 +272,19 @@ var READER_CONF = (function() {
                             }
                         },
         'layers'        : ['prippdb_experimental']
+    },
+    MASCP.GlycoModReader ,  {
+        'definition'    :  MASCP.GlycoModReader,
+        'nicename'      : 'GlycoMod',
+        'error_url'     : 'https://database.riken.jp/sw/links/en/ria102i/',
+        'success_url'   : 'https://database.riken.jp/sw/links/en/ria102i/?refagi=',
+        'result'        :  function() {
+                            if (this.result.getPeptides().length > 0) {                 
+                                jQuery('#glycomod_experimental').show();
+                                MASCP.renderer.showLayer('glycomod_experimental');
+                            }
+                        },
+        'layers'        : ['glycomod_experimental']
     },
     MASCP.P3dbReader, {
         'definition'    : MASCP.P3dbReader,
