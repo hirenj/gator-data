@@ -469,9 +469,14 @@ jQuery(document).ready(function() {
             var a_locus = an_agi.replace(/\.\d+/,'');
             var rdr = READER_CONF[this.__class__];
             var indexing_id = (rdr.success_url || '').indexOf('locus=true') > 0 ? a_locus : an_agi;
+            if (rdr.staticlink == true) {
+                var url_index = '';
+            } else {
+                var url_index = indexing_id;
+            }
             var success_url = (rdr.success_url || '').replace(/\#[^#]*$/,'');
             var datestring = (this.result.retrieved instanceof Date) ? this.result.retrieved.toDateString() : 'Just now';
-            jQuery('#links ul').append('<li><a href="'+success_url+indexing_id+'">'+rdr.nicename+'</a><span class="timestamp data_reload">'+datestring+'</span></li>');
+            jQuery('#links ul').append('<li><a href="'+success_url+url_index+'">'+rdr.nicename+'</a><span class="timestamp data_reload">'+datestring+'</span></li>');
             var li = jQuery('#links ul li:last');
             jQuery('.data_reload', li).bind('click',function(e) {
                 var clazz = rdr.definition;

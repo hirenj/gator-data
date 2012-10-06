@@ -15,7 +15,7 @@ var resource_map = {
     'pubmed'    : MASCP.PubmedReader,
     'interpro'  : MASCP.InterproReader,
     'p3db'      : MASCP.P3dbReader,
-    //'phosphat'  : MASCP.PhosphatReader,
+    'phosphat'  : MASCP.PhosphatReader,
     'ppdb'      : MASCP.PpdbReader,
     'promex'    : MASCP.PromexReader,
     'rippdb'    : MASCP.RippdbReader,
