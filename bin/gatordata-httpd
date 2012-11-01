@@ -3,6 +3,7 @@
 MASCP = require('mascp-jstools');
 
 var nconf = require('nconf');
+var fs = require('fs');
 
 nconf.env().argv();
 
@@ -50,6 +51,170 @@ nconf.save(function(err) {
 });
 
 
+var refresh_document = function(doc,map) {
+    var reader = new MASCP.GoogledataReader();
+    var inserter;
+    inserter = reader.createReader(doc,map);
+    return inserter;
+};
+
+var refresh_file = function(file,map,title) {
+    var csv = require('csv');
+    var data_array = [];
+    var inserter = new MASCP.UserdataReader();
+    inserter.map = map;
+    csv()
+    .fromStream(fs.createReadStream(file), {
+        delimiter : "\t"
+    }).on('data',function(dat) {
+     data_array.push(dat);
+    }).on('end',function() {
+     inserter.setData(title,data_array);
+    });
+    return inserter;
+};
+
+var watching_block = nconf.get("watching:spreadsheet") || {};
+
+setTimeout(function() {
+    console.log("Checking to see if any documents need to be updated");
+    for (var doc_conf in watching_block) {
+        var check_interval = watching_block[doc_conf].check_interval || 1000*60*60*24*7;
+        if ((new Date()).getTime() - watching_block[doc_conf].last_check < check_interval ) {
+            continue;
+        }
+        console.log("Checking document "+doc);
+        var inserter = refresh_document("spreadsheet:"+doc_conf,eval("("+watching_block[doc_conf].parser_function+")"));
+        inserter.bind('ready',function() {
+            var time = (new Date()).getTime();
+            watching_block[doc].last_check = time;
+            nconf.set('watching:spreadsheet:'+doc+':last_check', time);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                }
+            });
+        });
+    }
+    console.log("Checking next in a day");
+    setTimeout(arguments.callee,1000*60*60*24);
+},0);
+
+var watch_file_block = nconf.get("watching:file") || {};
+
+setTimeout(function() {
+    for (var doc_conf in watch_file_block) {
+        console.log("Watching "+doc_conf+" for changes");
+        fs.stat(doc_conf,function(err,stats) {
+            if (err) {
+                return;
+            }
+            if ((stats.mtime.getTime() - watch_file_block[doc_conf].last_check) > 0) {
+                console.log(doc_conf+" has changed, refreshing");
+                var inserter = refresh_file(doc_conf, eval("("+watch_file_block[doc_conf].parser_function+")"),watch_file_block[doc_conf].title);
+                inserter.bind('ready',function() {
+                    console.log("Reloaded data from "+doc_conf);
+                    var time = (new Date()).getTime();
+                    nconf.set('watching:file:'+doc_conf+':last_check', time);
+                    nconf.save(function(err) {
+                        if (err) {
+                            console.log("Could not write config");
+                        }
+                    });
+
+                });
+            }
+        });
+        fs.watch(doc_conf,function(ev,filename) {
+            console.log(doc_conf+" has changed, refreshing");
+            var inserter = refresh_file(doc_conf, eval("("+watch_file_block[doc_conf].parser_function+")"),watch_file_block[doc_conf].title);
+            inserter.bind('ready',function() {
+                var time = (new Date()).getTime();
+                nconf.set('watching:file:'+doc_conf+':last_check', time);
+                nconf.save(function(err) {
+                    if (err) {
+                        console.log("Could not write config");
+                    }
+                });
+                console.log("Reloaded data from "+doc_conf);
+            });
+        });
+    }
+},0);
+
+var watch_file = function(filename,map,title) {
+    if (nconf.get('watching:file:'+filename)) {
+        var curr = nconf.get('watching:file:'+filename);
+        if (curr.parser_function.toString() === (map || "").toString()) {
+            console.log("Already watching document");
+            return;
+        }
+    }
+    var inserter = refresh_file(filename,map,title);
+    inserter.bind('ready',function() {
+        if (map) {
+            var status = { "last_check" : (new Date()).getTime(), "parser_function" : map.toString(), "title" : title };
+            nconf.set('watching:file:'+filename, status);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                } else {
+                    console.log("Data inserted - will automatically update");
+                }
+            });
+        } else {
+            console.log("Please try again with a defined parser function");
+        }
+    });
+}
+
+var watch_spreadsheet = function(doc,map) {
+    if (nconf.get('watching:spreadsheet:'+doc)) {
+        var curr = nconf.get('watching:spreadsheet:'+doc);
+        if (curr.parser_function.toString() === (map || "").toString()) {
+            console.log("Already watching document");
+            return;
+        }
+    }
+    if ( ! map ) {
+        (new MASCP.GoogledataReader()).createReader("spreadsheet:"+doc,function(datablock) {
+            if (Array.isArray(datablock.data)) {
+                console.log(datablock.data.slice(0,5));
+            } else {
+                console.log(datablock.data);
+            }
+            console.log("We require a function that returns a signature of { accession : { data : {}, retrieved : 12345 } }"  );
+        });
+    } else {
+        var vm = require('vm');
+        try {
+            vm.runInNewContext("("+map.toString()+")({ \"data\" : {} })", {"console" : console } , "<parser function>");
+        } catch (e) {
+            console.log("Error running map function. Make sure you do not use any local or global variables");
+            console.log(e);
+            return;
+        }
+    }
+
+    var inserter = refresh_document("spreadsheet:"+doc,map);
+
+    inserter.bind('ready',function() {
+        if (map) {
+            var status = { "last_check" : (new Date()).getTime(), "parser_function" : map.toString() };
+            watching_block[doc] = status;
+            nconf.set('watching:spreadsheet'+doc, status);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                } else {
+                    console.log("Data inserted - will automatically update");
+                }
+            });
+        } else {
+            console.log("Please try again with a defined parser function");
+        }
+    });
+};
 
 var enable_id_translation = function(clazz) {
     (function(serv) {
@@ -280,10 +445,17 @@ MASCP.events.once('ready',function() {
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
-        vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module }, "<stdin>");
+        try {
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: watch_spreadsheet, watch_file : watch_file }, "<stdin>");
+        } catch (e) {
+            console.log("Error running script");
+            console.log(e);
+        }
     } else {
         repl.start("Gator data server >");
         repl.repl.context.resource_map = resource_map;
+        repl.repl.context.watch_spreadsheet = watch_spreadsheet;
+        repl.repl.context.watch_file = watch_file;
     }
 
 });
