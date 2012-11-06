@@ -1,0 +1,143 @@
+   @media print {
+      @page {
+        size: landscape;
+      }
+      * { margin: 0 !important; padding: 0 !important; }
+
+
+      #zoomin, #zoomout, #zoomlabel {
+        display: none;
+      }
+      input, button, svg button {
+        display: none !important;
+      }
+      svg button {
+        display: none !important;
+      }
+      #protein_list {
+        display: none;
+      }
+      .print_group {
+        position: relative;
+        page-break-inside: avoid;
+        width: 100%;
+        height: 200px !important;
+        display: block !important;
+        border: solid #ffffff 10px;
+      }
+      .print_group_3 {
+        page-break-after: always;
+/*        height: 400px;
+        margin-bottom: 15px;        
+*/      }
+    }
+    .print_group {
+        height: 200px;
+        position: relative;
+    }
+    .print_seperator {
+        height: 25pt;
+        width: 100%;
+        position: relative;
+        background: #dddddd;
+    }
+    .print_accession {
+        font-size: 20pt;
+        font-family: Arial;
+        width: 150px;
+        height: 100%;
+        position: absolute;
+        left: 0px;
+        background: #000000;
+        color: #ffffff;
+        padding-left: 15px;        
+    }
+    .print_description {
+        right: 0px;
+        position: absolute;
+        top: 50%;
+        margin-top: -25%;
+        left: 200px;
+    }
+    .print_sequence {
+        top: 25pt;
+        position: absolute;
+        width: 100%;
+        bottom: 0px;
+    }
+
+    @media screen {
+        #viewer {
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            overflow: auto;
+            left: 125px;
+            right: 25px;
+        }        
+    }
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #protein_list {
+        position: absolute;
+        left: 0px;
+        width: 100px;
+        top: 0px;
+        bottom: 0px;
+        overflow: auto;
+    }
+    #protein_list div {
+        background: #000000;
+        color: #ffffff;
+        cursor: pointer;
+        position: relative;
+    }
+    #protein_list div.selected, #protein_list div.selected:hover {
+        background: #4444ff;
+    }
+    #protein_list div:hover {
+        background: -webkit-linear-gradient(top, #999, #aaa);
+        background: -moz-linear-gradient(top, #999, #aaa);
+        background: -ms-linear-gradient(top, #999, #aaa);
+        color: #000000;
+    }
+    #protein_list div.done:after {
+        content: '\2713';
+        color: #7f7;
+        position: absolute;
+        right: 0px;
+        top: 0px;
+    }
+    #zoomin, #zoomout {
+        font-weight: bolder;
+        font-family: Helvetica;
+        font-size: 11pt;
+        cursor: pointer;
+        position: absolute;
+        right: 10px;
+        background: white;
+        border: solid #AAA 1px;
+        box-shadow: 2px 3px 3px #AAA;
+    }
+    #zoomlabel {
+        top: 2em;
+        position: absolute;
+        top: 2em;
+        right: 0px;
+        font-size: 12pt;
+        font-weight: bolder;
+        z-index: 1;
+        text-shadow: #fff 0px 0px 4px;
+    }
+    #zoomin {
+        top: 4em;
+        z-index: 1;
+        border-radius: 5px 5px 0px 0px;
+    }
+
+    #zoomout {
+        top: 6em;
+        z-index: 2;
+        border-radius: 0px 0px 5px 5px;
+    }
