@@ -380,7 +380,10 @@
 
     var scale_text_elements = function(renderer) {
         renderer.text_els = [];
-        jQuery(renderer).unbind('zoomChange').bind('zoomChange',function() {
+        jQuery(renderer).bind('zoomChange',function() {
+          if (renderer.printing) {
+            return;
+          }
           var text_els = renderer.text_els;
           text_els.forEach(function(els) {
             var a_text = els[0];
@@ -472,9 +475,111 @@
         }
     };
 
-    var create_renderer = function() {
+    var do_printing = function(proteins) {
+        var win = window.open();
+        var a_doc = win.document;
+        a_doc.open();
+        a_doc.close();
+        var link = document.createElement('link');
+        link.setAttribute('rel','stylesheet');
+        link.setAttribute('href','css/style.css');
+        link.setAttribute('type','text/css');
+        a_doc.head.appendChild(link);
+        var counter = 0;
+        var objs = [];
+        var mf = null;
+        var in_print = false;
+        var print_func = function(matcher) {
+          if (matcher) {
+            in_print = ! matcher.matches;
+          }
 
-        renderer = new MASCP.CondensedSequenceRenderer(document.getElementById('condensed_container'));
+          for (var i = 0; i < objs.length; i++) {
+            mf.call(objs[i],matcher);
+          }
+        };
+        var count = 1;
+        var blah = function (prot,cback) {
+          var whole_div = a_doc.createElement('div');
+          var clazz = 'print_group';
+          if (((count % 3) == 0) && count > 0 ) {
+            clazz = 'print_group print_group_3';
+          }
+          if ((((count+1) % 3) == 0) && count > 0) {
+            clazz = 'print_group print_group_1';
+          }
+          whole_div.setAttribute('class',clazz);
+          count++;
+          var seperator = a_doc.createElement('div');
+          seperator.setAttribute('class','print_seperator');
+          whole_div.appendChild(seperator);
+          var description = a_doc.createElement('div');
+          description.setAttribute('class','print_description');
+          seperator.appendChild(description);
+          var accession_text = a_doc.createElement('div');
+          accession_text.setAttribute('class','print_accession');
+          accession_text.textContent = prot.toUpperCase();
+          seperator.appendChild(accession_text);
+          var sequence_container = a_doc.createElement('div');
+          whole_div.appendChild(sequence_container);
+          sequence_container.setAttribute('class','print_sequence');
+          a_doc.body.appendChild(whole_div);
+          console.log("Made a new div for "+prot);
+          var rend = create_renderer(sequence_container);
+          objs.push(rend);
+          if (mf !== null) {
+            rend._media_func = true;
+          }
+          rend.padding = 30;
+          rend.text_els = [];
+          rend.acc = prot;
+          (function(my_rend) {
+            jQuery(my_rend).bind('sequenceChange', function() {
+              if ( ! mf ) {
+                mf = my_rend._media_func;
+                (my_rend.win() || window).matchMedia('print').addListener(print_func);
+                my_rend._media_func = function() {};
+              }
+              rend.navigation.hide();
+              rend.navigation.show = function(){};
+              retrieve_data(prot,my_rend,function() {
+                my_rend.trackOrder = ["all_domains"];
+                setTimeout(function() {
+                  my_rend.printing = true;
+                },1000);
+                console.log("Done for "+prot);
+                cback(my_rend);
+              });
+            });
+          })(rend);
+          rend.trackGap = -8;
+          rend.trackHeight = 12;
+          rend.fixedFontScale = 0.3;
+          var a_reader = new MASCP.UniprotReader();
+
+          MASCP.Service.CacheService(a_reader);
+
+          var accession = prot;
+          a_reader.retrieve(accession,function(e) {
+            description.textContent = this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,'');
+            rend.setSequence(this.result.getSequence());
+          });
+        };
+        (function(renderer) {
+          var acc = proteins.shift();
+          var self_func = arguments.callee;
+          if (acc && counter < 10) {
+            counter += 1;
+            setTimeout(function() {
+              blah(acc.toLowerCase(),self_func);
+            },0);
+          }
+        })();
+    };
+
+    var create_renderer = function(container) {
+
+        renderer = new MASCP.CondensedSequenceRenderer(container);
         renderer.font_order = 'Helvetica, Arial, sans-serif';
 
         setup_renderer(renderer);
@@ -490,12 +595,23 @@
       wire_renderer(renderer);
     };
 
-    var retrieve_data = function(acc,renderer) {
+    var retrieve_data = function(acc,renderer,end_func) {
+        var count = 0;
+        var refresher = function() {
+          count++;
+          console.log("Done "+count);
+          if (count == 3) {
+            renderer.refresh();
+            if (end_func) {
+              end_func.call();
+            }
+          }
+        };
         get_accepted_domains(acc,function(acc,domains) {
           render_domains(renderer,domains);
-          get_sites(acc,renderer);
-          get_predictions(acc,renderer);
-          get_peptides(acc,renderer);
+          get_sites(acc,renderer,refresher);
+          get_predictions(acc,renderer,refresher);
+          get_peptides(acc,renderer,refresher);
         });
     };
 
@@ -541,7 +657,7 @@
 
     };
 
-    var get_sites = function(acc,renderer) {
+    var get_sites = function(acc,renderer,done) {
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdC1ESDlXVzlkVEZfTkVHS01POFJ1a0E";
@@ -554,10 +670,13 @@
       }
       datareader.retrieve(acc,function(err) {
         console.log("Got sites okay");
+        if (done) {
+          done();
+        }
       });
     };
 
-    var get_predictions = function(acc,renderer) {
+    var get_predictions = function(acc,renderer,done) {
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "predictions";
@@ -566,10 +685,13 @@
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
+        if (done) {
+          done();
+        }
       });
     };
 
-    var get_peptides = function(acc,renderer) {
+    var get_peptides = function(acc,renderer,done) {
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHVYektENmlwcVVqOHZHZzZBZVVBYWc";
@@ -578,6 +700,9 @@
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
+        if (done) {
+          done();
+        }
       });
     };
 
@@ -650,7 +775,7 @@
 
 
       window.svgns = 'http://www.w3.org/2000/svg';
-      var renderer = create_renderer();
+      var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
       jQuery(renderer).bind('sequenceChange',function() {
         retrieve_data(renderer.acc,renderer);
@@ -661,9 +786,12 @@
       if (state.ids && state.ids.length > 0) {
         protein_doc_id = state.ids[0];
       }
-
       get_proteins(protein_doc_id,function(prots,auth_func) {
         update_protein_list(prots,renderer,auth_func);
+        document.getElementById('print').addEventListener('click',function() {
+          do_printing(prots);
+        });
+
         add_keyboard_navigation();
       });
       
