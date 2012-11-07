@@ -287,6 +287,8 @@
         });
         renderer.trackOrder.push('all_domains');
         renderer.showLayer('all_domains');
+        renderer.zoom -= 0.0001;
+
     };
 
 
@@ -770,8 +772,6 @@
 
 
     MASCP.ready = function() {
-
-
       window.svgns = 'http://www.w3.org/2000/svg';
       var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
