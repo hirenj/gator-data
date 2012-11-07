@@ -174,7 +174,6 @@
     var render_domains = function(renderer,domains) {
         renderer.text_els = [];
         MASCP.registerLayer("all_domains", { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
-        console.log(domains);
         var domain_keys = [];
         for (var domain in domains) {
           domain_keys.push(domain);
@@ -599,7 +598,6 @@
         var count = 0;
         var refresher = function() {
           count++;
-          console.log("Done "+count);
           if (count == 3) {
             renderer.refresh();
             if (end_func) {
@@ -780,7 +778,6 @@
       jQuery(renderer).bind('sequenceChange',function() {
         retrieve_data(renderer.acc,renderer);
       });
-      show_protein("Q53RD9",renderer);
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdDh2WHlBRmZGc2hCbW5IclFMNUdKMFE";
       if (state.ids && state.ids.length > 0) {
