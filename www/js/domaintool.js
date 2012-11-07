@@ -7,6 +7,11 @@
           galnac.setAttribute('stroke','#990');
           return galnac;
         };
+        renderer.small_galnac = function() {
+          var galnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+          galnac.setAttribute('fill','#ffff00');
+          return galnac;
+        };
         renderer.light_galnac = function() {
           var result = renderer.galnac();
           result.setAttribute('fill','#ffffB3');
@@ -15,7 +20,7 @@
         }
         renderer.nlinked = function() {
           var n_glc = renderer._canvas.group();
-          var glcnac = renderer._canvas.rect(-0.5,-2.5,1,1);
+          var glcnac = renderer._canvas.rect(-0.5,-2.3,1,1);
           glcnac.setAttribute('fill','#0000ff');
           n_glc.push(glcnac);
           glcnac = renderer._canvas.rect(-0.5,-1,1,1);
@@ -59,10 +64,11 @@
           return hex;
         };
         renderer.hexnac = function() {
-          var hexnac = renderer._canvas.rect(-0.5,-2.5,1,1);
+          var hexnac = renderer._canvas.rect(-0.5,-2.3,1,1);
           hexnac.setAttribute('fill','#ffffff');
           hexnac.setAttribute('stroke','#999999');
           hexnac.setAttribute('stroke-width','5');
+          return hexnac;
         };
         renderer.xyl = function() {
           var xyl = renderer._canvas.path('M0,-120 L0,-120 -15,-75 22.5,-105 -22.5,-105 15,-75 z');
@@ -138,13 +144,15 @@
                   group.forEach(function(site){
                     renderer.getAA(site).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : 24,  "bare_element" : true })[1].zoom_level = 'text';
                   });
-                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0],{ "shape" : "roundrect", "offset" : offset });
+                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : offset });
                   var a_galnac = (offset > 0) ? renderer.light_galnac() : renderer.galnac();
                   rect.setAttribute('fill',a_galnac.getAttribute('fill'));
                   rect.setAttribute('stroke',a_galnac.getAttribute('stroke'));
                   a_galnac.parentNode.removeChild(a_galnac);
-                  rect.setAttribute('stroke-width','15');
+                  rect.setAttribute('stroke-width','50');
                   rect.removeAttribute('style');
+                  rect.setAttribute('rx','120');
+                  rect.setAttribute('ry','120');
                   rect.zoom_level = 'summary';
                 }
                 group = [];
@@ -205,7 +213,7 @@
             seen[start] = true;
             if (start == end) {
               var shape_func   =  /N\-linked.*GlcNAc/.test(dom)    ? renderer.nlinked :
-                                  /GalNAc/.test(dom)    ? renderer.galnac  :
+                                  /GalNAc/.test(dom)    ? renderer.small_galnac  :
                                   /Fuc/.test(dom)       ? renderer.fuc :
                                   /Man/.test(dom)       ? renderer.man :
                                   /Glc\)/.test(dom)     ? renderer.glc :
@@ -227,8 +235,7 @@
                 }
                 return box;
               };
-
-              renderer.getAA(start).addToLayer("all_domains", {"height" : renderer.trackHeight * 3, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
+              renderer.getAA(start).addToLayer("all_domains", {"height" : 24, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
               renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : -1, "bare_element" : true });
             } else {
               var all_box;
@@ -292,7 +299,7 @@
     var wire_renderer_sequence_change = function(renderer) {
       var dragger = new GOMap.Diagram.Dragger();
       var seq_change_func = function() {
-        var zoomFactor = 0.95 * window.innerWidth / (2 * renderer.sequence.length);
+        var zoomFactor = 0.95 * renderer._container.parentNode.clientWidth / (2 * renderer.sequence.length);
         renderer.zoom = zoomFactor;
         dragger.applyToElement(renderer._canvas);
         GOMap.Diagram.addTouchZoomControls(renderer, renderer._canvas);
@@ -592,10 +599,10 @@
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc";
       datareader.retrieve(acc,function(err) {
-        if (err || ! this.result ) {
-          next(acc,filter_domains(all_domains,[]));
+        var wanted_domains = null;
+        if (! err && this.result ) {
+          wanted_domains = this.result._raw_data.data.domains;
         }
-        var wanted_domains = this.result._raw_data.data.domains;
         get_domains(acc,function(all_domains) {
           next(acc,filter_domains(all_domains,wanted_domains));
         });
@@ -604,6 +611,9 @@
 
     var filter_domains = function(all_domains,wanted_domains) {
       var results = {};
+      if (! wanted_domains ) {
+        return all_domains;
+      }
       for (var dom in all_domains) {
         if (! all_domains.hasOwnProperty(dom)) {
           continue;
