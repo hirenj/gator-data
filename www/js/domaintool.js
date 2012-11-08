@@ -7,6 +7,14 @@
           galnac.setAttribute('stroke','#990');
           return galnac;
         };
+        renderer.glcnac = function() {
+          var galnac = renderer._canvas.rect(-1,-1,2,2);
+          galnac.setAttribute('fill','#0000ff');
+          galnac.setAttribute('stroke-width','15');
+          galnac.setAttribute('stroke','#009');
+          return galnac;
+        };
+
         renderer.small_galnac = function() {
           var galnac = renderer._canvas.rect(-0.5,-2.3,1,1);
           galnac.setAttribute('fill','#ffff00');
@@ -212,6 +220,7 @@
             seen[start] = true;
             if (start == end) {
               var shape_func   =  /N\-linked.*GlcNAc/.test(dom)    ? renderer.nlinked :
+                                  /GlcNAc/.test(dom)    ? renderer.glcnac :
                                   /GalNAc/.test(dom)    ? renderer.small_galnac  :
                                   /Fuc/.test(dom)       ? renderer.fuc :
                                   /Man/.test(dom)       ? renderer.man :
@@ -464,10 +473,10 @@
             this.setAttribute('class',clazz+'selected ');
             selected = this;
             localStorage.setItem('selected',this.uprot);
-            show_protein(prot,renderer);
+            show_protein(this.uprot,renderer);
           });
           if (curr_acc == prot) {
-            a_div.click();
+            bean.fire(a_div,'click');
           }
 
         });
