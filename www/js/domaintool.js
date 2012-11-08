@@ -789,8 +789,8 @@
       });
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdDh2WHlBRmZGc2hCbW5IclFMNUdKMFE";
-      if (state.ids && state.ids.length > 0) {
-        protein_doc_id = state.ids[0];
+      if (state.exportIds && state.exportIds.length > 0) {
+        protein_doc_id = state.exportIds[0];
       }
       get_proteins(protein_doc_id,function(prots,auth_func) {
         update_protein_list(prots,renderer,auth_func);
