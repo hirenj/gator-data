@@ -186,6 +186,21 @@
         for (var domain in domains) {
           domain_keys.push(domain);
         }
+        domain_keys.sort(function(a,b) {
+          if (a == 'SIGNALP') {
+            return 1;
+          }
+          if (b == 'SIGNALP') {
+            return -1;
+          }
+          if (a == 'tmhmm-TMhelix') {
+            return 1;
+          }
+          if (b == 'tmhmm-TMhelix') {
+            return -1;
+          }
+          return a.localeCompare(b);
+        });
         domain_keys.forEach(function(dom) {
           lay_name = "dom:"+dom;
           lay_name = lay_name.replace(/\s/g,'_');

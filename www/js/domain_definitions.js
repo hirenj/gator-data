@@ -424,6 +424,7 @@ window.DOMAIN_DEFINITIONS = {
 "Pep_M12B_propep"                          : [ "pentagon", "pink"],
 "ZnMc_ADAM_like"                           : [ "pentagon", "pink"],
 "ZnMc_MMP_like"							   : [ "pentagon", "pink"],
+"ZnMc_ADAMTS_like"                         : [ "pentagon", "pink"],
 "DAG1"                                     : [ "pentagon", "pink"],
 
 "PRK07764"                                 : [ "pentagon", "yellow"],
@@ -738,7 +739,6 @@ window.DOMAIN_DEFINITIONS = {
 "FERM_C"                                   : ["hexagon", "orange"],
 "FERM_M"                                   : ["hexagon", "orange"],
 "FERM_N"                                   : ["hexagon", "orange"],
-"ZnMc_ADAMTS_like"                         : ["hexagon", "orange"],
 "Band_3_cyto"                              : ["hexagon", "orange"],
 "Annexin"                                  : ["hexagon", "red"],
 "Apolipoprotein"                           : ["hexagon", "red"],
