@@ -473,10 +473,10 @@
         var selected = null;
         prots.forEach(function(prot) {
           var a_div = document.createElement('div');
-          a_div.uprot = prot;
-          a_div.textContent = (prot+"").toUpperCase();
+          a_div.uprot = prot.id;
+          a_div.textContent = ((prot.name || prot.id)+"");
           list.appendChild(a_div);
-          a_div.setAttribute('id','prot_'+prot.toLowerCase());
+          a_div.setAttribute('id','prot_'+prot.id.toLowerCase());
 
           a_div.addEventListener('click',function() {
             var clazz;
@@ -663,10 +663,18 @@
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
         var datareader = greader.createReader(doc_id,function(datas) {
           var dataset = {};
-          datas.data.shift();
           var results = [];
           datas.data.forEach(function(row) {
-            results.push(row[0].toLowerCase());
+            if (row[0].match(/uniprot/i)) {
+              return;
+            }
+            var prot = {};
+            prot.id = row[0].toLowerCase();
+            prot.name = row[1];
+            prot.toString = function() {
+              return this.id;
+            };
+            results.push(prot);
           });
           callback(results);
         });
@@ -803,7 +811,7 @@
         retrieve_data(renderer.acc,renderer);
       });
       var state = get_passed_in_state();
-      var protein_doc_id = "0Ai48KKDu9leCdDh2WHlBRmZGc2hCbW5IclFMNUdKMFE";
+      var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
       }
