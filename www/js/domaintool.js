@@ -512,6 +512,7 @@
       container = document.createElement('div');
       window.help_container.appendChild(container);
       var rend = create_renderer(container);
+      rend.enablePrintResizing = function() {};
       container.setAttribute('class','help_box');
       rend.bind('sequenceChange',function() {
         rend.navigation.hide();
@@ -537,7 +538,9 @@
           rend.trackOrder = ['all_domains'];
         });
         rend.showLayer('all_domains');
-        rend.zoom = 0.7;
+        rend.withoutRefresh(function() {
+          rend.zoom = 3.3;
+        });
         rend.trackGap = -8;
         rend.trackHeight = 12;
         rend.padding = 10;
