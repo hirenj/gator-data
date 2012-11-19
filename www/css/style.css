@@ -66,6 +66,10 @@
         bottom: 0px;
     }
 
+    #help {
+        display: none;
+    }
+
     @media screen {
         #viewer {
             position: absolute;
@@ -75,9 +79,79 @@
             left: 125px;
             right: 25px;
         }        
+        #help {
+            display: block;
+        }
+    }
+
+
+    #help {
+        height: 35px;
+        width: 35px;
+        border-radius: 25px;
+        border: 1px solid #000;
+        font-size: 16px;
+        font-family: Helvetica;
+        font-weight: bolder;
+        background: #fff;
+        position: absolute;
+        top: 10px;
+        right: 30px;
+        box-shadow: 2px 2px 5px #888888;
+        cursor: pointer; cursor: hand;
+        z-index: 100;
+    }
+    #help:after {
+        content: "?";
+        display: block;
+        color: #000;
+    }
+    div.help_box {
+        top: 20%;
+        left: 0;
+        right: 0;
+        margin: 0px auto;
+        height: 300px;
+        width: 655px;
+        padding-left: 10px;
+        background: #fff;
+        position: absolute;
+        border-radius: 25px;
+    }
+    div.help_box:after {
+        content: "";
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 655px;
+        height: 300px;
+        /*background-color: #f00;*/
+        background-image: url(/img/labels.svg);
+        background-repeat: no-repeat;
+        background-position: 0px 0px;
+        background-size: 655px 300px;
+    }
+
+    @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+        #help {
+            display: none;
+        }
+    }
+
+    div.help_box_container {
+        content: " ";
+        display: block;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+        opacity: 0.9;
+        background: #000;
+        z-index: 101;
+        position: fixed;
     }
     body {
-      font-family: Arial, sans-serif;
+      font-family: Helvetica, Arial, sans-serif;
     }
     #protein_list {
         position: absolute;

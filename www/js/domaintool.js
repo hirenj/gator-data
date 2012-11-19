@@ -500,6 +500,68 @@
         }
     };
 
+    var show_help = function() {
+      if (window.help_container) {
+        window.help_container.style.visibility = 'visible';
+        return;
+      }
+      var container = document.createElement('div');
+      document.body.appendChild(container);
+      container.setAttribute('class','help_box_container');
+      window.help_container = container;
+      container = document.createElement('div');
+      window.help_container.appendChild(container);
+      var rend = create_renderer(container);
+      container.setAttribute('class','help_box');
+      rend.bind('sequenceChange',function() {
+        rend.navigation.hide();
+        container.style.position = 'absolute';
+        ["purple","pink","blue","green","yellow","orange","red","gray","#4285F4"].forEach(function(col) {
+          rend.add3dGradient(col);
+        });
+        MASCP.registerLayer("all_domains", { 'fullname' : "All domains", 'color' : '#aaaaaa' },[rend]);
+        rend.getAA(50).addToLayer('all_domains',{"content" : renderer.galnac(), "offset" : -3, "height" : 24, "bare_element" : true });
+        rend.getAA(50).addToLayer('all_domains',{"content" : renderer.light_galnac(), "offset" : 2, "height" : 24, "bare_element" : true });
+
+        var rect = renderer.getAA(55).addShapeOverlay("all_domains",10,{ "shape" : "roundrect", "offset" : 2.75 });
+        var a_galnac = renderer.light_galnac();
+        rect.setAttribute('fill',a_galnac.getAttribute('fill'));
+        rect.setAttribute('stroke',a_galnac.getAttribute('stroke'));
+        a_galnac.parentNode.removeChild(a_galnac);
+        rect.setAttribute('stroke-width','50');
+        rect.removeAttribute('style');
+        rect.setAttribute('rx','120');
+        rect.setAttribute('ry','120');
+
+        rend.withoutRefresh(function() {
+          rend.trackOrder = ['all_domains'];
+        });
+        rend.showLayer('all_domains');
+        rend.zoom = 0.7;
+        rend.trackGap = -8;
+        rend.trackHeight = 12;
+        rend.padding = 10;
+        window.help_rend = rend;
+        render_domains(rend,{
+                             "SIGNALP" : { "name" : "SIGNALP", "peptides" : [[1,15]]},
+                             "N-linked (GlcNAc...)" : { "name" : "N-linked GlcNAc", "peptides" : [[17,17]]},
+                             "N-linked (GlcNAc...) Potential" : { "name" : "N-linked GlcNAc", "peptides" : [[20,20]]},
+                             "O-linked (GalNAc...)" : { "name" : "GalNAc", "peptides" : [[23,23]]},
+                             "O-linked (Man...)" : { "name" : "Man", "peptides" : [[26,26]]},
+                             "O-linked (HexNAc...)" : { "name" : "Man", "peptides" : [[29,29]]},
+                             "O-linked (Xyl...)" : { "name" : "Man", "peptides" : [[32,32]]},
+
+                             "NTR"     :  { "name" : "NTR", "peptides" : [[37,45]]}
+                      });
+
+        rend.refresh();
+      });
+      window.help_container.addEventListener('click',function() {
+        window.help_container.style.visibility = 'hidden';
+      },false);
+      rend.setSequence('MNMNMNMNMNSMNTMSNTMNMNMNMNMNSMNTMSNTMNMNMNMNMNSMNTMSNTMNTTTTTT');
+    }
+
     var do_printing = function(proteins) {
         var win = window.open();
         var a_doc = win.document;
@@ -823,5 +885,7 @@
 
         add_keyboard_navigation();
       });
-      
+      document.getElementById('help').addEventListener('click',function() {
+        show_help();
+      });
     }
