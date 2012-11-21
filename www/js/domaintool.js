@@ -469,7 +469,6 @@
           list.removeChild(list.firstChild);
         }
         var curr_acc = localStorage.getItem('selected');
-
         var selected = null;
         prots.forEach(function(prot) {
           var a_div = document.createElement('div');
@@ -809,8 +808,9 @@
       datareader.datasetname = "domains";
             
       datareader.retrieve(acc,function(err) {
-        if (err || ! this.result) {
+        if (err || ! this.result ) {
           next();
+          return;
         }
         next(this.result._raw_data.data);
       });
@@ -875,10 +875,25 @@
       jQuery(renderer).bind('sequenceChange',function() {
         retrieve_data(renderer.acc,renderer);
       });
+
+      document.getElementById('help').addEventListener('click',function() {
+        show_help();
+      });
+
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
+      }
+      if (window.location.toString().match(/uniprot/)) {
+        var results = /uniprot\/(.*)/.exec(window.location);
+        if (results && results[1]) {
+          var prot = { "id" : results[1], "name" : results[1] };
+          prot.toString = function() { return this.id; };
+          localStorage.setItem('selected',results[1]);
+          update_protein_list([prot],renderer);
+        }
+        return;
       }
       get_proteins(protein_doc_id,function(prots,auth_func) {
         update_protein_list(prots,renderer,auth_func);
@@ -887,8 +902,5 @@
         });
 
         add_keyboard_navigation();
-      });
-      document.getElementById('help').addEventListener('click',function() {
-        show_help();
       });
     }

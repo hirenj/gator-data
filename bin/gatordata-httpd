@@ -307,6 +307,15 @@ MASCP.events.once('ready',function() {
         });
     })();
 
+    (function() {
+        var middle = express.static(__dirname + '/../www');
+        app.get("/uniprot/*", function(req, res, next) {
+            req.url = '/index.html';
+            middle(req,res,next);
+        });
+    })();
+
+
     var data_headers = function(req,res,next) {
         res.header('Content-type', 'application/json');
         res.header('Access-Control-Allow-Headers','x-requested-with');
