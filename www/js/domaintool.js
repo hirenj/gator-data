@@ -919,6 +919,7 @@
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
+        document.getElementById('drive_install').style.display = 'none';
       }
       if (window.location.toString().match(/uniprot/)) {
         var results = /uniprot\/(.*)/.exec(window.location);
