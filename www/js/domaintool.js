@@ -721,6 +721,39 @@
 
     };
 
+    var wire_drive_button = function() {
+      drive_install(function(auth_func) {
+        if (auth_func) {
+          document.getElementById('drive_install').addEventListener('click',function() {
+            auth_func(function(err) {
+              if (err) {
+                return;
+              } else {
+                document.getElementById('drive_install').style.display = 'none';
+              }
+            });
+          });
+        } else {
+          document.getElementById('drive_install').style.display = 'none';
+        }
+
+      });
+    };
+
+
+    var drive_install = function(callback) {
+      var greader = new MASCP.GoogledataReader();
+      MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+      var datareader = greader.createReader("spreadsheet:null",function(datas) {});
+      datareader.bind('error',function(e,err) {
+        if (err.cause && err.cause == "No user event") {
+          callback.call(null,err.authorize);
+        } else {
+          callback.call(null);
+        }
+      });
+    };
+
     var get_proteins = function(protein_doc,callback) {
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
@@ -879,6 +912,8 @@
       document.getElementById('help').addEventListener('click',function() {
         show_help();
       });
+
+      wire_drive_button();
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";

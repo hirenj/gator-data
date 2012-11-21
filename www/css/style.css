@@ -70,6 +70,10 @@
         display: none;
     }
 
+    #drive_install {
+        display: none;
+    }
+
     @media screen {
         #viewer {
             position: absolute;
@@ -82,6 +86,27 @@
         #help {
             display: block;
         }
+        #drive_install {
+            display: block;
+            position: absolute;
+            background: none;
+            background-image: url("/img/drive_icon.png");
+            background-position: 5px 5px;
+            background-size: 23px 23px;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            padding: 0px;
+            border: 0px;
+            width: 35px;
+            height: 35px;
+            top: 10px;
+            right: 80px;
+            z-index: 100;
+            box-shadow: 2px 2px 5px #888888;
+            border-radius: 25px;
+            border: 1px solid #000;
+        }
+
     }
 
 
