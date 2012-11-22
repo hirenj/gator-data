@@ -722,7 +722,7 @@
     };
 
     var wire_drive_button = function() {
-      drive_install(function(auth_func) {
+      drive_install(function(err,auth_func) {
         if (auth_func) {
           document.getElementById('drive_install').addEventListener('click',function() {
             auth_func(function(err) {
@@ -733,6 +733,8 @@
               }
             });
           });
+        } else if (err) {
+          return;
         } else {
           document.getElementById('drive_install').style.display = 'none';
         }
@@ -744,10 +746,14 @@
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
       MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
-      var datareader = greader.createReader("spreadsheet:null",function(datas) {});
-      datareader.bind('error',function(e,err) {
-        if (err.cause && err.cause == "No user event") {
-          callback.call(null,err.authorize);
+      var datareader = greader.getDocument(null,null,function(err) {
+        if (err && err.cause && err.cause == "No user event") {
+          callback.call(null,null,err.authorize);
+        } else if (err && err.cause && err.cause == "No google auth library") {
+          window.init = function() {
+            drive_install(callback);
+          };
+          callback.call(null,err);
         } else {
           callback.call(null);
         }
