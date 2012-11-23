@@ -341,6 +341,28 @@
 
 
     var wire_renderer_zoom = function(renderer) {
+      var scroll_box = document.getElementById('scroll_box');
+      var scroller = document.getElementById('scroller');
+      scroll_box.addEventListener('scroll',function() {
+        renderer.setLeftVisibleResidue(parseInt(scroll_box.scrollLeft * renderer.sequence.length / scroller.clientWidth)); 
+        if (renderer._canvas) {
+          bean.fire(renderer._canvas,'panend');
+        }
+      });
+      renderer.bind('zoomChange',function() {
+        var size = 100*renderer.sequence.length/ (renderer.rightVisibleResidue() - renderer.leftVisibleResidue());
+        scroller.style.width = parseInt(size)+'%';
+        var left_shift = parseInt(scroller.clientWidth * (renderer.leftVisibleResidue() / renderer.sequence.length));
+        scroll_box.scrollLeft = left_shift;
+      });
+      jQuery(renderer).bind('sequenceChange',function() {
+        bean.add(renderer._canvas,'pan',function() {
+          var size = 100*renderer.sequence.length/ (renderer.rightVisibleResidue() - renderer.leftVisibleResidue());
+          scroller.style.width = parseInt(size)+'%';
+          var left_shift = parseInt(scroller.clientWidth * (renderer.leftVisibleResidue() / renderer.sequence.length));
+          scroll_box.scrollLeft = left_shift;
+        });
+      });
       jQuery('#zoomin').click(function() {
         var start_zoom = renderer.zoom;
         var curr_zoom = start_zoom;
