@@ -922,6 +922,7 @@
       })("state") || "{}");
     };
 
+    var has_ready = MASCP.ready;
 
     MASCP.ready = function() {
       window.svgns = 'http://www.w3.org/2000/svg';
@@ -961,4 +962,7 @@
 
         add_keyboard_navigation();
       });
+    };
+    if (has_ready) {
+      MASCP.ready();
     }
