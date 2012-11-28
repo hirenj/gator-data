@@ -604,7 +604,7 @@
           }
         };
         var count = 1;
-        var blah = function (prot,cback) {
+        var print_single = function (prot,cback) {
           var whole_div = a_doc.createElement('div');
           var clazz = 'print_group';
           if (((count % 3) == 0) && count > 0 ) {
@@ -673,10 +673,10 @@
         (function(renderer) {
           var acc = proteins.shift();
           var self_func = arguments.callee;
-          if (acc && counter < 10) {
+          if (acc) {
             counter += 1;
             setTimeout(function() {
-              blah(acc.toLowerCase(),self_func);
+              print_single(acc.id.toLowerCase(),self_func);
             },0);
           }
         })();
