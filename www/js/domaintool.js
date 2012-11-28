@@ -781,6 +781,11 @@
         }
       },false);
     };
+    var wire_clipboarder = function() {
+      document.getElementById('clipboarder').addEventListener('click',function() {
+        window.prompt("Predicted sites S/T",this.sequence);
+      });
+    }
 
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
@@ -859,6 +864,14 @@
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
+        var a_seq = renderer.sequence.toLowerCase();
+        if (this.result && this.result._raw_data) {
+          this.result._raw_data.data.sites.forEach(function(site) {
+            a_seq = a_seq.substr(0,site-1) + a_seq.substr(site-1,1).toUpperCase() +  a_seq.substr(site);
+          });
+        }
+        document.getElementById('clipboarder').sequence = a_seq;
+
         if (done) {
           done();
         }
@@ -961,6 +974,7 @@
 
       wire_drive_button();
       wire_uniprot_id_changer(renderer);
+      wire_clipboarder();
 
 
       var state = get_passed_in_state();
