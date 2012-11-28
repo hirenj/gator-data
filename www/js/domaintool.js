@@ -783,7 +783,28 @@
     };
     var wire_clipboarder = function() {
       document.getElementById('clipboarder').addEventListener('click',function() {
-        window.prompt("Predicted sites S/T",this.sequence);
+        var other_win = window.open('');
+        var bits  = this.sequence.split('');
+        var parent = other_win.document.createElement('pre');
+        parent.style.width = '300px';
+        other_win.document.body.appendChild(parent);
+        var i = 0;
+        bits.forEach(function(aa) {
+          if ( i > 0 && (i % 10) == 0) {
+            parent.appendChild(document.createTextNode(' '));
+            if ( (i % 50) == 0) {
+            parent.appendChild(document.createElement('br'));
+            }
+          }
+          if (aa.match(/[ST]/)) {
+            var bold = document.createElement('b');
+            bold.appendChild(document.createTextNode(aa));
+            parent.appendChild(bold);
+          } else {
+            parent.appendChild(document.createTextNode(aa.toUpperCase()));
+          }
+          i++;
+        });
       });
     }
 
