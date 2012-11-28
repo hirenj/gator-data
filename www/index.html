@@ -29,15 +29,17 @@
         <input type="button" value="Copy" id="clipboarder"/>
         <div contentEditable="true" id="uniprot_id"></div>
         <div id="description"></div>
-        <div style="position: relative; height: 2em;">
+        <div style="position: relative; height: 2.5em;">
             <div id="zoomlabel">Zoom</div>
             <input id="zoomout" value="&#8211;" type="button"/><input id="zoomin" value="+" type="button"/>
         </div>
+        <div style="padding: 15px 5px 30px 5px; box-shadow: inset 2px 2px 10px #999; border-radius: 4px;">
         <div style="overflow: hidden; width: auto; left: 0px; top: 0px; bottom: 0px;">
             <div id="condensed_container"></div>
         </div>
         <div id="scroll_box">
             <div id="scroller"></div>
+        </div>
         </div>
     </div>
     <script type="text/javascript" src="https://apis.google.com/js/auth.js?onload=init"></script>

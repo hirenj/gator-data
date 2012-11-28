@@ -585,7 +585,7 @@
         var a_doc = win.document;
         a_doc.open();
         a_doc.close();
-        var link = document.createElement('link');
+        var link = a_doc.createElement('link');
         link.setAttribute('rel','stylesheet');
         link.setAttribute('href','css/style.css');
         link.setAttribute('type','text/css');
@@ -640,7 +640,7 @@
           rend.acc = prot;
           (function(my_rend) {
             jQuery(my_rend).bind('sequenceChange', function() {
-              if ( ! mf ) {
+              if ( ! mf && window.matchMedia) {
                 mf = my_rend._media_func;
                 (my_rend.win() || window).matchMedia('print').addListener(print_func);
                 my_rend._media_func = function() {};
@@ -787,21 +787,24 @@
         var bits  = this.sequence.split('');
         var parent = other_win.document.createElement('pre');
         parent.style.width = '300px';
+        if ( ! other_win.document.body ) {
+          other_win.document.appendChild(other_win.document.createElement('body'));
+        }
         other_win.document.body.appendChild(parent);
         var i = 0;
         bits.forEach(function(aa) {
           if ( i > 0 && (i % 10) == 0) {
-            parent.appendChild(document.createTextNode(' '));
+            parent.appendChild(other_win.document.createTextNode(' '));
             if ( (i % 50) == 0) {
-            parent.appendChild(document.createElement('br'));
+              parent.appendChild(other_win.document.createElement('br'));
             }
           }
           if (aa.match(/[ST]/)) {
-            var bold = document.createElement('b');
-            bold.appendChild(document.createTextNode(aa));
+            var bold = other_win.document.createElement('b');
+            bold.appendChild(other_win.document.createTextNode(aa));
             parent.appendChild(bold);
           } else {
-            parent.appendChild(document.createTextNode(aa.toUpperCase()));
+            parent.appendChild(other_win.document.createTextNode(aa.toUpperCase()));
           }
           i++;
         });
