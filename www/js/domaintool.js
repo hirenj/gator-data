@@ -362,7 +362,7 @@
         var curr_zoom = start_zoom;
         var count = 0;
         while (start_zoom === renderer.zoom && count < 5) {
-            curr_zoom += 0.5;
+            curr_zoom += 0.125;
             if (renderer.grow_container) {
               renderer.zoomCenter = 'center';
             }
@@ -377,7 +377,7 @@
         var curr_zoom = start_zoom;
         var count = 0;
         while (start_zoom === renderer.zoom && count < 5) {
-            curr_zoom -= 0.5;
+            curr_zoom -= 0.125;
             if (renderer.grow_container) {
               renderer.zoomCenter = 'center';
             }
@@ -732,6 +732,7 @@
         renderer.acc = acc;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
+        document.getElementById('uniprot_id').textContent = acc.toUpperCase();
         renderer.grow_container = true;
       });
 
@@ -758,6 +759,28 @@
       });
     };
 
+    var wire_uniprot_id_changer = function(renderer) {
+      var uniprot = document.getElementById('uniprot_id');
+      uniprot.addEventListener('input',function() {
+        var uprot_re1 = /([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
+        var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
+        if (uniprot.textContent.toUpperCase().match(uprot_re1) || uniprot.textContent.toUpperCase().match(uprot_re2)) {
+          var selected;
+          selected = document.getElementById('prot_'+uniprot.textContent.toLowerCase());
+          if (selected) {
+            bean.fire(selected,'click');
+            selected.scrollIntoView(true);
+          } else {
+            selected = (document.getElementsByClassName('selected') || [])[0];
+            if (selected) {
+              var clazz = selected.getAttribute('class') || '';
+              selected.setAttribute('class',clazz.replace(/selected\s/,''));
+            }
+            show_protein(uniprot.textContent,renderer);
+          }
+        }
+      },false);
+    };
 
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
@@ -937,6 +960,8 @@
       });
 
       wire_drive_button();
+      wire_uniprot_id_changer(renderer);
+
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
