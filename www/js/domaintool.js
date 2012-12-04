@@ -923,7 +923,7 @@
       datareader.datasetname = "domains";
             
       datareader.retrieve(acc,function(err) {
-        if (err || ! this.result ) {
+        if (! this.result ) {
           next();
           return;
         }
