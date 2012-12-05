@@ -1,4 +1,5 @@
 jQuery(document).ready(function() {
+    var ready_func = function() {
     var supportsXHR = false;
     if (XMLHttpRequest)
     {
@@ -227,11 +228,7 @@ jQuery(document).ready(function() {
     };
     
     jQuery('#search').unbind('change').bind('change',search_func);
-    
-});
 
-jQuery(document).ready(function() {
-    
     var rendering_readers = null;
     var all_readers = [];
 
@@ -546,4 +543,10 @@ jQuery(document).ready(function() {
     jQuery(MASCP.renderer).bind('resultsRendered',rrend);
     jQuery(MASCP.renderer).bind('sequenceChange',seqchange);
     
+}
+if (! MASCP.ready ) {
+    MASCP.ready = ready_func;
+} else {
+    ready_func();
+}
 });
