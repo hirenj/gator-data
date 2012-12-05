@@ -2,12 +2,23 @@
 
 MASCP = require('mascp-jstools');
 
-var argv =  require('optimist').argv;
+var nconf = require('nconf');
+var fs = require('fs');
 
-var port = argv.port || 3000;
+nconf.env().argv();
+
+nconf.file('config.json');
+
+nconf.defaults({
+    'port'   : 3000,
+    'static' : false
+});
+
+var port = nconf.get('port');
 
 var resource_map = {
     'tair'      : MASCP.TairReader,
+    'uniprot'   : MASCP.UniprotReader,
     'atchloro'  : MASCP.AtChloroReader,
     'atpeptide' : MASCP.AtPeptideReader,
     'pep2pro'   : MASCP.Pep2ProReader,
@@ -21,6 +32,7 @@ var resource_map = {
     'rippdb'    : MASCP.RippdbReader,
     'glycomod'  : MASCP.GlycoModReader,
     'suba'      : MASCP.SubaReader,
+    'user'      : MASCP.UserdataReader,
     'ArbitraryData' : MASCP.ArbitraryDataReader,
     'rnaedit'   : MASCP.RnaEditReader,
     'ubiquitin' : MASCP.UbiquitinReader,
@@ -28,6 +40,243 @@ var resource_map = {
     'nssnps'    : MASCP.SnpReader,
     'proteotypic' : MASCP.ProteotypicReader
 };
+
+
+MASCP.UserdataReader.datasets(function(service) {
+    resource_map[service] = MASCP.UserdataReader;
+});
+
+
+nconf.save(function(err) {
+    if (err) {
+        console.log("Could not write config");
+    }
+});
+
+
+var refresh_document = function(doc,map) {
+    var reader = new MASCP.GoogledataReader();
+    var inserter;
+    inserter = reader.createReader(doc,map);
+    return inserter;
+};
+
+var refresh_file = function(file,map,title) {
+    var csv = require('csv');
+    var data_array = [];
+    var inserter = new MASCP.UserdataReader();
+    inserter.map = map;
+    csv()
+    .fromStream(fs.createReadStream(file), {
+        delimiter : "\t"
+    }).on('data',function(dat) {
+     data_array.push(dat);
+    }).on('end',function() {
+     inserter.setData(title,data_array);
+    });
+    return inserter;
+};
+
+var watching_block = nconf.get("watching:spreadsheet") || {};
+
+setTimeout(function() {
+    console.log("Checking to see if any documents need to be updated");
+    for (var doc_conf in watching_block) {
+        var check_interval = watching_block[doc_conf].check_interval || 1000*60*60*24*7;
+        if ((new Date()).getTime() - watching_block[doc_conf].last_check < check_interval ) {
+            continue;
+        }
+        console.log("Checking document "+doc_conf);
+        var inserter = refresh_document("spreadsheet:"+doc_conf,eval("("+watching_block[doc_conf].parser_function+")"));
+        inserter.bind('ready',function() {
+            var time = (new Date()).getTime();
+            watching_block[doc_conf].last_check = time;
+            nconf.set('watching:spreadsheet:'+doc_conf+':last_check', time);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                }
+            });
+        });
+    }
+    console.log("Checking next in a day");
+    setTimeout(arguments.callee,1000*60*60*24);
+},0);
+
+var watch_file_block = nconf.get("watching:file") || {};
+
+setTimeout(function() {
+    for (var doc_conf in watch_file_block) {
+        console.log("Watching "+doc_conf+" for changes");
+        (function(doc_name) {
+        fs.stat(doc_name,function(err,stats) {
+            if (err) {
+                return;
+            }
+            if ((stats.mtime.getTime() - watch_file_block[doc_name].last_check) > 0) {
+                console.log(doc_name+" has changed, refreshing");
+                var inserter = refresh_file(doc_name, eval("("+watch_file_block[doc_name].parser_function+")"),watch_file_block[doc_name].title);
+                inserter.bind('ready',function() {
+                    console.log("Reloaded data from "+doc_name);
+                    var time = (new Date()).getTime();
+                    nconf.set('watching:file:'+doc_name+':last_check', time);
+                    nconf.save(function(err) {
+                        if (err) {
+                            console.log("Could not write config");
+                        }
+                    });
+
+                });
+            }
+        });
+        fs.watch(doc_name,function(ev,filename) {
+            console.log(doc_name+" has changed, refreshing");
+            var inserter = refresh_file(doc_name, eval("("+watch_file_block[doc_name].parser_function+")"),watch_file_block[doc_name].title);
+            inserter.bind('ready',function() {
+                var time = (new Date()).getTime();
+                nconf.set('watching:file:'+doc_name+':last_check', time);
+                nconf.save(function(err) {
+                    if (err) {
+                        console.log("Could not write config");
+                    }
+                });
+                console.log("Reloaded data from "+doc_name);
+            });
+        });
+        })(doc_conf);
+    }
+},0);
+
+var watch_file = function(filename,map,title) {
+    if (nconf.get('watching:file:'+filename)) {
+        var curr = nconf.get('watching:file:'+filename);
+        if (curr.parser_function.toString() === (map || "").toString()) {
+            console.log("Already watching document");
+            return;
+        }
+    }
+    var inserter = refresh_file(filename,map,title);
+    inserter.bind('ready',function() {
+        if (map) {
+            var status = { "last_check" : (new Date()).getTime(), "parser_function" : map.toString(), "title" : title };
+            nconf.set('watching:file:'+filename, status);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                } else {
+                    console.log("Data inserted for "+filename+" - will automatically update");
+                }
+            });
+        } else {
+            console.log("Please try again with a defined parser function");
+        }
+    });
+}
+
+var watch_spreadsheet = function(doc,map) {
+    if (nconf.get('watching:spreadsheet:'+doc)) {
+        var curr = nconf.get('watching:spreadsheet:'+doc);
+        if (curr.parser_function.toString() === (map || "").toString()) {
+            console.log("Already watching document "+doc+" refreshing anyway");
+        }
+    }
+    if ( ! map ) {
+        (new MASCP.GoogledataReader()).createReader("spreadsheet:"+doc,function(datablock) {
+            if (Array.isArray(datablock.data)) {
+                console.log(datablock.data.slice(0,5));
+            } else {
+                console.log(datablock.data);
+            }
+            console.log("We require a function that returns a signature of { accession : { data : {}, retrieved : 12345 } }"  );
+        });
+    } else {
+        var vm = require('vm');
+        try {
+            vm.runInNewContext("("+map.toString()+")({ \"data\" : {} })", {"console" : console } , "<parser function>");
+        } catch (e) {
+            console.log("Error running map function. Make sure you do not use any local or global variables");
+            console.log(e);
+            return;
+        }
+    }
+
+    var inserter = refresh_document("spreadsheet:"+doc,map);
+
+    inserter.bind('ready',function() {
+        console.log("Got data back for spreadsheet:"+doc);
+        if (map) {
+            var status = { "last_check" : (new Date()).getTime(), "parser_function" : map.toString() };
+            watching_block[doc] = status;
+            nconf.set('watching:spreadsheet:'+doc, status);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                } else {
+                    console.log("Data inserted - will automatically update");
+                }
+            });
+        } else {
+            console.log("Please try again with a defined parser function");
+        }
+    });
+    inserter.bind('error',function(err) {
+        console.log("Error retrieving spreadsheet");
+        console.log(err);
+    });
+};
+
+var enable_id_translation = function(clazz) {
+    (function(serv) {
+        var defaultDataReceived = serv.prototype._dataReceived;
+
+        serv.prototype._dataReceived = function(data,status)
+        {
+            if (data === null) {
+                return defaultDataReceived.call(this,null,status);
+            }
+            if (typeof data == "object") {
+                return defaultDataReceived.call(this,data,status);
+            }
+
+            if (typeof data == "string") {
+                if (data.toLowerCase().match(/^at/)) {
+                    this.agi = data.toLowerCase().replace(/(\n|\r)+$/,'')+'.1';
+                    this.retrieve(this.agi);
+                    return;
+                } else {
+                    return defaultDataReceived.call(this,null,status);
+                }
+            }
+        };
+    })(clazz);
+    var old_request = clazz.prototype.requestData;
+
+    clazz.prototype.requestData = function()
+    {
+        var self = this;
+        var agi = this.agi || '';
+        if (! agi.toLowerCase().match(/^at/)) {
+            return {
+                type: "GET",
+                dataType: "txt",
+                url: "http://uniprot.org/mapping/",
+                data : {
+                    "from" : "ACC+ID",
+                    "to" : "TAIR_ID",
+                    "format" : "list",
+                    "query" : agi
+                }
+            }
+        }
+        return old_request.call(this);
+    };
+
+};
+
+if (port == 3702) {
+    enable_id_translation(MASCP.SnpReader);
+}
+
 
 repl = require('repl');
 
@@ -43,7 +292,7 @@ MASCP.events.once('ready',function() {
         app.use(app.router);
     });
     
-    if (argv.static) {
+    if (nconf.get('static')) {
         app.listen(port,'127.0.0.1');
         console.log('Server running at http://127.0.0.1:'+port+'/');
         return;
@@ -52,6 +301,14 @@ MASCP.events.once('ready',function() {
     app.get("/", function(req, res) {
       res.redirect("/index.html");
     });
+
+    (function() {
+        var middle = express.static(__dirname + '/../www');
+        app.get("/cazy/*", function(req, res, next) {
+            req.url = '/alignment.html';
+            middle(req,res,next);
+        });
+    })();
 
     var data_headers = function(req,res,next) {
         res.header('Content-type', 'application/json');
@@ -64,6 +321,8 @@ MASCP.events.once('ready',function() {
 
     app.post('/data/*',data_headers);
     app.get('/data/*',data_headers);
+    
+    app.post('/tools/*', data_headers);
 
     app.get('/data/history/:resource/:date/:agi',function(req,res,next) {
         var service = service_object(req);
@@ -95,6 +354,28 @@ MASCP.events.once('ready',function() {
             }
         });
     });
+
+    app.get('/data/latest/cazy/:family',function(req,res,next) {
+        var tax = '9606';
+        if (app.address().port != 3000) {
+            tax = app.address().port;
+        }
+
+        var opts = {'host' : 'www.uniprot.org',
+                    'port' : 80,
+                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b'+tax+'%5d%22&format=list'
+                    };
+        var client = require('http').get(opts,
+        function(response) {
+            response.on('data', function (chunk) {
+                var ids = chunk.toString().replace(/\n/g,',');
+                ids = ids.replace(/,$/,'');
+                res.send(ids.split(','),200);
+            });
+        }).on('error', function(e) {
+            res.send({"error" : "Could not contact Uniprot"},200);
+        });
+    });
     
     app.get('/data/latest/gator',function(req,res,next) {
         var agi = req.query.agi || req.query.acc;
@@ -122,6 +403,9 @@ MASCP.events.once('ready',function() {
         if (clazz == MASCP.ArbitraryDataReader) {
             obj = obj._extend(req.query.dataset || req.body.dataset);
         }
+        if (clazz == MASCP.UserdataReader) {
+            obj.datasetname = resource;
+        }
         return obj;
     };
 
@@ -141,22 +425,46 @@ MASCP.events.once('ready',function() {
     }
     
     app.get('/data/latest/:resource',function(req,res,next) {
-        get_latest(req.param('agi'), service_object(req),res);
+        get_latest(req.query.agi || req.query.acc, service_object(req),res);
     });
     
     app.get('/data/latest/:resource/:agi',function(req,res,next) {
         get_latest(req.param('agi'), service_object(req), res);
     });
 
-    app.listen(port,'127.0.0.1');
-    console.log('Server running at http://127.0.0.1:'+port+'/');
+    app.post('/tools/clustalw/', function(req,res,next) {
+        var sequences = req.body.sequences.split(",");
+        var clustal = new MASCP.ClustalRunner();
+        clustal.sequences = sequences;
+        clustal.agi = MASCP.ClustalRunner.hash(clustal.sequences.join(','))+'';
+        clustal.retrieve(clustal.agi,function(err) {
+            if ( err && ! err.error ) {
+                err.error  = err.message;
+            }
+            if (err || this.result && this.result._raw_data && this.result._raw_data.nodeName) {
+                res.send(err.error ? { "error" : err.error } : { "error" : err },200);
+            } else {
+                res.send(this.result ? this.result._raw_data : {"error" : "No data"},200);
+            }
+        });
+    });
+
+    app.listen(port);//,'127.0.0.1');
+    console.log('Server running at http://127.0.0.1:'+app.address().port+'/');
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
-        vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module }, "<stdin>");
+        try {
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: watch_spreadsheet, watch_file : watch_file }, "<stdin>");
+        } catch (e) {
+            console.log("Error running script");
+            console.log(e);
+        }
     } else {
         repl.start("Gator data server >");
         repl.repl.context.resource_map = resource_map;
+        repl.repl.context.watch_spreadsheet = watch_spreadsheet;
+        repl.repl.context.watch_file = watch_file;
     }
 
 });

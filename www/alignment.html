@@ -1,0 +1,308 @@
+<html>
+<head>
+    <script type="text/javascript" src="/js/mascp-jstools.js"></script>
+    <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
+    <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-ui-1.7.2.min.js"></script>
+    <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-masonry-1.2.0.min.js"></script>
+    <style type="text/css">
+    @media print {
+      @page {
+        size: landscape;
+      }
+
+      #zoomin, #zoomout, #zoomlabel, .noprint {
+        display: none;
+      }
+    }
+
+    #zoomin, #zoomout {
+        font-weight: bolder;
+        font-family: Helvetica;
+        font-size: 11pt;
+        cursor: pointer;
+        position: absolute;
+        right: 10px;
+        background: white;
+        border: solid #AAA 1px;
+        box-shadow: 2px 3px 3px #AAA;
+    }
+    #zoomlabel {
+        top: 2em;
+        position: absolute;
+        top: 2em;
+        right: 0px;
+        font-size: 12pt;
+        font-weight: bolder;
+        z-index: 1;
+        text-shadow: #fff 0px 0px 4px;
+    }
+    #zoomin {
+        top: 4em;
+        z-index: 1;
+        border-radius: 5px 5px 0px 0px;
+    }
+
+    #zoomout {
+        top: 6em;
+        z-index: 2;
+        border-radius: 0px 0px 5px 5px;
+    }
+    </style>
+    <input class="noprint" type="button" value="Waiting.." id="run"/>
+    <div class="noprint" style="position: relative; height: 2em;">
+        <div id="zoomlabel">Zoom</div>
+        <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
+    </div>
+    <div>
+        <div style="overflow: hidden; width: auto; height: 100%;">
+            <div id="condensed_container" style="width: 100%"></div>
+        </div>
+    </div>
+    <script type="text/html" id="window_tmpl">
+        <div>
+          <p>You think this is potentially a mucin domain</p>
+          <p>It contains <ul>
+          </ul></p>
+        </div>
+    </script>
+    <script>
+      window.svgns = 'http://www.w3.org/2000/svg';
+      var widget_rend = new MASCP.CondensedSequenceRenderer(document.getElementById('condensed_container'));
+      var dragger = new GOMap.Diagram.Dragger();
+      widget_rend.zoom = 0.81;
+      widget_rend.padding = 10;
+      widget_rend.trackGap = 3;
+
+      jQuery('#zoomin').click(function() {
+        var start_zoom = widget_rend.zoom;
+        var curr_zoom = start_zoom;
+        var count = 0;
+        while (start_zoom === widget_rend.zoom && count < 5) {
+            curr_zoom += 0.5;
+            widget_rend.zoomCenter = 'center';
+            widget_rend.zoom = curr_zoom;
+            widget_rend.zoomCenter = null;
+            count++;
+        }
+      });
+
+      jQuery('#zoomout').click(function(e) {
+        var start_zoom = widget_rend.zoom;
+        var curr_zoom = start_zoom;
+        var count = 0;
+        while (start_zoom === widget_rend.zoom && count < 5) {
+            curr_zoom -= 0.5;
+            widget_rend.zoomCenter = 'center';
+            widget_rend.zoom = curr_zoom;
+            widget_rend.zoomCenter = null;
+            count++;
+        }
+      });
+
+      jQuery(widget_rend).bind('sequenceChange', function() {
+        var zoomFactor = 0.95 * window.innerWidth / (2 * widget_rend.sequence.length);
+        widget_rend.zoom = zoomFactor;
+        dragger.applyToElement(widget_rend._canvas);
+        GOMap.Diagram.addTouchZoomControls(widget_rend, widget_rend._canvas);
+        GOMap.Diagram.addScrollZoomControls(widget_rend, widget_rend._canvas);
+        widget_rend.navigation.hide();
+      });
+      var all_accs = [];
+
+      function get_seqs() {
+          var accs = all_accs.concat([]);
+          var results = [];
+          var seq_reader = new MASCP.UniprotReader(null,"/data/latest/gator");
+          var runner = function() {
+              results.push(this.result.getSequence());
+              if (accs.length > 0) {
+                  seq_reader.retrieve(accs.shift());
+              } else {
+                  do_clustal(results.join(','));
+              }
+          };
+          seq_reader.bind('resultReceived',runner);
+          seq_reader.retrieve(accs.shift());
+      }
+      var xmlhttp;
+      
+      var get_snps = function(an_id,a_seq,layer) {
+        MASCP.SnpReader.SERVICE_URL = '/data/latest/gator';
+        var reader = new MASCP.SnpReader();
+        reader.retrieve(an_id,function(err) {
+          if ( err )  {
+            return;
+          }
+          var a_result = reader.result;
+          widget_rend.withoutRefresh(function() {
+            var accessions = a_result.getAccessions().slice(0,2);
+            while (accessions.length > 0) {
+
+              var acc = accessions.shift();
+              var diffs = a_result.getSnp(acc).slice(0,2);
+
+              var ins = [];
+              var i;
+              for (i = diffs.length - 1; i >= 0 ; i-- ){
+                  ins.push( { 'insertBefore' : diffs[i][0] + 1, 'delta' : diffs[i][2] });
+              }
+              for (i = ins.length - 1; i >= 0 ; i-- ) {
+                var wanted_pos = ins[i].insertBefore - 1;
+                var end = 0;
+                var chars_found = 0;
+
+                while (chars_found != wanted_pos) {
+                  var missing = wanted_pos - chars_found;
+                  var subbit = a_seq.substr(end,missing);
+                  end += missing;
+                  chars_found += subbit.replace(/-/g,'').length;
+                }
+                var pos = end;
+
+                console.log("Done");
+                widget_rend.getAA(pos).addAnnotation(layer,1, { 'border' : 'rgb(0,0,150)', 'offset' : 0, 'height' : 2, 'content' : ins[i].delta, 'angle': -45 });
+              }
+
+            }
+
+          });
+          // widget_rend._layer_containers[layer].fixed_track_height = 1;
+          widget_rend.redrawAnnotations(layer);
+        });
+      };
+
+      var do_stuff_with = function(seqs,alignment) {
+          var a_seq = seqs[0];
+          widget_rend.setSequence(Array(a_seq.length+1).join("."));
+          widget_rend.grow_container = true;
+          for (var i = 0; i < seqs.length; i++) {
+              MASCP.registerLayer('lay'+i,{'fullname': all_accs[i] || ' ', 'color' : '#ff0000'});
+              widget_rend.renderTextTrack('lay'+i,seqs[i]);
+
+              get_snps(all_accs[i],seqs[i],'lay'+i);
+
+              widget_rend.trackOrder.push('lay'+i);
+          }
+          for (var i = 0; i < seqs.length; i++) {
+              widget_rend.showLayer('lay'+i);              
+          }
+          var box = widget_rend.getAA(100).addBoxOverlay("lay0",10);
+          box.addEventListener('click',function() {
+              widget_rend.
+              getAA(105).
+              callout("lay0","window_tmpl",
+                      { 
+                        'width'  : 75,
+                        'height' : 50
+                      });
+              widget_rend.refresh();
+          });
+          var under = null;
+          var updater = function(e) {
+            if (! under ) {
+              return;
+            }
+            var left = widget_rend.leftVisibleResidue();
+            var right = widget_rend.rightVisibleResidue();
+            var padding = Math.floor(0.5*(right - left));
+            left -= padding;
+            right += padding;
+            if ( left < 0 ) {
+              left = 0;
+            }
+            var width =  right - left;
+            var top = 25;
+            if (widget_rend.zoom > 3.6) {  
+              top = 10;            
+//              top = (seqs.length+1)*5 + 5;
+            }
+            under.setAttribute('transform','translate('+left*50+','+top*50+')');
+            var wind = alignment.substr(left,width);
+            var aas = wind.split('');
+            for (var i = 0; i < aas.length; i++) {
+              var a_rect = under.childNodes[i];
+              if ( ! a_rect ) {
+                a_rect = under.parentNode.rect(i,0,1,seqs.length*100);
+                under.push(a_rect);
+              }
+              var fill = 'none'
+              if (aas[i] == '*') {
+                fill = '#000000';
+              }
+              if (aas[i] == ':') {
+                fill = '#999999';
+              }
+              if (aas[i] == '.') {
+                fill = '#dddddd';
+              }
+              a_rect.setAttribute('stroke','none');
+              a_rect.setAttribute('fill',fill);
+              a_rect.setAttribute('opacity','0.5');
+            }
+            while (aas.length < under.childNodes.length) {
+              under.removeChild(under.lastChild);
+            }
+
+          };
+
+          bean.add(widget_rend._canvas,'panend',updater);
+
+          widget_rend.addUnderlayRenderer(function(zoom,canvas) {
+            if (under) {
+              under.parentNode.removeChild(under);
+              under = null;
+            }
+            under = canvas.group();
+            canvas.insertBefore(under,canvas.firstChild.nextSibling);
+            updater();
+          });
+          widget_rend.refresh();
+      }
+      
+      var got_data = function() {
+          if (xmlhttp.readyState == 4) {
+              if (xmlhttp.status == 200) {
+                  console.log("Data back");
+                  var seqdata = JSON.parse(xmlhttp.responseText);
+                  do_stuff_with(seqdata.data.sequences,seqdata.data.alignment);
+              }
+          }
+      };
+      
+      function do_clustal(seqs) {
+          xmlhttp =  new XMLHttpRequest();
+          if (xmlhttp) {
+              xmlhttp.onreadystatechange = got_data;
+          }
+          xmlhttp.open("POST", '/tools/clustalw/', true);	        
+          xmlhttp.setRequestHeader("Content-type",
+              "application/x-www-form-urlencoded");
+          xmlhttp.send('sequences='+seqs);
+      }
+
+      (function() {
+          var family = window.location.href.split('/').reverse().shift();
+          xmlhttp =  new XMLHttpRequest();
+          if (xmlhttp) {
+              xmlhttp.onreadystatechange = function() {
+                if (xmlhttp.readyState == 4) {
+                    if (xmlhttp.status == 200) {
+                        all_accs = JSON.parse(xmlhttp.responseText);
+                        document.getElementById('run').value="Go";
+                    }
+                }
+              };
+          }
+          xmlhttp.open("GET", '/data/latest/cazy/'+family, true);         
+          xmlhttp.setRequestHeader("Content-type",
+              "application/x-www-form-urlencoded");
+          xmlhttp.send('');
+      })();
+
+
+      document.getElementById('run').addEventListener('click',get_seqs);
+      
+      
+      </script>
+</body>
+</html>

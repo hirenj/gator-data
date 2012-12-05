@@ -1,0 +1,400 @@
+<html>
+<head>
+    <script type="text/javascript" src="https://apis.google.com/js/auth.js?onload=init">
+    </script>
+    <script type="text/javascript" src="/js/mascp-jstools.js"></script>
+    <script type="text/javascript" charset="utf-8" src="http://code.jquery.com/jquery-1.4.1.min.js"></script>
+    <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-ui-1.7.2.min.js"></script>
+    <script type="text/javascript" src="http://gator.masc-proteomics.org/js/jquery-masonry-1.2.0.min.js"></script>
+    <script type="text/javascript">
+      var getDocsFeed = function(callback) {
+        var feedUrl = "https://docs.google.com/feeds/documents/private/full";
+        var scope = "https://docs.google.com/feeds/ https://spreadsheets.google.com/feeds/";
+
+        var performLogin = function() {
+          var token = google.accounts.user.login(scope);
+        };
+        
+        if (! google.accounts.user.checkLogin(scope)=='') {
+          var service = new google.gdata.client.GoogleService('writely','gator');
+          service.getFeed(feedUrl,function(data) {
+            callback.call(null,null,data);
+          },callback);
+        } else {
+          performLogin();
+        }
+      }
+
+      var printDocsFeed = function() {
+        getDocsFeed(function(e,docslist) {
+          var entries = docslist.feed.entry;
+          var i;
+          for ( i = entries.length - 1; i >= 0; i-- ) {
+            console.log( [ entries[i].title.$t, entries[i]['gd$resourceId'].$t, entries[i]['updated'].$t ] );
+          }
+        });
+      };
+
+    </script>
+    <style type="text/css">
+    @media print {
+      @page {
+        size: landscape;
+      }
+
+      #zoomin, #zoomout, #zoomlabel {
+        display: none;
+      }
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+    }
+    #zoomin, #zoomout {
+        font-weight: bolder;
+        font-family: Helvetica;
+        font-size: 11pt;
+        cursor: pointer;
+        position: absolute;
+        right: 10px;
+        background: white;
+        border: solid #AAA 1px;
+        box-shadow: 2px 3px 3px #AAA;
+    }
+    #zoomlabel {
+        top: 2em;
+        position: absolute;
+        top: 2em;
+        right: 0px;
+        font-size: 12pt;
+        font-weight: bolder;
+        z-index: 1;
+        text-shadow: #fff 0px 0px 4px;
+    }
+    #zoomin {
+        top: 4em;
+        z-index: 1;
+        border-radius: 5px 5px 0px 0px;
+    }
+
+    #zoomout {
+        top: 6em;
+        z-index: 2;
+        border-radius: 0px 0px 5px 5px;
+    }
+    </style>
+    <script type="text/html" id="insertion_tmpl">
+        <div style="font-family: Courier;"><%=insert%>
+        </div>
+    </script>
+    <script type="text/html" id="description_tmpl">
+        <div><%=desc%>
+        </div>
+    </script>
+    <img src="img/red.png" style="display: none;"/>
+    <img src="" id="submitter"/>
+    <input type="text" id="acc" value="p02751"/><input type="button" value="Import sites" id="getdocs"/>
+    <input type="button" value="Reset domains" id="reset"/>
+    <input type="button" value="Accept domains" id="submit"/>
+    <div style="position: relative; height: 2em;">
+        <div id="zoomlabel">Zoom</div>
+        <input id="zoomout" value="–" type="button"/><input id="zoomin" value="+" type="button"/>
+    </div>
+    <div>
+        <div style="overflow: hidden; width: auto; height: 100%;">
+            <div id="condensed_container"></div>
+        </div>
+    </div>
+    <script>
+      window.svgns = 'http://www.w3.org/2000/svg';
+      var widget_rend = new MASCP.CondensedSequenceRenderer(document.getElementById('condensed_container'));
+      var dragger = new GOMap.Diagram.Dragger();
+      widget_rend.zoom = 0.81;
+      widget_rend.padding = 10;
+      widget_rend.trackGap = 3;
+
+      jQuery('#zoomin').click(function() {
+        var start_zoom = widget_rend.zoom;
+        var curr_zoom = start_zoom;
+        var count = 0;
+        while (start_zoom === widget_rend.zoom && count < 5) {
+            curr_zoom += 0.5;
+            if (widget_rend.grow_container) {
+              widget_rend.zoomCenter = 'center';
+            }
+            widget_rend.zoom = curr_zoom;
+            widget_rend.zoomCenter = null;
+            count++;
+        }
+      });
+
+      jQuery('#zoomout').click(function(e) {
+        var start_zoom = widget_rend.zoom;
+        var curr_zoom = start_zoom;
+        var count = 0;
+        while (start_zoom === widget_rend.zoom && count < 5) {
+            curr_zoom -= 0.5;
+            if (widget_rend.grow_container) {
+              widget_rend.zoomCenter = 'center';
+            }
+            widget_rend.zoom = curr_zoom;
+            widget_rend.zoomCenter = null;
+            count++;
+        }
+      });
+
+      MASCP.UniprotReader.SERVICE_URL = '/data/latest/gator';
+      document.getElementById('getdocs').addEventListener('click',function() {
+        widget_rend.trackOrder = [];
+        widget_rend.reset();
+        widget_rend.refresh();
+
+        var a_reader = new MASCP.UniprotReader();
+        var accession = document.getElementById('acc').value;
+        var sequences = [];
+        var counter = 2;
+        var got_error = false;
+        a_reader.bind('resultReceived',function(e) {
+          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi };
+          bit.toString = function() { return this.sequence; };
+          sequences.push(bit);
+        });
+        a_reader.bind('error',function(e) {
+          got_error = true;
+
+          if (sequences.length > 1) {
+            do_clustal(sequences);
+            return;
+          }
+          widget_rend.setSequence(sequences[0].toString());
+          widget_rend.grow_container = true;
+        });
+        a_reader.retrieve(accession);
+        a_reader.bind('requestComplete',function() {
+          if ( ! got_error ) {
+            a_reader.retrieve(accession+'-'+counter);
+            counter+=1;
+          }
+        });
+      });
+
+      var formkey = "dDNMc2tvRmE0QU9OelhPU3dwSWNjYkE6MQ";
+
+      document.getElementById('reset').addEventListener('click',function() {
+        return;
+        document.getElementById('submitter').
+        setAttribute('src',
+            'https://docs.google.com/a/glycocode.com/'+
+            'spreadsheet/formResponse?formkey='+formkey+
+            '&entry.0.single='+document.getElementById('acc').value+
+            '&entry.1.single='
+        );
+      });
+
+      document.getElementById('submit').addEventListener('click',function() {
+        var wanted = {};
+        widget_rend.trackOrder.forEach(function(track) {
+          if (track.match(/^dom\:/) && widget_rend.isLayerActive(track)) {
+            wanted[track] = 1;
+          }
+        });
+        var wanted_domains = JSON.stringify(wanted);
+        document.getElementById('submitter').
+        setAttribute('src',
+            'https://docs.google.com/a/glycocode.com/'+
+            'spreadsheet/formResponse?formkey='+formkey+
+            '&entry.0.single='+document.getElementById('acc').value+
+            '&entry.1.single='+wanted_domains
+        );
+      });
+
+
+      jQuery(widget_rend).bind('sequenceChange', function() {
+        var zoomFactor = 0.95 * window.innerWidth / (2 * widget_rend.sequence.length);
+        widget_rend.zoom = zoomFactor;
+        dragger.applyToElement(widget_rend._canvas);
+        GOMap.Diagram.addTouchZoomControls(widget_rend, widget_rend._canvas);
+        GOMap.Diagram.addScrollZoomControls(widget_rend, widget_rend._canvas);
+        widget_rend.navigation.hide();
+        get_sites();
+        //get_domains();
+      });
+      
+      var pretty_print = function(seq) {
+        var bits = seq.toString().split('');
+        var i = 0;
+        while (bits.length > 0) {
+          console.log(i + " " +bits.splice(0,20).join(""));
+          i += 20;
+        }
+      }
+
+      var get_sites = function() {
+        var doc_id = "spreadsheet:0Ai48KKDu9leCdHlXWGdGLVZOX05KeExicHBmRWpRR0E";
+          var greader = new MASCP.GoogledataReader();
+          MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+          // var datareader = new MASCP.UserdataReader();
+          // datareader.datasetname = doc_id;
+          var datareader = greader.createReader(doc_id,{ "id" : "uniprot_id", "sites" : "site" });
+          datareader.registerSequenceRenderer(widget_rend);
+          if (widget_rend.trackOrder.indexOf(doc_id) < 0) {
+            widget_rend.trackOrder.push(doc_id);
+          }
+          datareader.retrieve(document.getElementById('acc').value,function() {
+            widget_rend.showLayer(doc_id);
+          });
+      }
+      var get_domains= function() {
+          MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+          var datareader = new MASCP.UserdataReader();
+          datareader.datasetname = "domains";
+          datareader.retrieve(document.getElementById('acc').value,function() {
+            var domains = this.result._raw_data.data;
+            for (var dom in domains) {
+              var lay_name = "dom:"+dom;
+              MASCP.registerLayer(lay_name, { 'fullname' : domains[dom].name || dom, 'color' : '#aaaaaa' });
+              widget_rend.trackOrder.push(lay_name);
+              domains[dom].peptides.forEach(function(pos) {
+                var start = parseInt(pos[0]);
+                var end = parseInt(pos[1]);
+                var box = widget_rend.getAA(start).addBoxOverlay(lay_name,end-start,1);
+                var desc = domains[dom].description;
+                if (domains[dom].description) {
+                  var cout;
+                  var thing = lay_name;
+                  box.addEventListener('mouseover',function() {
+                    cout = widget_rend.getAA(parseInt(0.5*(start+end))).callout(thing,'description_tmpl',{ 'width' : 25, 'height' : 3, 'desc' : desc });
+                    widget_rend.refresh();
+                  });
+                  box.addEventListener('mouseout',function() {
+                    if (cout) {
+                      cout.parentNode.removeChild(cout);
+                      cout = null;
+                    }
+                  });
+                }
+              });
+              widget_rend.showLayer(lay_name);
+            }
+            widget_rend.refresh();
+            widget_rend.navigation.show();
+            // get_current_data();
+          });
+      }
+
+      var get_current_data = function() {
+        var doc_id = "spreadsheet:0Ai48KKDu9leCdDNMc2tvRmE0QU9OelhPU3dwSWNjYkE";
+        MASCP.UserdataReader.SERVICE_URL = null;
+        var greader = new MASCP.GoogledataReader();
+        var datareader = greader.createReader(doc_id,function(datas) {
+          var dataset = {};
+          console.log(datas);
+          datas.data.shift();
+          datas.data.forEach(function(row) {
+            dataset[row[1].toLowerCase()] = row[2] ? JSON.parse(row[2]) : null;
+          });
+          if (dataset[document.getElementById('acc').value.toLowerCase()] !== null ) {
+            var accepted = dataset[document.getElementById('acc').value.toLowerCase()];
+            var tracks = widget_rend.trackOrder;
+            var new_tracks = [];
+            tracks.forEach(function(track) {
+              if (track.match(/^dom\:/)) {
+                if (accepted[track]) {
+                  new_tracks.push(track);
+                } else {
+                  widget_rend.hideLayer(track);
+                }
+              } else {
+                new_tracks.push(track);
+              }
+            });
+            widget_rend.trackOrder = new_tracks;
+            widget_rend.refresh();
+          }
+          return {};
+        });
+      }
+
+      var check_values = function(seq,idx,seqs) {
+        var positives = 0;
+        var aa = seq.toString().charAt(idx);
+        for (var i = 1; i < seqs.length; i++) {
+          if (seqs[i].toString().charAt(idx) == aa) {
+            positives += 1;
+          }
+        }
+        return 1 - (positives / (seqs.length - 1));
+      }
+
+      var seq_callout = null;
+
+      var do_clustal = function(seqs) {
+        MASCP.ClustalRunner.SERVICE_URL = '/tools/clustalw/';
+        var runner = new MASCP.ClustalRunner();
+        runner.sequences = seqs;
+        
+        runner.registerSequenceRenderer(widget_rend);
+
+        runner.retrieve("dummy",function() {
+          this.result.alignToSequence(0);
+          var aligned = this.result.getSequences();
+          widget_rend.setSequence(aligned[0]);
+          widget_rend.grow_container = true;
+          MASCP.registerGroup('isoforms', {'fullname' : 'Splice variants' });
+          MASCP.registerLayer('isoform_controller',{'fullname': 'Splices', 'color' : '#ff0000'});
+          widget_rend.trackOrder.push('isoform_controller');
+          widget_rend.showLayer('isoform_controller');
+          var alignments = this.result.getAlignment().split('');
+          widget_rend.renderTextTrack('isoform_controller',this.result.getAlignment().replace(/ /g,'.'));
+          for (var i = 0 ; i < alignments.length; i++ ) {
+            widget_rend.getAA(i+1).addBoxOverlay('isoform_controller',1,check_values(aligned[0],i,aligned));
+          }
+          for (var i = 0 ; i < aligned.length; i++) {
+            MASCP.registerLayer('lay'+i,{'fullname': 'Isoform '+(i+1), 'group' : 'isoforms', 'color' : '#ff0000'});
+            widget_rend.renderTextTrack('lay'+i,aligned[i].toString());
+            if (widget_rend.trackOrder.indexOf('lay'+i) < 0) {
+              widget_rend.trackOrder.push('lay'+i);
+            }
+
+            if (aligned[i].insertions) {
+              for (var insert in aligned[i].insertions) {
+                var insertions = aligned[i].insertions;
+                var layname = 'lay'+i;
+                if (insert == 0 && insertions[insert] == "") {
+                  continue;
+                }
+                if (insert == 0) {
+                  insert = 1;
+                }
+                var an_anno = widget_rend.getAA(insert).addAnnotation('lay'+i,10,
+                  { 'content' : '+'+insertions[insert].length,
+                    // 'no_scale' : false,
+                    'height' : 4,
+                    'offset' : 5,
+                    'angle'  : -45, 
+                    'border' : 'rgb(0,0,255)'
+                  });
+                (function(layname,insert,insertions) {
+                an_anno.addEventListener('click',function() {
+                  if (seq_callout !== null && seq_callout.parentNode !== null) {
+                    seq_callout.parentNode.removeChild(seq_callout);
+                  }
+                  seq_callout = null;
+                  seq_callout = widget_rend.getAA(insert).callout(layname,'insertion_tmpl', { 'width' : insertions[insert].length, 'height' : 3, 'insert' : insertions[insert].match(/(\w{1,10})/g).join(' ')});
+                  seq_callout.addEventListener('click',function() {
+                    this.parentNode.removeChild(this);
+                  });
+                  widget_rend.refresh();
+                });
+                })(layname,insert,insertions);
+               // var an_anno = widget_rend.getAA(insert).callout('lay'+i,'insertion_tmpl', { 'width' : aligned[i].insertions[insert].length*10, 'height' : 12, 'insert' : aligned[i].insertions[insert]});
+                // console.log(an_anno);
+              }
+            }
+          }
+          widget_rend.createGroupController('isoform_controller','isoforms');
+        });
+      }
+
+      </script>
+</body>
+</html>
