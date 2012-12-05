@@ -159,7 +159,7 @@ var watch_file = function(filename,map,title) {
                 if (err) {
                     console.log("Could not write config");
                 } else {
-                    console.log("Data inserted - will automatically update");
+                    console.log("Data inserted for "+filename+" - will automatically update");
                 }
             });
         } else {
@@ -172,8 +172,7 @@ var watch_spreadsheet = function(doc,map) {
     if (nconf.get('watching:spreadsheet:'+doc)) {
         var curr = nconf.get('watching:spreadsheet:'+doc);
         if (curr.parser_function.toString() === (map || "").toString()) {
-            console.log("Already watching document");
-            return;
+            console.log("Already watching document "+doc+" refreshing anyway");
         }
     }
     if ( ! map ) {
@@ -199,10 +198,11 @@ var watch_spreadsheet = function(doc,map) {
     var inserter = refresh_document("spreadsheet:"+doc,map);
 
     inserter.bind('ready',function() {
+        console.log("Got data back for spreadsheet:"+doc);
         if (map) {
             var status = { "last_check" : (new Date()).getTime(), "parser_function" : map.toString() };
             watching_block[doc] = status;
-            nconf.set('watching:spreadsheet'+doc, status);
+            nconf.set('watching:spreadsheet:'+doc, status);
             nconf.save(function(err) {
                 if (err) {
                     console.log("Could not write config");
@@ -213,6 +213,10 @@ var watch_spreadsheet = function(doc,map) {
         } else {
             console.log("Please try again with a defined parser function");
         }
+    });
+    inserter.bind('error',function(err) {
+        console.log("Error retrieving spreadsheet");
+        console.log(err);
     });
 };
 
