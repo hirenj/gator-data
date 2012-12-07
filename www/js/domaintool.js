@@ -1,4 +1,3 @@
-
     if (!(window.console && console.log)) { (function() { var noop = function() {}; var methods = ['assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error', 'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log', 'markTimeline', 'profile', 'profileEnd', 'markTimeline', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'warn']; var length = methods.length; var console = window.console = {}; while (length--) { console[methods[length]] = noop; } }()); }
 
     var extend_renderer = function(renderer) {
@@ -305,8 +304,8 @@
                       this.parentNode.removeChild(this);
                     }
                     this.cout = null;
-                  });
-              });
+                  },false);
+              },false);
             }
             done_anno = true;
           });
@@ -406,7 +405,7 @@
         if (e.keyCode == 114) {
           document.getElementById('reset').click();
         }
-      });
+      },false);
     };
 
 
@@ -478,7 +477,7 @@
             });
 
             });
-          });
+          },false);
           list.appendChild(input);
           return;
         }
@@ -506,7 +505,7 @@
             selected = this;
             localStorage.setItem('selected',this.uprot);
             show_protein(this.uprot,renderer);
-          });
+          },false);
           if (curr_acc == prot) {
             bean.fire(a_div,'click');
           }
@@ -750,7 +749,7 @@
               } else {
                 document.getElementById('drive_install').style.display = 'none';
               }
-            });
+            },false);
           });
         } else if (err) {
           return;
@@ -810,7 +809,7 @@
           }
           i++;
         });
-      });
+      },false);
     }
 
     var drive_install = function(callback) {
@@ -996,7 +995,7 @@
 
       document.getElementById('help').addEventListener('click',function() {
         show_help();
-      });
+      },false);
 
       wire_drive_button();
       wire_uniprot_id_changer(renderer);
@@ -1023,7 +1022,7 @@
         update_protein_list(prots,renderer,auth_func);
         document.getElementById('print').addEventListener('click',function() {
           do_printing(prots);
-        });
+        },false);
 
         add_keyboard_navigation();
       });
