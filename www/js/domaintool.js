@@ -749,8 +749,8 @@
               } else {
                 document.getElementById('drive_install').style.display = 'none';
               }
-            },false);
-          });
+            });
+          },false);
         } else if (err) {
           return;
         } else {
@@ -822,6 +822,11 @@
           window.init = function() {
             drive_install(callback);
           };
+          setTimeout(function() {
+            if (gapi) {
+              drive_install(callback);
+            }
+          },0);
           callback.call(null,err);
         } else {
           callback.call(null);
