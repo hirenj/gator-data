@@ -30,6 +30,9 @@
 /*        height: 400px;
         margin-bottom: 15px;        
 */      }
+        #scroller, #scroll_box {
+            display: none;
+        }
     }
     .print_group {
         height: 200px;
