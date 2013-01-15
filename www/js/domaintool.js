@@ -1054,6 +1054,7 @@
           if (prots.length <= 0) {
             renderer.acc = null;
             do_clustal(sequences,null,function() {
+              document.getElementById('align').setAttribute('class','ready');
               ready = true;
             });
           } else {
@@ -1113,6 +1114,7 @@
           var my_prots = [].concat(prots);
           this.removeEventListener('click',arguments.callee);
           callback_func = prepare_alignment(my_prots);
+          document.getElementById('align').setAttribute('class','running');
           this.addEventListener('click',function() {
             callback_func();
           },false);
