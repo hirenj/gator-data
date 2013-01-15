@@ -1111,6 +1111,7 @@
 
       get_proteins(protein_doc_id,function(prots,auth_func) {
         if (prots.length < 11) {
+          document.getElementById('align').style.display = 'block';
           document.getElementById('align').addEventListener('click',function() {
             var my_prots = [].concat(prots);
             this.removeEventListener('click',arguments.callee);
