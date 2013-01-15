@@ -101,6 +101,8 @@
               continue;
             }
             var box = renderer.getAA(start).addBoxOverlay(layer,end-start+1);
+            box.aa = start;
+            box.aa_width = end-start+1;
             box.removeAttribute('style');
             box.setAttribute('fill','#999999');
             box.setAttribute('opacity','1');
@@ -111,6 +113,14 @@
             box.setHeight = function(hght) {
               this.setAttribute('y',-2*renderer._RS/renderer.zoom);
               this.setAttribute('height',hght*0.1);
+            };
+            box.move = function(new_x,new_width) {
+              var transform_attr = this.getAttribute('transform');
+              var matches = /translate\(.*[,\s](.*)\)/.exec(transform_attr);
+              if (matches[1]) {
+                this.setAttribute('transform','translate('+(new_x*renderer._RS)+','+matches[1]+')');
+              }
+              this.setAttribute('width',new_width*renderer._RS);
             };
             box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
           }
@@ -180,9 +190,10 @@
       };
     };
 
-    var render_domains = function(renderer,domains) {
+    var render_domains = function(renderer,domains,acc) {
+        var target_layer = renderer.acc ? "all_domains" : acc;
         renderer.text_els = [];
-        MASCP.registerLayer("all_domains", { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
+        MASCP.registerLayer(target_layer, { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
         var domain_keys = [];
         for (var domain in domains) {
           domain_keys.push(domain);
@@ -259,7 +270,7 @@
                 }
                 return box;
               };
-              renderer.getAA(start).addToLayer("all_domains", {"height" : 24, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
+              renderer.getAA(start).addToLayer(target_layer, {"height" : 24, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
               renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : -1, "bare_element" : true });
             } else {
               var all_box;
@@ -267,16 +278,16 @@
               if (window.DOMAIN_DEFINITIONS[domains[dom].name]) {
                   var dats = window.DOMAIN_DEFINITIONS[domains[dom].name];
                   var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
-                  all_box = renderer.getAA(start).addShapeOverlay("all_domains",end-start+1,{ "shape" : dats[0], "height" : 8, "fill" : fill, "rotate" : dats[2] || 0 });
+                  all_box = renderer.getAA(start).addShapeOverlay(target_layer,end-start+1,{ "shape" : dats[0], "height" : 8, "fill" : fill, "rotate" : dats[2] || 0 });
                   all_box.setAttribute('stroke','#999999');
                   all_box.style.strokeWidth = '10px';
                   box = renderer.getAA(start).addShapeOverlay(lay_name,end-start+1,{ "shape" : dats[0], "fill" : 'url("#grad_'+dats[1]+'")' });
               } else {
-                  all_box = renderer.getAA(start).addBoxOverlay("all_domains",end-start+1,1);
+                  all_box = renderer.getAA(start).addBoxOverlay(target_layer,end-start+1,1);
                   box = renderer.getAA(start).addBoxOverlay(lay_name,end-start+1,1);                
               }
 
-              var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay("all_domains",0,{ 'txt' : track_name });
+              var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : track_name });
               a_text.setAttribute('fill','#111111');
               a_text.setAttribute('stroke','#999999');
               renderer.text_els.push([a_text,all_box]);
@@ -310,8 +321,10 @@
             done_anno = true;
           });
         });
-        renderer.trackOrder.push('all_domains');
-        renderer.showLayer('all_domains');
+        if (renderer.acc) {
+          renderer.trackOrder.push('all_domains');
+          renderer.showLayer('all_domains');
+        }
         renderer.zoom -= 0.0001;
 
     };
@@ -713,7 +726,13 @@
           }
         };
         get_accepted_domains(acc,function(acc,domains) {
-          render_domains(renderer,domains);
+          if (renderer.acc) {
+            render_domains(renderer,domains);
+          } else {
+            var obj = { "gotResult" : function() { render_domains(renderer,domains,acc); }, "agi" : acc };
+            jQuery(renderer).trigger('readerRegistered',[obj]);
+            obj.gotResult();
+          }
           get_sites(acc,renderer,refresher);
           get_predictions(acc,renderer,refresher);
           get_peptides(acc,renderer,refresher);
@@ -725,12 +744,24 @@
     };
 
     var show_protein = function(acc,renderer) {
+      end_clustal();
+      end_clustal = function() {};
+      window.showing_clustal = false;
+
       setup_renderer(renderer);
+
+
       var a_reader = new MASCP.UniprotReader();
 
       MASCP.Service.CacheService(a_reader);
+      jQuery(renderer).bind('sequenceChange',function() {
+        jQuery(renderer).unbind('sequenceChange',arguments.callee);
+        console.log("Retrieving data");
+        retrieve_data(acc,renderer);
+      });
+
       a_reader.retrieve(acc,function(e) {
-        renderer.acc = acc;
+        // renderer.acc = acc;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
         document.getElementById('uniprot_id').textContent = acc.toUpperCase();
@@ -871,11 +902,11 @@
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdC1ESDlXVzlkVEZfTkVHS01POFJ1a0E";
 
-      datareader.setupSequenceRenderer = render_sites("all_domains");
+      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc);
       datareader.registerSequenceRenderer(renderer);
 
-      if (renderer.trackOrder.indexOf("all_domains") < 0) {
-        renderer.trackOrder.push("all_domains");
+      if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
+        renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
       }
       datareader.retrieve(acc,function(err) {
         console.log("Got sites okay");
@@ -890,7 +921,7 @@
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "predictions";
 
-      datareader.setupSequenceRenderer = render_sites("all_domains",true,3);
+      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc,true,3);
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
@@ -913,7 +944,7 @@
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHVYektENmlwcVVqOHZHZzZBZVVBYWc";
 
-      datareader.setupSequenceRenderer = render_peptides("all_domains");
+      datareader.setupSequenceRenderer = render_peptides(renderer.acc ? "all_domains" : acc );
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
@@ -988,15 +1019,68 @@
       })("state") || "{}");
     };
 
+    var end_clustal = function() {};
+
+    var do_clustal = function(seqs,renderer,readyfunc) {
+        MASCP.ClustalRunner.SERVICE_URL = '/tools/clustalw/';
+        var runner = new MASCP.ClustalRunner();
+        runner.sequences = seqs;
+        if (renderer) {
+          renderer.grow_container = true;
+          runner.registerSequenceRenderer(renderer);
+          runner.bind('resultReceived',function() {
+            var self = this;
+            console.log("Got result from clustal");
+            end_clustal = function() {
+              self.result = null;
+            };
+          });
+        }
+        runner.retrieve("dummy",readyfunc);
+    };
+
+    var prepare_alignment = function(prots) {
+      var sequences = [];
+      var ready = false;
+      (function() {
+        var acc = prots.shift();
+        var caller = arguments.callee;
+        var a_reader = new MASCP.UniprotReader();
+        MASCP.Service.CacheService(a_reader);
+        a_reader.retrieve(acc.toString(),function(e) {
+          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi };
+          bit.toString = function() { return this.sequence; };
+          sequences.push(bit);
+          if (prots.length <= 0) {
+            renderer.acc = null;
+            do_clustal(sequences,null,function() {
+              ready = true;
+            });
+          } else {
+            caller();
+          }
+        });
+      })();
+      return function() {
+        if (ready && ! window.showing_clustal) {
+          setup_renderer(renderer);
+          renderer.sequence = "";
+          do_clustal(sequences,renderer,function() {
+            sequences.forEach(function(seq) {
+              retrieve_data(seq.agi,renderer);
+            });
+            window.showing_clustal = true;
+          });
+        }
+      };
+    };
+
     var has_ready = MASCP.ready;
 
     MASCP.ready = function() {
       window.svgns = 'http://www.w3.org/2000/svg';
       var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
-      jQuery(renderer).bind('sequenceChange',function() {
-        retrieve_data(renderer.acc,renderer);
-      });
 
       document.getElementById('help').addEventListener('click',function() {
         show_help();
@@ -1023,7 +1107,16 @@
         }
         return;
       }
+
       get_proteins(protein_doc_id,function(prots,auth_func) {
+        document.getElementById('align').addEventListener('click',function() {
+          var my_prots = [].concat(prots);
+          this.removeEventListener('click',arguments.callee);
+          callback_func = prepare_alignment(my_prots);
+          this.addEventListener('click',function() {
+            callback_func();
+          },false);
+        },false);
         update_protein_list(prots,renderer,auth_func);
         document.getElementById('print').addEventListener('click',function() {
           do_printing(prots);
