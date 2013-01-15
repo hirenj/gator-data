@@ -1110,15 +1110,17 @@
       }
 
       get_proteins(protein_doc_id,function(prots,auth_func) {
-        document.getElementById('align').addEventListener('click',function() {
-          var my_prots = [].concat(prots);
-          this.removeEventListener('click',arguments.callee);
-          callback_func = prepare_alignment(my_prots);
-          document.getElementById('align').setAttribute('class','running');
-          this.addEventListener('click',function() {
-            callback_func();
+        if (prots.length < 11) {
+          document.getElementById('align').addEventListener('click',function() {
+            var my_prots = [].concat(prots);
+            this.removeEventListener('click',arguments.callee);
+            callback_func = prepare_alignment(my_prots);
+            document.getElementById('align').setAttribute('class','running');
+            this.addEventListener('click',function() {
+              callback_func();
+            },false);
           },false);
-        },false);
+        }
         update_protein_list(prots,renderer,auth_func);
         document.getElementById('print').addEventListener('click',function() {
           do_printing(prots);
