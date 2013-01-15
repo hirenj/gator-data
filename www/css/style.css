@@ -109,6 +109,9 @@
             border-radius: 25px;
             border: 1px solid #000;
         }
+        #align {
+            display: block;
+        }
         #scroll_box {
             position: absolute;
             left: 0px;
@@ -141,7 +144,7 @@
     }
 
 
-    #help {
+    #help, #align {
         height: 35px;
         width: 35px;
         border-radius: 25px;
@@ -157,6 +160,33 @@
         cursor: pointer; cursor: hand;
         z-index: 100;
     }
+
+    #align {
+        top: 10px;
+        right: 100px;
+        border: 1px solid #999;
+        opacity: 0.5;
+    }
+
+
+    #align.running {
+        border: 3px solid #999;
+        -webkit-animation: pulsate 1s ease-out;
+        -webkit-animation-iteration-count: infinite; 
+        opacity: 1;
+    }
+
+    #align.ready {
+        border: 1px solid #000;
+        opacity: 1;
+    }
+
+    @-webkit-keyframes pulsate {
+        0% {border: 1px solid #fff;}
+        50% {border: 1px solid #000;}
+        100% {border: 1px solid #fff;}
+    }
+
     #help:after {
         content: "?";
         display: block;
