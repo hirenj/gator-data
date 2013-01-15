@@ -92,6 +92,8 @@ setTimeout(function() {
             nconf.save(function(err) {
                 if (err) {
                     console.log("Could not write config");
+                } else {
+                    console.log("Saved configuration");
                 }
             });
         });
@@ -120,6 +122,8 @@ setTimeout(function() {
                     nconf.save(function(err) {
                         if (err) {
                             console.log("Could not write config");
+                        } else {
+                            console.log("Saved configuration");
                         }
                     });
 
@@ -135,6 +139,8 @@ setTimeout(function() {
                 nconf.save(function(err) {
                     if (err) {
                         console.log("Could not write config");
+                    } else {
+                        console.log("Saved configuration");
                     }
                 });
                 console.log("Reloaded data from "+doc_name);
@@ -438,21 +444,36 @@ MASCP.events.once('ready',function() {
         get_latest(req.param('agi'), service_object(req), res);
     });
 
+    var clustal_running = {};
+
     app.post('/tools/clustalw/', function(req,res,next) {
         var sequences = req.body.sequences.split(",");
         var clustal = new MASCP.ClustalRunner();
         clustal.sequences = sequences;
         clustal.agi = MASCP.ClustalRunner.hash(clustal.sequences.join(','))+'';
+        if (clustal_running[clustal.agi] === true) {
+            res.send({"status" : "RUNNING"},202);
+            return;
+        }
+        clustal.bind('running',function() {
+            clustal_running[clustal.agi] = true;
+            res.send({"status" : "RUNNING"},202);
+            res = { "send" : function() {} };
+        });
         clustal.retrieve(clustal.agi,function(err) {
             if ( err && ! err.error ) {
                 err.error  = err.message;
             }
+            delete clustal_running[this.agi];
             if (err || this.result && this.result._raw_data && this.result._raw_data.nodeName) {
                 res.send(err.error ? { "error" : err.error } : { "error" : err },200);
             } else {
                 res.send(this.result ? this.result._raw_data : {"error" : "No data"},200);
             }
         });
+
+        return;
+
     });
 
     app.listen(port);//,'127.0.0.1');
