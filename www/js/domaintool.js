@@ -230,7 +230,6 @@
           domains[dom].peptides.forEach(function(pos) {
             var start = parseInt(pos[0]);
             var end = parseInt(pos[1]);
-
             if (isNaN(start)) {
               return;
             }
@@ -906,7 +905,7 @@
       datareader.registerSequenceRenderer(renderer);
 
       if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
-        renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
+        renderer.trackOrder.unshift(renderer.acc ? "all_domains" : acc);
       }
       datareader.retrieve(acc,function(err) {
         console.log("Got sites okay");
@@ -1109,8 +1108,9 @@
         return;
       }
 
-      get_proteins(protein_doc_id,function(prots,auth_func) {
-        if (prots.length < 11) {
+
+      var handle_proteins = function(prots,auth_func) {
+        if (prots.length < 25) {
           document.getElementById('align').style.display = 'block';
           document.getElementById('align').addEventListener('click',function() {
             var my_prots = [].concat(prots);
@@ -1128,7 +1128,37 @@
         },false);
 
         add_keyboard_navigation();
-      });
+      };
+
+      if (/cazy\//.exec(window.location)) {
+        document.getElementById('drive_install').style.display = 'none';
+        (function() {
+            var family = window.location.href.split('/').reverse().shift();
+            xmlhttp =  new XMLHttpRequest();
+            if (xmlhttp) {
+                xmlhttp.onreadystatechange = function() {
+                  if (xmlhttp.readyState == 4) {
+                      if (xmlhttp.status == 200) {
+                          var prots = [];
+                          (JSON.parse(xmlhttp.responseText)).forEach(function(prot) {
+                            prot.toString = function() { return this.id };
+                            prots.push(prot);
+                            MASCP.registerLayer(prot.id.toLowerCase(),{'fullname': prot.name, 'color' : '#aaa'});
+                          });
+                          handle_proteins(prots);
+                      }
+                  }
+                };
+            }
+            xmlhttp.open("GET", '/data/latest/cazy/'+family, true);
+            xmlhttp.setRequestHeader("Content-type",
+                "application/x-www-form-urlencoded");
+            xmlhttp.send('');
+        })();
+      } else {
+        get_proteins(protein_doc_id,handle_proteins);
+      }
+
     };
     if (has_ready) {
       MASCP.ready();

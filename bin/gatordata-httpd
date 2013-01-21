@@ -308,7 +308,7 @@ MASCP.events.once('ready',function() {
     (function() {
         var middle = express.static(__dirname + '/../www');
         app.get("/cazy/*", function(req, res, next) {
-            req.url = '/alignment.html';
+            req.url = '/index.html';
             middle(req,res,next);
         });
     })();
@@ -375,14 +375,14 @@ MASCP.events.once('ready',function() {
 
         var opts = {'host' : 'www.uniprot.org',
                     'port' : 80,
-                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a%22Mammalia+%5b'+tax+'%5d%22&format=list'
+                    'path' : '/uniprot/?query=('+req.param('family').toUpperCase()+')+AND+reviewed%3ayes+AND+taxonomy%3a'+tax+'&format=tab&columns=id,genes'
                     };
         var client = require('http').get(opts,
         function(response) {
             response.on('data', function (chunk) {
                 var ids = chunk.toString().replace(/\n/g,',');
                 ids = ids.replace(/,$/,'');
-                res.send(ids.split(','),200);
+                res.send(ids.split(',').map(function(row) { var cols = row.split(/\t/); return { "id" : cols[0], "name" : cols[1].replace(/\s+.*/,'') } }).slice(1),200);
             });
         }).on('error', function(e) {
             res.send({"error" : "Could not contact Uniprot"},200);
