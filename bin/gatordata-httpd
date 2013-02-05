@@ -43,6 +43,7 @@ MASCP.UserdataReader.datasets(function(service) {
     resource_map[service] = MASCP.UserdataReader;
 });
 
+var live_resources = nconf.get('liveupdate');
 
 nconf.save(function(err) {
     if (err) {
@@ -228,6 +229,19 @@ var watch_spreadsheet = function(doc,map) {
     });
 };
 
+var live_update = function(resource,clazz,merger) {
+    var conf = { "merger_function" : merger.toString(), "class" : (new clazz()).toString() };
+    nconf.set('liveupdate:'+resource,conf);
+    nconf.save(function(err) {
+        if (err) {
+            console.log("Could not write config");
+        } else {
+            console.log("Set function for live update for "+resource);
+        }
+    });
+};
+
+
 var enable_id_translation = function(clazz) {
     (function(serv) {
         var defaultDataReceived = serv.prototype._dataReceived;
@@ -288,9 +302,12 @@ MASCP.events.once('ready',function() {
     var express = require('express'),
         app = express.createServer();
 
+
+    var htmldir = nconf.get("webdir") || __dirname + '/../www';
+
     app.configure(function() {
         app.use(express.bodyParser());
-        app.use(express.static(__dirname + '/../www'));
+        app.use(express.static(htmldir));
         app.use(express.static(__dirname + '/../node_modules/mascp-jstools/dist'));
         app.use(app.router);
     });
@@ -306,7 +323,7 @@ MASCP.events.once('ready',function() {
     });
 
     (function() {
-        var middle = express.static(__dirname + '/../www');
+        var middle = express.static(htmldir);
         app.get("/cazy/*", function(req, res, next) {
             req.url = '/index.html';
             middle(req,res,next);
@@ -403,6 +420,45 @@ MASCP.events.once('ready',function() {
         get_latest(acc,service_object(req),res);        
     });
 
+    var retrieve_latest = function(agi,service,res,old_data) {
+        var live_resource = live_resources[service.resource_name];
+        if ( ! live_resource ) {
+            return false;
+        }
+        var merger_func = eval("("+live_resource.merger_function+")");
+        var clazz = eval("("+live_resource.class+")");
+        var service = new clazz();
+        if ( ! clazz.running ) {
+            clazz.running = {};
+        }
+        service.bind('running',function() {
+            clazz.running[this.agi] = true;
+            res.send({"status" : "RUNNING"},202);
+            res = { "send" : function() {} };
+        });
+
+        if (clazz.running[agi] === true) {
+            res.send({"status" : "RUNNING"},202);
+            return true;
+        }
+
+
+        service.retrieve(agi,function(err) {
+            delete clazz.running[this.agi];
+            if (err && ! old_data) {
+                res.send(err.error ? { "error" : err.error } : { "error" : err },200);
+                return;
+            }
+            if (err) {
+                res.send(old_data,200);
+                return;
+            }
+            old_data._raw_data = merger_func(old_data._raw_data,this.result._raw_data);
+            res.send(old_data._raw_data,200);
+        });
+        return true;
+    };
+
     var service_object = function(req) {
         req.query = req.query || {};
         req.body = req.body || {};
@@ -418,6 +474,7 @@ MASCP.events.once('ready',function() {
         if (clazz == MASCP.UserdataReader) {
             obj.datasetname = resource;
         }
+        obj.resource_name = resource;
         return obj;
     };
 
@@ -431,7 +488,9 @@ MASCP.events.once('ready',function() {
             if (err || this.result && this.result._raw_data && this.result._raw_data.nodeName) {
                 res.send(err.error ? { "error" : err.error } : { "error" : err },200);
             } else {
-                res.send(this.result ? this.result._raw_data : {"error" : "No data"},200);
+                if ( ! retrieve_latest(agi,service,res,this.result) ) {
+                    res.send(this.result ? this.result._raw_data : {"error" : "No data"},200);
+                }
             }
         });        
     }
@@ -482,7 +541,7 @@ MASCP.events.once('ready',function() {
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
         try {
-            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: watch_spreadsheet, watch_file : watch_file }, "<stdin>");
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: watch_spreadsheet, watch_file : watch_file, live_update : live_update }, "<stdin>");
         } catch (e) {
             console.log("Error running script");
             console.log(e);
