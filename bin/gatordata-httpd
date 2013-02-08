@@ -515,7 +515,7 @@ MASCP.events.once('ready',function() {
     var clustal_running = {};
 
     app.post('/tools/clustalw/', function(req,res,next) {
-        var sequences = req.body.sequences.split(",");
+        var sequences = (req.body.sequences || "").split(",");
         var clustal = new MASCP.ClustalRunner();
         clustal.sequences = sequences;
         clustal.agi = MASCP.ClustalRunner.hash(clustal.sequences.join(','))+'';
