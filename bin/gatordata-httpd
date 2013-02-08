@@ -43,7 +43,7 @@ MASCP.UserdataReader.datasets(function(service) {
     resource_map[service] = MASCP.UserdataReader;
 });
 
-var live_resources = nconf.get('liveupdate');
+var live_resources = nconf.get('liveupdate') || {};
 
 nconf.save(function(err) {
     if (err) {
@@ -321,6 +321,14 @@ MASCP.events.once('ready',function() {
     app.get("/", function(req, res) {
       res.redirect("/index.html");
     });
+    (function() {
+        var middle = express.static(htmldir);
+        app.get("/comparison/*", function(req, res, next) {
+            req.url = '/index.html';
+            middle(req,res,next);
+        });
+    })();
+
 
     (function() {
         var middle = express.static(htmldir);
