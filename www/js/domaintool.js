@@ -735,6 +735,8 @@
             }
             get_sites(acc,renderer,refresher);
             get_peptides(acc,renderer,refresher);
+            get_predictions(acc,renderer,refresher);
+
           } else {
             var track_name = renderer.acc ? "all_domains" : acc;
             MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
@@ -742,13 +744,13 @@
               renderer.trackOrder.push(track_name);
             }
             renderer.showLayer(track_name);
+            get_predictions(acc,renderer,refresher);
             get_predictions_31(acc,renderer,function() {
               count += 2;
               refresher();
             });
             renderer.navigation.show();
           }
-          get_predictions(acc,renderer,refresher);
 
         });
     };
