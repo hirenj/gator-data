@@ -433,11 +433,17 @@ MASCP.events.once('ready',function() {
         }
         service.bind('running',function() {
             clazz.running[this.agi] = true;
+            if (res.header) {
+                res.header('Refresh','10;');
+            }
             res.send({"status" : "RUNNING"},202);
             res = { "send" : function() {} };
         });
 
         if (clazz.running[agi] === true) {
+            if (res.header) {
+                res.header('Refresh','10;');
+            }
             res.send({"status" : "RUNNING"},202);
             return true;
         }
