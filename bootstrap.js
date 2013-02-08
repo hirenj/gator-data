@@ -30,6 +30,23 @@ watch_file("./predictions.txt",function(datablock) {
 	return data;
 },"predictions");
 
+/* Bootstrap up the predicted sites for NetOGlyc 3.1 */
+watch_file("./netoglyc31_predictions.txt",function(datablock) {
+	var data = {};
+	for (var i = 0; i < datablock.length; i++) {
+		var row = datablock[i];
+		id = row[0];
+		if ( ! data[id] ) {
+			data[id] = { "data" : { "sites" : [] }, "retrieved" : datablock.retrieved, "etag" : datablock.etag };
+		}
+		var sites = (row[1] || "").split(/,/);
+		sites.forEach(function(site) {
+			data[id].data.sites.push(parseInt(site.substr(1)));
+		});
+	}
+	return data;
+},"predictions31");
+
 /* Bootstrap in the wanted domains */
 watch_spreadsheet("0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc",function(datablock) {
 	var data = {};

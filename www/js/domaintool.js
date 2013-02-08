@@ -583,7 +583,7 @@
                              "O-linked (Xyl...)" : { "name" : "Man", "peptides" : [[32,32]]},
 
                              "NTR"     :  { "name" : "NTR", "peptides" : [[37,45]]}
-                      });
+                      },"all_domains");
 
         rend.refresh();
       });
@@ -725,16 +725,31 @@
           }
         };
         get_accepted_domains(acc,function(acc,domains) {
-          if (renderer.acc) {
-            render_domains(renderer,domains);
+          if (! /comparison\//.exec(window.location)) {
+            if (renderer.acc) {
+              render_domains(renderer,domains);
+            } else {
+              var obj = { "gotResult" : function() { render_domains(renderer,domains,acc); }, "agi" : acc };
+              jQuery(renderer).trigger('readerRegistered',[obj]);
+              obj.gotResult();
+            }
+            get_sites(acc,renderer,refresher);
+            get_peptides(acc,renderer,refresher);
           } else {
-            var obj = { "gotResult" : function() { render_domains(renderer,domains,acc); }, "agi" : acc };
-            jQuery(renderer).trigger('readerRegistered',[obj]);
-            obj.gotResult();
+            var track_name = renderer.acc ? "all_domains" : acc;
+            MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
+            if (renderer.trackOrder.indexOf(track_name) < 0 ) {
+              renderer.trackOrder.push(track_name);
+            }
+            renderer.showLayer(track_name);
+            get_predictions_31(acc,renderer,function() {
+              count += 2;
+              refresher();
+            });
+            renderer.navigation.show();
           }
-          get_sites(acc,renderer,refresher);
           get_predictions(acc,renderer,refresher);
-          get_peptides(acc,renderer,refresher);
+
         });
     };
 
@@ -919,8 +934,11 @@
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "predictions";
-
-      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc,true,3);
+      var top_offset = 3;
+      if  (/comparison\//.exec(window.location)) {
+        top_offset = 0;
+      }
+      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc,true,top_offset);
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
@@ -932,6 +950,25 @@
         }
         document.getElementById('clipboarder').sequence = a_seq;
 
+        if (done) {
+          done();
+        }
+      });
+    };
+
+    var get_predictions_31 = function(acc,renderer,done) {
+      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+      var datareader = new MASCP.UserdataReader();
+      datareader.datasetname = "predictions31";
+
+      MASCP.registerLayer("netoglyc31",{ "fullname" : "Net-O-Glyc 3.1"});
+      datareader.setupSequenceRenderer = render_sites("netoglyc31",false,-1);
+      datareader.registerSequenceRenderer(renderer);
+
+      datareader.retrieve(acc,function() {
+        if (this.result && renderer.trackOrder.indexOf("netoglyc31") < 0) {
+          renderer.trackOrder.push("netoglyc31");
+        }
         if (done) {
           done();
         }
