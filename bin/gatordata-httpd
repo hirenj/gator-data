@@ -459,6 +459,9 @@ MASCP.events.once('ready',function() {
                 res.send(old_data,200);
                 return;
             }
+            if ( ! old_data ) {
+                old_data = {};
+            }
             old_data._raw_data = merger_func(old_data._raw_data,this.result._raw_data);
             res.send(old_data._raw_data,200);
         });
