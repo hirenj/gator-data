@@ -64,6 +64,9 @@ var refresh_file = function(file,map,title) {
     var data_array = [];
     var inserter = new MASCP.UserdataReader();
     inserter.map = map;
+    inserter.bind('progress',function(percent) {
+        console.log(title+" insertion ("+percent+"%)");
+    });
     csv()
     .fromStream(fs.createReadStream(file), {
         delimiter : "\t"
