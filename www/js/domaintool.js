@@ -943,18 +943,32 @@
       datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc,true,top_offset);
       datareader.registerSequenceRenderer(renderer);
 
+      renderer.bind('resultsRendered',function(e,reader) {
+        if (reader !== datareader) {
+          return;
+        }
+        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        console.log(arguments);
+        console.log(reader);
+        console.log(datareader);
+        console.log(reader == datareader);
+        if (reader == datareader && done) {
+          done();
+        }
+      });
+
       datareader.retrieve(acc,function() {
         var a_seq = renderer.sequence.toLowerCase();
         if (this.result && this.result._raw_data) {
           this.result._raw_data.data.sites.forEach(function(site) {
             a_seq = a_seq.substr(0,site-1) + a_seq.substr(site-1,1).toUpperCase() +  a_seq.substr(site);
           });
+        } else {
+          if (done) {
+            done();
+          }
         }
         document.getElementById('clipboarder').sequence = a_seq;
-
-        if (done) {
-          done();
-        }
       });
     };
 
@@ -966,13 +980,26 @@
       MASCP.registerLayer("netoglyc31",{ "fullname" : "Net-O-Glyc 3.1"});
       datareader.setupSequenceRenderer = render_sites("netoglyc31",false,-1);
       datareader.registerSequenceRenderer(renderer);
-
+      renderer.bind('resultsRendered',function(e,reader) {
+        if (reader !== datareader) {
+          return;
+        }
+        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        console.log(arguments);
+        console.log(reader);
+        console.log(datareader);
+        console.log(reader == datareader);
+        if (reader == datareader && done) {
+          done();
+        }
+      });
       datareader.retrieve(acc,function() {
         if (this.result && renderer.trackOrder.indexOf("netoglyc31") < 0) {
           renderer.trackOrder.push("netoglyc31");
-        }
-        if (done) {
-          done();
+        } else {
+          if (done) {
+            done();
+          }
         }
       });
     };
