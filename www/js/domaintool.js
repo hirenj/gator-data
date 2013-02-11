@@ -746,7 +746,7 @@
             renderer.showLayer(track_name);
             get_predictions(acc,renderer,refresher);
             get_predictions_31(acc,renderer,function() {
-              count += 2;
+              count += 1;
               refresher();
             });
             renderer.navigation.show();
@@ -947,13 +947,14 @@
         if (reader !== datareader) {
           return;
         }
+        if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
+          renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
+          renderer.showLayer(renderer.acc ? "all_domains" : acc);
+        }
         jQuery(renderer).unbind('resultsRendered',arguments.callee);
-        console.log(arguments);
-        console.log(reader);
-        console.log(datareader);
-        console.log(reader == datareader);
         if (reader == datareader && done) {
           done();
+          done = null;
         }
       });
 
@@ -984,13 +985,14 @@
         if (reader !== datareader) {
           return;
         }
+        if (renderer.trackOrder.indexOf("netoglyc31") < 0) {
+          renderer.trackOrder.push("netoglyc31");
+          renderer.showLayer("netoglyc31");
+        }
         jQuery(renderer).unbind('resultsRendered',arguments.callee);
-        console.log(arguments);
-        console.log(reader);
-        console.log(datareader);
-        console.log(reader == datareader);
         if (reader == datareader && done) {
           done();
+          done = null;
         }
       });
       datareader.retrieve(acc,function() {
