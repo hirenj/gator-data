@@ -219,7 +219,7 @@ var watch_spreadsheet = function(doc,map) {
                 if (err) {
                     console.log("Could not write config");
                 } else {
-                    console.log("Data inserted - will automatically update");
+                    console.log("Data inserted - will automatically update for spreadsheet:"+doc);
                 }
             });
         } else {
@@ -227,8 +227,8 @@ var watch_spreadsheet = function(doc,map) {
         }
     });
     inserter.bind('error',function(err) {
-        console.log("Error retrieving spreadsheet");
-        console.log(err);
+        console.log("Error retrieving spreadsheet for spreadsheet:"+doc);
+        console.log(arguments);
     });
 };
 
