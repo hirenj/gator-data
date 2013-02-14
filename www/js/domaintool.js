@@ -1115,7 +1115,7 @@
         var a_reader = new MASCP.UniprotReader();
         MASCP.Service.CacheService(a_reader);
         a_reader.retrieve(acc.toString(),function(e) {
-          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi };
+          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi, 'name' : this.result.getDescription().replace(/.* GN=/,'').replace(/\s.+/,'') };
           bit.toString = function() { return this.sequence; };
           sequences.push(bit);
           if (prots.length <= 0) {
