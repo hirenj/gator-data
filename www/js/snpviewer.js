@@ -242,7 +242,7 @@ jQuery(document).ready(function() {
                     for (var i = 0; i < grps.length; i++) {
                         var a_node;
                         var a_txt = wind.document.createTextNode(grps[i]);
-                        if (MASCP.positions.indexOf(i+1) >= 0) {
+                        if ((MASCP.positions || []).indexOf(i+1) >= 0) {
                             a_node = wind.document.createElement('span');
                             a_node.style.background = '#ff00ff';
                             a_node.appendChild(a_txt);
