@@ -1225,6 +1225,11 @@
         })();
       } else {
         get_proteins(protein_doc_id,handle_proteins);
+        if (state.exportIds) {
+          setInterval(function() {
+            get_proteins(protein_doc_id,handle_proteins);
+          },1000);
+        }
       }
 
     };
