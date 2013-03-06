@@ -289,6 +289,7 @@
               var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : track_name });
               a_text.setAttribute('fill','#111111');
               a_text.setAttribute('stroke','#999999');
+              a_text.setAttribute('stroke-width','0.01%');
               renderer.text_els.push([a_text,all_box]);
             }
 
@@ -664,6 +665,10 @@
                 my_rend.trackOrder = ["all_domains"];
                 setTimeout(function() {
                   my_rend.printing = true;
+                  my_rend.text_els.forEach(function(el) {
+                    el[0].setAttribute('stroke-width','0');
+                    el[0].setAttribute('fill','#ffffff');
+                  });
                 },1000);
                 console.log("Done for "+prot);
                 cback(my_rend);
@@ -1173,6 +1178,9 @@
           localStorage.setItem('selected',results[1]);
           update_protein_list([prot],renderer);
         }
+        document.getElementById('print').addEventListener('click',function() {
+          do_printing([prot]);
+        },false);
         return;
       }
 
@@ -1228,7 +1236,7 @@
         if (state.exportIds) {
           setInterval(function() {
             get_proteins(protein_doc_id,handle_proteins);
-          },60*1000);
+          },10*60*1000);
         }
       }
 
