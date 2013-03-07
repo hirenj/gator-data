@@ -741,6 +741,7 @@
             get_sites(acc,renderer,refresher);
             get_peptides(acc,renderer,refresher);
             get_predictions(acc,renderer,refresher);
+            get_usersets(acc,renderer);
 
           } else {
             var track_name = renderer.acc ? "all_domains" : acc;
@@ -933,6 +934,39 @@
         console.log("Got sites okay");
         if (done) {
           done();
+        }
+      });
+    };
+
+    var get_usersets = function(acc,renderer) {
+      var gdata = new MASCP.GoogledataReader();
+      gdata.getPreferences("Domaintool preferences",function(err,prefs) {
+        if (err) {
+          return;
+        }
+        var sets = prefs.user_datasets;
+        for (var set in sets) {
+          var method = sets[set].sites;
+          var a_reader = gdata.createReader(set);
+          a_reader.bind('ready',function() {
+            a_reader.retrieve(acc,function() {
+              if ( ! this.result ) {
+                return;
+              }
+              var datas = this.result._raw_data.data;
+
+              var obj = { "gotResult" : function() {
+                datas.sites.forEach(function(site) {
+                  renderer.getAA(parseInt(site)).addToLayer(renderer.acc ? "all_domains" : acc,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
+                });
+                renderer.trigger('resultsRendered',[this]);
+                renderer.refresh();
+              }, "agi" : acc };
+              jQuery(renderer).trigger('readerRegistered',[obj]);
+              obj.gotResult();
+
+            });
+          });
         }
       });
     };
@@ -1166,6 +1200,44 @@
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
+
+      if (state.ids) {
+        var reader = (new MASCP.GoogledataReader()).createReader(state.ids[0],function(datablock){
+          for (var key in datablock) {
+            if (key == "" || key.match(/\s/)) {
+              delete datablock[key];
+            } else {
+              var dat = datablock[key];
+              delete datablock[key];
+              datablock[key.toLowerCase()] = {
+                "data" : dat,
+                "retrieved" : datablock.retrieved,
+                "etag" : datablock.etag,
+                "title" : datablock.title
+              };
+            }
+          }
+          delete datablock.retrieved;
+          delete datablock.etag;
+          delete datablock.title;
+          return datablock;
+        });
+        reader.bind('ready',function() {
+          (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+            if ( ! prefs.user_datasets ) {
+              prefs.user_datasets = {};
+            }
+            prefs.user_datasets[reader.datasetname] = {
+              "sites" : "man",
+              "peptides" : "true"
+            };
+            (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
+              console.log("Wrote prefs");
+            });
+          });
+        });
+      }
+
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
         document.getElementById('drive_install').style.display = 'none';
