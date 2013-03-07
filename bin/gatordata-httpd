@@ -51,6 +51,21 @@ nconf.save(function(err) {
     }
 });
 
+process.on( 'SIGINT', function() {
+    nconf.save(function(err) {
+        if (err) {
+            console.log("Error writing out configuration");
+        }
+        console.log("Clean exit, saving config file");
+        process.exit();
+    });
+});
+
+process.addListener("uncaughtException", function (err) {
+    console.log("Uncaught exception: " + err);
+    console.trace();
+    // We should make sure state is clean here
+});
 
 var refresh_document = function(doc,map) {
     var reader = new MASCP.GoogledataReader();
@@ -67,14 +82,18 @@ var refresh_file = function(file,map,title) {
     inserter.bind('progress',function(percent) {
         console.log(title+" insertion ("+percent+"%)");
     });
-    csv()
-    .fromStream(fs.createReadStream(file), {
-        delimiter : "\t"
-    }).on('data',function(dat) {
-     data_array.push(dat);
-    }).on('end',function() {
-     inserter.setData(title,data_array);
+    MASCP.Service.ClearCache('MASCP.UserdataReader.'+title,null,function() {
+        console.log("Cleared data out");
+        csv()
+        .fromStream(fs.createReadStream(file), {
+            delimiter : "\t"
+        }).on('data',function(dat) {
+         data_array.push(dat);
+        }).on('end',function() {
+            inserter.setData(title,data_array);
+        });
     });
+
     return inserter;
 };
 
