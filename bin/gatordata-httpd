@@ -140,6 +140,7 @@ setTimeout(function() {
                 var inserter = refresh_file(doc_name, eval("("+watch_file_block[doc_name].parser_function+")"),watch_file_block[doc_name].title);
                 inserter.bind('ready',function() {
                     console.log("Reloaded data from "+doc_name);
+                    resource_map[watch_file_block[doc_name].title] = MASCP.UserdataReader;
                     var time = (new Date()).getTime();
                     nconf.set('watching:file:'+doc_name+':last_check', time);
                     nconf.save(function(err) {
@@ -157,6 +158,7 @@ setTimeout(function() {
             console.log(doc_name+" has changed, refreshing");
             var inserter = refresh_file(doc_name, eval("("+watch_file_block[doc_name].parser_function+")"),watch_file_block[doc_name].title);
             inserter.bind('ready',function() {
+                resource_map[watch_file_block[doc_name].title] = MASCP.UserdataReader;
                 var time = (new Date()).getTime();
                 nconf.set('watching:file:'+doc_name+':last_check', time);
                 nconf.save(function(err) {
