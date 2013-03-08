@@ -1154,7 +1154,11 @@
         var a_reader = new MASCP.UniprotReader();
         MASCP.Service.CacheService(a_reader);
         a_reader.retrieve(acc.toString(),function(e) {
-          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi, 'name' : this.result.getDescription().replace(/.* GN=/,'').replace(/\s.+/,'') };
+          var organism_name = this.result.getDescription().replace(/.*_/,'').replace(/\s.+/,'');
+          if (organism_name == "HUMAN") {
+            organism_name = "";
+          }
+          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi, 'name' : this.result.getDescription().replace(/.* GN=/,'').replace(/\s.+/,'')+" "+organism_name };
           bit.toString = function() { return this.sequence; };
           sequences.push(bit);
           if (prots.length <= 0) {
@@ -1202,6 +1206,7 @@
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
 
       if (state.ids) {
+        get_usersets = function() {};
         var reader = (new MASCP.GoogledataReader()).createReader(state.ids[0],function(datablock){
           for (var key in datablock) {
             if (key == "" || key.match(/\s/)) {
