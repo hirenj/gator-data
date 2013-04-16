@@ -782,7 +782,23 @@
         retrieve_data(acc,renderer);
       });
 
-      a_reader.retrieve(acc,function(e) {
+      a_reader.retrieve(acc,function(err) {
+
+        if ( err ) {
+
+          if (err.status && err.status >= 500 ) {
+            window.notify.warn("Could not reach UniProt server, please try again shortly").hideLater(5000);
+            return;
+          }
+          if (err.status && err.status >= 400) {
+            window.notify.alert("Problem contacting the UniProt servers");
+            return;
+          }
+
+          window.notify.warn("Could not retrieve sequence from UniProt");
+          return;
+        }
+
         // renderer.acc = acc;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
@@ -913,6 +929,7 @@
             callback.call(null,protein_doc,err.authorize);
             return;
           }
+          window.notify.alert("Could not retrieve desired protein list, please try again");
           console.log("Error");
           console.log(err);
         });
@@ -931,6 +948,19 @@
         renderer.trackOrder.unshift(renderer.acc ? "all_domains" : acc);
       }
       datareader.retrieve(acc,function(err) {
+        if (this.result) {
+          window.notify.info("Retrieved GalNAc site data").hideLater(1000);
+          if (this.result._raw_data.data.sites.length < 1 ) {
+            window.notify.info("No sites for "+acc);
+          }
+        } else {
+            window.notify.info("No GalNAc SimpleCell sites found for "+acc.toUpperCase()).hideLater(2000);
+        }
+        if (err) {
+          if (err !== "No data") {
+            window.notify.warn("Could not retrieve GalNAc site data");
+          }
+        }
         console.log("Got sites okay");
         if (done) {
           done();
@@ -997,7 +1027,22 @@
         }
       });
 
-      datareader.retrieve(acc,function() {
+      datareader.retrieve(acc,function(err) {
+
+        if (this.result) {
+          window.notify.info("Retrieved NetOGlyc4.0 prediction data").hideLater(1000);
+          if (this.result._raw_data.data.sites.length < 1 || this.result._raw_data.data.sites[0] === null ) {
+            window.notify.info(acc.toUpperCase()+" is not predicted to carry O-GalNAc modifications").hideLater(5000);
+          }
+        } else {
+            window.notify.info("No NetOGlyc4.0 prediction data found for "+acc.toUpperCase());
+        }
+        if (err) {
+          if (err !== "No data") {
+            window.notify.warn("Could not retrieve NetOGlyc4.0 site data");
+          }
+        }
+
         var a_seq = renderer.sequence.toLowerCase();
         if (this.result && this.result._raw_data) {
           this.result._raw_data.data.sites.forEach(function(site) {
