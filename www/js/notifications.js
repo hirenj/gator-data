@@ -103,7 +103,7 @@
 	}
 
 	var window_checker = setInterval(function() {
-	    if (document.readyState === "interactive") {
+	    if (document.readyState === "interactive" || document.readyState === "complete") {
 	        clearInterval(window_checker);
 	        window_ready = true;
 	        try_notify();
