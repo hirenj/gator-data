@@ -1157,6 +1157,9 @@
       if (! wanted_domains ) {
         return all_domains;
       }
+      if (! all_domains ) {
+        return results;
+      }
       for (var dom in all_domains) {
         if (! all_domains.hasOwnProperty(dom)) {
           continue;
