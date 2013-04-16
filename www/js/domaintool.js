@@ -766,6 +766,12 @@
     };
 
     var show_protein = function(acc,renderer) {
+      if (window.ga) {
+        setTimeout(function() {
+          window.ga('send','event','protein','load',acc);
+        },0);
+      }
+
       end_clustal();
       end_clustal = function() {};
       window.showing_clustal = false;
@@ -787,10 +793,22 @@
         if ( err ) {
 
           if (err.status && err.status >= 500 ) {
+            if (window.ga) {
+              setTimeout(function() {
+                window.ga('send','event','protein','timeout',acc);
+              },0);
+            }
+
             window.notify.warn("Could not reach UniProt server, please try again shortly").hideLater(5000);
             return;
           }
           if (err.status && err.status >= 400) {
+            if (window.ga) {
+              setTimeout(function() {
+                window.ga('send','event','protein','missing',acc);
+              },0);
+            }
+
             window.notify.alert("Problem contacting the UniProt servers");
             return;
           }
