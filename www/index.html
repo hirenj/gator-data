@@ -3,6 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, user-scalable = no">
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/css/hint.min.css"/>
     <script src="/js/notifications.js"></script>
 
 <!--[if IE]>
@@ -49,15 +50,15 @@
     <div id="page_canvas">
     <div id="protein_list"></div>
     <button id="help"></button>
-    <button id="drive_install"></button>
+    <button id="drive_install" class="hint--left" data-hint="Google Drive integration"></button>
     <button id="align">&#8652;</button>
     <div id="viewer">
         <input type="button" value="Print" id="print"/>
-        <input type="button" value="Copy" id="clipboarder"/>
-        <div contentEditable="true" id="uniprot_id"></div>
+        <input type="button" value="Copy" id="clipboarder" />
+        <div contentEditable="true" id="uniprot_id" data-hint="Click to type in new UniProt ID"></div>
         <div id="description"></div>
         <div style="position: relative; height: 2.5em;">
-            <div id="zoomlabel">Zoom</div>
+            <div id="zoomlabel" class="hint--always hint--left">Zoom</div>
             <input id="zoomout" value="&#8211;" type="button"/><input id="zoomin" value="+" type="button"/>
         </div>
         <div id="sequence_frame">
