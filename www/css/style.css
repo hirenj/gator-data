@@ -1,6 +1,12 @@
+@import url(http://fonts.googleapis.com/css?family=Quicksand:700|Sorts+Mill+Goudy:400italic);
+
    @media print {
 
       .notification_container {
+        display: none;
+      }
+
+      #information {
         display: none;
       }
 
@@ -121,6 +127,48 @@
             background: #779977;
         }
 
+        #information {
+            font-family: Helvetica, Arial, sans-serif;
+            position: absolute;
+            top: 100%;
+            width: 100%;
+            height: auto;
+            background-image: url("/img/p6.png");
+            background-repeat: repeat;
+            z-index: -1;
+        }
+        #information > header {
+            background: #EBE375;
+        }
+        #information > div.body {
+            margin: 50px;
+        }
+        #information .title {
+            margin-left: 15px;
+            color: #40221e;
+            font-family: 'Quicksand', Helvetica, Arial, sans-serif;
+            font-size: 60pt;
+            text-align: left;
+        }
+        #information .sub_heading {
+            margin-left: 15px;
+            color: #175566;
+            font-family: 'Sorts Mill Goudy', serif;
+            font-size: 30pt;
+        }
+        #information .sub_heading a {
+            text-decoration: none;
+            color: #175566 !important;
+        }
+        body {
+            margin: 0px;
+        }
+        #page_canvas {
+            box-shadow: 0px 0px 40px #000;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+        }
 
         #viewer {
             position: absolute;
@@ -192,8 +240,7 @@
         }
     }
 
-
-    #help, #align {
+    #help, #align, #top {
         height: 35px;
         width: 35px;
         border-radius: 25px;
