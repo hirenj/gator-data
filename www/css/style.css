@@ -342,9 +342,15 @@
         width: 100px;
         top: 0px;
         bottom: 0px;
-        overflow: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
+    .hint--inline:before, .hint--inline:after {
+        right: 10px !important;
+    }
+
     #protein_list div {
+        display: block;
         background: #000000;
         color: #ffffff;
         cursor: pointer;

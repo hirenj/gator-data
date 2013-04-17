@@ -544,7 +544,7 @@
           a_div.textContent = ((prot.name || prot.id)+"");
           list.appendChild(a_div);
           a_div.setAttribute('id','prot_'+prot.id.toLowerCase());
-
+          a_div.setAttribute('class','hint--left hint--inline ');
           a_div.addEventListener('click',function() {
             var clazz;
             if (selected) {
@@ -555,7 +555,12 @@
             this.setAttribute('class',clazz+'selected ');
             selected = this;
             localStorage.setItem('selected',this.uprot);
-            show_protein(this.uprot,renderer);
+            show_protein(this.uprot,renderer,function() {
+              setTimeout(function() {
+                a_div.removeAttribute('data-hint');
+              },500);
+            });
+            a_div.setAttribute('data-hint',"Loading..");
           },false);
           if (curr_acc == prot) {
             bean.fire(a_div,'click');
@@ -743,7 +748,7 @@
       document.getElementById("description").textContent = description;
     };
 
-    var show_protein = function(acc,renderer) {
+    var show_protein = function(acc,renderer,success) {
       if (window.ga) {
         setTimeout(function() {
           window.ga('send','pageview','/uniprot/'+acc.toUpperCase());
@@ -800,6 +805,9 @@
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
         document.getElementById('uniprot_id').textContent = acc.toUpperCase();
         renderer.grow_container = true;
+        if (success) {
+          success();
+        }
       });
 
     };
