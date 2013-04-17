@@ -217,7 +217,7 @@
         }
         #uniprot_id {
             color: #999999;
-            width: 200px;
+            width: 50%;
             overflow: hidden;
             display: block;
             position: absolute;
