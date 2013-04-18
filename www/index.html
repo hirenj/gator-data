@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, user-scalable = no">
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
     <link rel="stylesheet" type="text/css" href="/css/hint.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/autocomplete.css"/>
     <script src="/js/notifications.js"></script>
 
 <!--[if IE]>
@@ -55,9 +56,13 @@
     <div id="viewer">
         <input type="button" value="Print" id="print"/>
         <input type="button" value="Copy" id="clipboarder" />
-        <div contentEditable="true" id="uniprot_id" data-hint="Click to type in new UniProt ID"></div>
+        <span class="hint--right hint--always">
+        <input id="searchGene" type="search"/>
+        </span>
+
+        <div class="hint--right" id="uniprot_container" data-hint="Click to type in new UniProt ID"><div contentEditable="true" id="uniprot_id"></div></div>
         <div id="description"></div>
-        <div style="position: relative; height: 2.5em;">
+        <div style="position: relative; height: 1em;">
             <div id="zoomlabel" class="hint--always hint--left">Zoom</div>
             <input id="zoomout" value="&#8211;" type="button"/><input id="zoomin" value="+" type="button"/>
         </div>
@@ -96,6 +101,7 @@
     <script type="text/javascript" src="/js/mascp-jstools.js"></script>
     <script type="text/javascript" src="/js/domain_definitions.js"></script>
     <script type="text/javascript" charset="utf-8" src="/js/jquery-1.4.1.min.js"></script>
+    <script type="text/javascript" src="/js/autocomplete.js"></script>
     <script type="text/javascript" src="/js/domaintool.js"></script>
 </body>
 </html>

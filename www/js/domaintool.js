@@ -329,6 +329,162 @@
 
     };
 
+    (function(win) {
+      var autocomplete;
+
+      var do_http_request = function(url,cback) {
+          var xmlhttp =  new XMLHttpRequest();
+          if (xmlhttp) {
+              xmlhttp.onreadystatechange = function() {
+                if (xmlhttp.readyState == 4) {
+                    if (xmlhttp.status == 200) {
+                        cback(null,JSON.parse(xmlhttp.responseText));
+                    } else {
+                        cback({"error" : xmlhttp.status });
+                    }
+                }
+              };
+              //xmlhttp.onerror?
+          }
+          xmlhttp.open("GET", url, true);
+          xmlhttp.setRequestHeader("Content-type",
+              "application/x-www-form-urlencoded");
+          xmlhttp.send('');
+      };
+
+      var test_mygene = function(success,failure) {
+        do_http_request('http://mygene.info/gene/387429',function(err,val) {
+          if (err) {
+            failure();
+          }
+          success();
+        });
+      }
+
+      var searchTimeout = null;
+      var search_cache = {};
+
+      var show_persistent_message = function(message) {
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+          searchTimeout = null;
+        }
+        autocomplete.element.parentNode.setAttribute('data-hint',message);
+      };
+
+      var flash_message = function(message,time) {
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+          searchTimeout = null;
+        }
+        if (! time ) {
+          time = 2000;
+        }
+        autocomplete.element.parentNode.setAttribute('data-hint',message);
+        console.log(time);
+        searchTimeout = setTimeout(function() {
+          autocomplete.element.parentNode.removeAttribute('data-hint');
+        },time);
+      };
+
+      var clear_messages = function() {
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+          searchTimeout = null;
+        }
+        autocomplete.element.parentNode.removeAttribute('data-hint');
+      };
+
+
+      var autocomplete_with_mygene = function(newValue) {
+        if (! newValue || newValue.length < 1) {
+          return;
+        }
+        if (search_cache[newValue]) {
+          clear_messages();
+          return search_cache[newValue];
+        }
+        show_persistent_message('Searching..');
+        do_http_request('http://mygene.info/query?q='+newValue+'*+AND+species:human',function(err,val) {
+          if (err) {
+            flash_message('Error searching');
+            return;
+          }
+          clear_messages();
+          var prots = [];
+          (val.rows || []).forEach(function(prot) {
+            var val = { "name" : prot.name, "id" : prot.id, "symbol" : prot.symbol };
+            val.toString = function() {
+              return this.name + " ("+ this.symbol +")";
+            };
+            prots.push(val);
+          });
+          if (prots.length == 0) {
+            flash_message('No matches');
+          } else {
+            clear_messages();
+          }
+          search_cache[newValue] = prots;
+          autocomplete.addValues(prots);
+        });
+      };
+
+      var get_mygene_uniprotid = function(id,callback) {
+        do_http_request('http://mygene.info/gene/'+id,function(err,data) {
+          if ( err || ! data.uniprot ) {
+            flash_message('No matches');
+            callback(err || { "error" : "No matches"});
+            return;
+          }
+          var uniprot = data.uniprot['Swiss-Prot'] || data.uniprot['TrEMBL'][0];
+          callback.call(setup,null,uniprot);
+        });
+      };
+
+      var setup = function(element,callback) {
+        test_mygene(function() {
+          autocomplete = new Autocomplete(element,{
+            srcType : "dom",
+            useNativeInterface : false,
+            onInput : autocomplete_with_mygene
+          });
+          autocomplete.element.addEventListener('change',function() {
+            if (! this.rawValue ) {
+              return;
+            }
+            if ( ! this.value ) {
+              return;
+            }
+            get_mygene_uniprotid(this.rawValue.id,callback);
+          },function() {
+            element.style.display = 'none';
+            console.log("No mygene");
+          });
+        });
+      };
+
+      setup.flash_message = flash_message;
+
+      win.MyGeneCompleter = setup;
+
+    })(window);
+
+
+    var wire_genesearch = function(renderer) {
+      MyGeneCompleter(document.getElementById('searchGene'),function(err,uniprot) {
+          if ( ! uniprot ) {
+            MyGeneCompleter.flash_message("No UniProt entry found");
+            return;
+          }
+          if (document.getElementById('prot_'+uniprot.toLowerCase())) {
+            document.getElementById('prot_'+uniprot.toLowerCase()).click();
+            return;
+          }
+          MyGeneCompleter.flash_message("Not in SimpleCell",2000);
+          show_protein(uniprot,renderer);
+      });
+    };
+
 
     var wire_renderer = function(renderer) {
       wire_renderer_sequence_change(renderer);
@@ -441,6 +597,7 @@
     };
 
     var add_keyboard_navigation = function() {
+      return;
       window.addEventListener('keypress',function(e) {
         var to_select;
         if (e.keyCode == 110) {
@@ -917,6 +1074,7 @@
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+        window.notify.info("Loading protein list");
         var datareader = greader.createReader(doc_id,function(datas) {
           var dataset = {};
           var results = [];
@@ -1262,7 +1420,7 @@
       wire_drive_button();
       wire_uniprot_id_changer(renderer);
       wire_clipboarder();
-
+      wire_genesearch(renderer);
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
