@@ -1,8 +1,28 @@
 (function(win) {
   var autocomplete;
+  var ready = null;
+
+
+  var readyfunc = function(callback) {
+    if ( ready === null ) {
+      ready = callback;
+    } else {
+      callback(ready);
+    }
+  };
+
+
+  win.MyGeneCompleter = function() {};
+  win.MyGeneCompleter.ready = readyfunc;
+
+
+
 
   var do_http_request = function(url,cback) {
       var xmlhttp =  new XMLHttpRequest();
+      if(window.XDomainRequest) {
+        xmlhttp = new XDomainRequest();
+      }
       if (xmlhttp) {
           xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == 4) {
@@ -13,11 +33,18 @@
                 }
             }
           };
-          xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); },false);
+          xmlhttp.onload = function() {
+            cback(null,JSON.parse(xmlhttp.responseText));
+          };
+          if (xmlhttp.addEventListener) {
+            xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); },false);
+          }
       }
       xmlhttp.open("GET", url, true);
-      xmlhttp.setRequestHeader("Content-type",
-          "application/x-www-form-urlencoded");
+      if (xmlhttp.setRequestHeader) {
+        xmlhttp.setRequestHeader("Content-type",
+            "application/x-www-form-urlencoded");
+      }
       xmlhttp.send('');
   };
 
@@ -135,15 +162,7 @@
 
   setup.flash_message = flash_message;
 
-  var ready = null;
-
-  setup.ready = function(callback) {
-    if ( ready === null ) {
-      ready = callback;
-    } else {
-      callback(ready);
-    }
-  };
+  setup.ready = readyfunc;
 
   test_mygene(function() {
     if ( ready && typeof(ready) === 'function') {
