@@ -344,7 +344,7 @@
                     }
                 }
               };
-              //xmlhttp.onerror?
+              xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); },false);
           }
           xmlhttp.open("GET", url, true);
           xmlhttp.setRequestHeader("Content-type",
@@ -381,7 +381,6 @@
           time = 2000;
         }
         autocomplete.element.parentNode.setAttribute('data-hint',message);
-        console.log(time);
         searchTimeout = setTimeout(function() {
           autocomplete.element.parentNode.removeAttribute('data-hint');
         },time);
@@ -458,7 +457,6 @@
             get_mygene_uniprotid(this.rawValue.id,callback);
           },function() {
             element.style.display = 'none';
-            console.log("No mygene");
           });
         });
       };
@@ -1074,7 +1072,7 @@
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
-        window.notify.info("Loading protein list");
+        var notification = window.notify.info("Loading protein list");
         var datareader = greader.createReader(doc_id,function(datas) {
           var dataset = {};
           var results = [];
@@ -1092,7 +1090,11 @@
           });
           callback(results);
         });
+        datareader.bind('ready',function() {
+          notification.hide();
+        });
         datareader.bind('error',function(e,err) {
+          notification.hide();
           if (err.cause && err.cause == "No user event") {
             callback.call(null,protein_doc,err.authorize);
             return;
