@@ -16,6 +16,9 @@
 		setTimeout(function() {
 			try_notify();
 		},0);
+		info_block.hide = function() {
+			hide_notification(this.element);
+		};
 		return info_block;
 	};
 
