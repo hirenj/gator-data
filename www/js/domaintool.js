@@ -392,6 +392,13 @@
       })
     };
 
+    var wire_history = function(renderer) {
+      if (history) {
+        window.onpopstate = function(event) {
+          show_protein((event.state || {})['uniprot_id'],renderer);
+        }
+      }
+    };
 
     var wire_renderer = function(renderer) {
       wire_renderer_sequence_change(renderer);
@@ -600,7 +607,7 @@
         while (list.childNodes.length > 0) {
           list.removeChild(list.firstChild);
         }
-        var curr_acc = localStorage.getItem('selected');
+        var curr_acc = history ? (history.state || {})['uniprot_id'] : localStorage.getItem('selected');
         var selected = null;
         prots.forEach(function(prot) {
           var a_div = document.createElement('div');
@@ -618,7 +625,9 @@
             clazz = this.getAttribute('class') || '';
             this.setAttribute('class',clazz+'selected ');
             selected = this;
-            localStorage.setItem('selected',this.uprot);
+            if (! history) {
+              localStorage.setItem('selected',this.uprot);
+            }
             show_protein(this.uprot,renderer,function() {
               setTimeout(function() {
                 a_div.removeAttribute('data-hint');
@@ -813,10 +822,18 @@
     };
 
     var show_protein = function(acc,renderer,success) {
+      if ( ! acc ) {
+        return;
+      }
+      var ucacc = acc.toString().toUpperCase();
+
       if (window.ga) {
         setTimeout(function() {
-          window.ga('send','pageview','/uniprot/'+acc.toUpperCase());
+          window.ga('send','pageview','/uniprot/'+ucacc);
         },0);
+      }
+      if (history && history.pushState && (history.state || {})['uniprot_id'] !== ucacc ) {
+        history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
       }
 
       end_clustal();
@@ -832,10 +849,10 @@
       jQuery(renderer).bind('sequenceChange',function() {
         jQuery(renderer).unbind('sequenceChange',arguments.callee);
         console.log("Retrieving data");
-        retrieve_data(acc,renderer);
+        retrieve_data(ucacc,renderer);
       });
 
-      a_reader.retrieve(acc,function(err) {
+      a_reader.retrieve(ucacc,function(err) {
 
         if ( err ) {
 
@@ -867,7 +884,7 @@
         // renderer.acc = acc;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
-        document.getElementById('uniprot_id').textContent = acc.toUpperCase();
+        document.getElementById('uniprot_id').textContent = ucacc;
         renderer.grow_container = true;
         if (success) {
           success();
@@ -1332,6 +1349,7 @@
       wire_uniprot_id_changer(renderer);
       wire_clipboarder();
       wire_genesearch(renderer);
+      wire_history(renderer);
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
@@ -1383,13 +1401,16 @@
         if (results && results[1]) {
           var prot = { "id" : results[1], "name" : results[1] };
           prot.toString = function() { return this.id; };
-          localStorage.setItem('selected',results[1]);
-          update_protein_list([prot],renderer);
+          if (history && history.replaceState) {
+            history.replaceState({"uniprot_id" : results[1]},results[1],"/uniprot/"+results[1]);
+          }
+          show_protein(prot,renderer);
+          // update_protein_list([prot],renderer);
         }
-        document.getElementById('print').addEventListener('click',function() {
-          do_printing([prot]);
-        },false);
-        return;
+        // document.getElementById('print').addEventListener('click',function() {
+        //   do_printing([prot]);
+        // },false);
+        // return;
       }
 
 
