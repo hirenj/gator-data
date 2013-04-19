@@ -1071,9 +1071,31 @@
           return;
         }
         var sets = prefs.user_datasets;
+        var not = window.notify.info("Refreshing User set data");
         for (var set in sets) {
+          (function() {
           var method = sets[set].sites;
-          var a_reader = gdata.createReader(set);
+          var a_reader = gdata.createReader(set,function(datablock){
+            for (var key in datablock) {
+              if (key == "" || key.match(/\s/)) {
+                delete datablock[key];
+              } else {
+                var dat = datablock[key];
+                delete datablock[key];
+                datablock[key.toLowerCase()] = {
+                  "data" : dat,
+                  "retrieved" : datablock.retrieved,
+                  "etag" : datablock.etag,
+                  "title" : datablock.title
+                };
+              }
+            }
+            delete datablock.retrieved;
+            delete datablock.etag;
+            delete datablock.title;
+            return datablock;
+          });
+
           a_reader.bind('ready',function() {
             a_reader.retrieve(acc,function() {
               if ( ! this.result ) {
@@ -1093,6 +1115,7 @@
 
             });
           });
+          })();
         }
       });
     };
