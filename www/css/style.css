@@ -6,6 +6,10 @@
         display: none;
       }
 
+      #search_container {
+        display: none;
+      }
+
       #information {
         display: none;
       }
@@ -125,6 +129,10 @@
         }
         .notification_container .level_3 {
             background: #779977;
+        }
+
+        #search_container {
+            font-size: 10px;
         }
 
         #information {
