@@ -33,9 +33,11 @@
                 }
             }
           };
-          xmlhttp.onload = function() {
-            cback(null,JSON.parse(xmlhttp.responseText));
-          };
+          if (window.XDomainRequest) {
+            xmlhttp.onload = function() {
+              cback(null,JSON.parse(xmlhttp.responseText));
+            };
+          }
           if (xmlhttp.addEventListener) {
             xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); },false);
           }
