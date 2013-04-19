@@ -353,11 +353,14 @@
       };
 
       var test_mygene = function(success,failure) {
-        do_http_request('http://mygene.info/gene/387429',function(err,val) {
+        do_http_request('http://mygene.info/gene/1',function(err,val) {
           if (err) {
             failure();
+            failure = function() {};
+            return;
           }
           success();
+          success = function() {};
         });
       }
 
@@ -441,46 +444,115 @@
       };
 
       var setup = function(element,callback) {
-        test_mygene(function() {
-          autocomplete = new Autocomplete(element,{
-            srcType : "dom",
-            useNativeInterface : false,
-            onInput : autocomplete_with_mygene
-          });
-          autocomplete.element.addEventListener('change',function() {
-            if (! this.rawValue ) {
-              return;
-            }
-            if ( ! this.value ) {
-              return;
-            }
-            get_mygene_uniprotid(this.rawValue.id,callback);
-          },function() {
-            element.style.display = 'none';
-          });
+        if ( ready === false ) {
+          console.log("MyGene not available");
+          return;
+        }
+        autocomplete = new Autocomplete(element,{
+          srcType : "dom",
+          useNativeInterface : false,
+          onInput : autocomplete_with_mygene
+        });
+        autocomplete.element.addEventListener('change',function() {
+          if (! this.rawValue ) {
+            return;
+          }
+          if ( ! this.value ) {
+            return;
+          }
+          get_mygene_uniprotid(this.rawValue.id,callback);
         });
       };
 
       setup.flash_message = flash_message;
+
+      var ready = null;
+
+      setup.ready = function(callback) {
+        if ( ready === null ) {
+          ready = callback;
+        } else {
+          callback(ready);
+        }
+      };
+
+      test_mygene(function() {
+        if ( ready && typeof(ready) === 'function') {
+          ready(true);
+        }
+        ready = true
+      },function() {
+        if ( ready && typeof(ready) === 'function') {
+          ready(false);
+        }
+        ready = false;
+      });
 
       win.MyGeneCompleter = setup;
 
     })(window);
 
 
-    var wire_genesearch = function(renderer) {
-      MyGeneCompleter(document.getElementById('searchGene'),function(err,uniprot) {
-          if ( ! uniprot ) {
-            MyGeneCompleter.flash_message("No UniProt entry found");
+    var wire_plainsearch = function() {
+      var auto = new Autocomplete(document.getElementById('searchGene'),{
+        srcType : "dom",
+        useNativeInterface : false,
+        onInput : function(name) {
+          var prots = document.getElementById('protein_list').childNodes;
+          var prot_list = [];
+          if (this._cache_prots) {
+            auto.addValues(this._cache_prots);
             return;
           }
-          if (document.getElementById('prot_'+uniprot.toLowerCase())) {
-            document.getElementById('prot_'+uniprot.toLowerCase()).click();
-            return;
+          for (var i = 0; i < prots.length; i++) {
+            var obj = {};
+            obj.element = prots[i];
+            obj.name = prots[i].textContent;
+            obj.toString = function() { return this.name };
+            prot_list.push(obj);
           }
-          MyGeneCompleter.flash_message("Not in SimpleCell",2000);
-          show_protein(uniprot,renderer);
+          auto.addValues(prot_list);
+          this._cache_prots = prot_list;
+        }
       });
+      auto.element.addEventListener('change',function() {
+        if (! this.rawValue ) {
+          return;
+        }
+        if ( ! this.value ) {
+          return;
+        }
+        this.rawValue.element.click();
+      });
+    };
+
+    var wire_genesearch = function(renderer) {
+      MyGeneCompleter.ready(function(working) {
+        if (working) {
+          document.getElementById('searchGeneLabel').textContent = 'Search by NCBI gene name';
+          MyGeneCompleter(document.getElementById('searchGene'),function(err,uniprot) {
+            if ( ! uniprot ) {
+              MyGeneCompleter.flash_message("No UniProt entry found");
+              return;
+            }
+            if (document.getElementById('prot_'+uniprot.toLowerCase())) {
+              document.getElementById('prot_'+uniprot.toLowerCase()).click();
+              return;
+            }
+            MyGeneCompleter.flash_message("Not in SimpleCell",2000);
+            show_protein(uniprot,renderer);
+          });
+        } else {
+          if (window.ga) {
+            setTimeout(function() {
+              window.ga('send','event','mygene','nonfunctional');
+            },0);
+          }
+
+          document.getElementById('searchGeneLabel').textContent = 'Search by protein name';
+          wire_plainsearch();
+        }
+      })
     };
 
 
@@ -1205,7 +1277,7 @@
             window.notify.info(acc.toUpperCase()+" is not predicted to carry O-GalNAc modifications").hideLater(5000);
           }
         } else {
-            window.notify.info("No NetOGlyc4.0 prediction data found for "+acc.toUpperCase());
+            window.notify.info("No NetOGlyc4.0 prediction data available for "+acc.toUpperCase()).hideLater(5000);
         }
         if (err) {
           if (err !== "No data") {
