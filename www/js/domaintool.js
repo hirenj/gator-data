@@ -1065,58 +1065,37 @@
     };
 
     var get_usersets = function(acc,renderer) {
-      var gdata = new MASCP.GoogledataReader();
-      gdata.getPreferences("Domaintool preferences",function(err,prefs) {
+      (new MASCP.GoogledataReader()).readWatchedDocuments("Domaintool preferences",function(err,pref,reader) {
         if (err) {
-          return;
+          // Errs if : No user event / getting preferences
+          // actual reader error
+
+          if (err.status === "preferences") {
+            window.notify.alert("Problem getting user preferences");
+            return;
+          }
+          if (err) {
+            window.notify.alert("Problem reading user data set");
+          }
+          console.log(err);
         }
-        var sets = prefs.user_datasets;
-        var not = window.notify.info("Refreshing User set data");
-        for (var set in sets) {
-          (function() {
-          var method = sets[set].sites;
-          var a_reader = gdata.createReader(set,function(datablock){
-            for (var key in datablock) {
-              if (key == "" || key.match(/\s/)) {
-                delete datablock[key];
-              } else {
-                var dat = datablock[key];
-                delete datablock[key];
-                datablock[key.toLowerCase()] = {
-                  "data" : dat,
-                  "retrieved" : datablock.retrieved,
-                  "etag" : datablock.etag,
-                  "title" : datablock.title
-                };
-              }
-            }
-            delete datablock.retrieved;
-            delete datablock.etag;
-            delete datablock.title;
-            return datablock;
-          });
+        var method = pref["sites"];
+        reader.retrieve(acc,function() {
+          if ( ! this.result ) {
+            return;
+          }
+          var datas = this.result._raw_data.data;
 
-          a_reader.bind('ready',function() {
-            a_reader.retrieve(acc,function() {
-              if ( ! this.result ) {
-                return;
-              }
-              var datas = this.result._raw_data.data;
-
-              var obj = { "gotResult" : function() {
-                datas.sites.forEach(function(site) {
-                  renderer.getAA(parseInt(site)).addToLayer(renderer.acc ? "all_domains" : acc,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
-                });
-                renderer.trigger('resultsRendered',[this]);
-                renderer.refresh();
-              }, "agi" : acc };
-              jQuery(renderer).trigger('readerRegistered',[obj]);
-              obj.gotResult();
-
+          var obj = { "gotResult" : function() {
+            datas.sites.forEach(function(site) {
+              renderer.getAA(parseInt(site)).addToLayer(renderer.acc ? "all_domains" : acc,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
             });
-          });
-          })();
-        }
+            renderer.trigger('resultsRendered',[this]);
+            renderer.refresh();
+          }, "agi" : acc };
+          jQuery(renderer).trigger('readerRegistered',[obj]);
+          obj.gotResult();
+        });
       });
     };
 
@@ -1379,7 +1358,7 @@
 
       if (state.ids) {
         get_usersets = function() {};
-        var reader = (new MASCP.GoogledataReader()).createReader(state.ids[0],function(datablock){
+        var parser = function(datablock){
           for (var key in datablock) {
             if (key == "" || key.match(/\s/)) {
               delete datablock[key];
@@ -1398,20 +1377,18 @@
           delete datablock.etag;
           delete datablock.title;
           return datablock;
-        });
-        reader.bind('ready',function() {
-          (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
-            if ( ! prefs.user_datasets ) {
-              prefs.user_datasets = {};
+        };
+
+        (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
+          if (err) {
+            if (err.status === "preferences") {
+              window.notify.alert("Error setting preferences - try opening document again");
+              return;
             }
-            prefs.user_datasets[reader.datasetname] = {
-              "sites" : "man",
-              "peptides" : "true"
-            };
-            (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
-              console.log("Wrote prefs");
-            });
-          });
+            window.notify.alert("Problem reading document, please try again");
+            return;
+          }
+          window.notify.info("Successfully loaded "+(docname || ""));
         });
       }
 
