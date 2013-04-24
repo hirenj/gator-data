@@ -219,11 +219,11 @@
           if (dom == "KDEL") {
             domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
           }
-          var track_name = domains[dom].name;
-          if ( ! track_name ) {
-            domains[dom].name = dom.replace(/\s/g,'_');
-            track_name = domains[dom].name;
+          if ( ! domains[dom].name ) {
+            domains[dom].name = dom;
           }
+
+          var track_name = (domains[dom].name || dom).replace(/\s/g,'_');
           if ( dom == "tmhmm-TMhelix") {
             track_name = "TM Transmembrane";
           }
@@ -278,8 +278,9 @@
             } else {
               var all_box;
               var box;
-              if (window.DOMAIN_DEFINITIONS[domains[dom].name]) {
-                  var dats = window.DOMAIN_DEFINITIONS[domains[dom].name];
+              var dom_key = (domains[dom].name).replace(/\s/g,'_');
+              if (window.DOMAIN_DEFINITIONS[dom_key]) {
+                  var dats = window.DOMAIN_DEFINITIONS[dom_key];
                   var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
                   all_box = renderer.getAA(start).addShapeOverlay(target_layer,end-start+1,{ "shape" : dats[0], "height" : 8, "fill" : fill, "rotate" : dats[2] || 0 });
                   all_box.setAttribute('stroke','#999999');
