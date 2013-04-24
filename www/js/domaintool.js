@@ -1065,6 +1065,12 @@
     };
 
     var get_usersets = function(acc,renderer) {
+
+      // Don't trigger any popups
+      if ( ! window.event ) {
+        window.event = { "which" : null };
+      }
+
       (new MASCP.GoogledataReader()).readWatchedDocuments("Domaintool preferences",function(err,pref,reader) {
         if (err) {
           // Errs if : No user event / getting preferences
@@ -1382,6 +1388,10 @@
         (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
           if (err) {
             if (err.status === "preferences") {
+              if (err.original_error.cause === "No user event") {
+                window.notify.alert("You have been logged out, please click the drive button to authorize again");
+                return;
+              }
               window.notify.alert("Error setting preferences - try opening document again");
               return;
             }
