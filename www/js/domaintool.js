@@ -220,6 +220,10 @@
             domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
           }
           var track_name = domains[dom].name;
+          if ( ! track_name ) {
+            domains[dom].name = dom.replace(/\s/g,'_');
+            track_name = domains[dom].name;
+          }
           if ( dom == "tmhmm-TMhelix") {
             track_name = "TM Transmembrane";
           }
@@ -779,7 +783,12 @@
         var refresher = function() {
           count++;
           if (count == 3) {
-            renderer.refresh();
+            if (renderer.trackOrder.indexOf(acc) < 0) {
+              renderer.trackOrder.push(acc);
+            }
+            renderer.showLayer(acc);
+            // renderer.refresh();
+
             if (end_func) {
               end_func.call();
             }
