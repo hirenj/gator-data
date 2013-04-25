@@ -1,93 +1,5 @@
     if (!(window.console && console.log)) { (function() { var noop = function() {}; var methods = ['assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error', 'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log', 'markTimeline', 'profile', 'profileEnd', 'markTimeline', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'warn']; var length = methods.length; var console = window.console = {}; while (length--) { console[methods[length]] = noop; } }()); }
 
-    var extend_renderer = function(renderer) {
-        renderer.galnac = function() {
-          var galnac = renderer._canvas.rect(-1,-1,2,2);
-          galnac.setAttribute('fill','#ffff00');
-          galnac.setAttribute('stroke-width','15');
-          galnac.setAttribute('stroke','#990');
-          return galnac;
-        };
-        renderer.glcnac = function() {
-          var galnac = renderer._canvas.rect(-1,-1,2,2);
-          galnac.setAttribute('fill','#0000ff');
-          galnac.setAttribute('stroke-width','15');
-          galnac.setAttribute('stroke','#009');
-          return galnac;
-        };
-
-        renderer.small_galnac = function() {
-          var galnac = renderer._canvas.rect(-0.5,-2.3,1,1);
-          galnac.setAttribute('fill','#ffff00');
-          return galnac;
-        };
-        renderer.light_galnac = function() {
-          var result = renderer.galnac();
-          result.setAttribute('fill','#ffffB3');
-          result.setAttribute('stroke','#a6a635');
-          return result;
-        }
-        renderer.nlinked = function() {
-          var n_glc = renderer._canvas.group();
-          var glcnac = renderer._canvas.rect(-0.5,-2.3,1,1);
-          glcnac.setAttribute('fill','#0000ff');
-          n_glc.push(glcnac);
-          glcnac = renderer._canvas.rect(-0.5,-1,1,1);
-          glcnac.setAttribute('fill','#0000ff');
-          n_glc.push(glcnac);
-          return n_glc;
-        };
-        renderer.fuc = function() {
-          var fuc = renderer._canvas.path("M0,-125 25,-75 -25,-75 z");
-          fuc.setAttribute('fill','#ff0000');
-          fuc.setAttribute('stroke','#990000');
-          fuc.setAttribute('stroke-width','5');
-          return fuc;
-        };
-        renderer.man = function() {
-          var man = renderer._canvas.circle(0,-2,0.5);
-          man.setAttribute('fill','#00ff00');
-          man.setAttribute('stroke','#009900');
-          man.setAttribute('stroke-width','5');
-          return man;
-        };
-        renderer.glc = function() {
-          var glc = renderer._canvas.circle(0,-2,0.5);
-          glc.setAttribute('fill','#0000ff');
-          glc.setAttribute('stroke','#000099');
-          glc.setAttribute('stroke-width','5');
-          return glc;
-        };
-        renderer.gal = function() {
-          var gal = renderer._canvas.circle(0,-2,0.5);
-          gal.setAttribute('fill','#ffff00');
-          gal.setAttribute('stroke','#999900');
-          gal.setAttribute('stroke-width','5');
-          return gal;
-        };
-        renderer.hex = function() {
-          var hex = renderer._canvas.circle(0,-2,0.5);
-          hex.setAttribute('fill','#ffffff');
-          hex.setAttribute('stroke','#999999');
-          hex.setAttribute('stroke-width','5');
-          return hex;
-        };
-        renderer.hexnac = function() {
-          var hexnac = renderer._canvas.rect(-0.5,-2.3,1,1);
-          hexnac.setAttribute('fill','#ffffff');
-          hexnac.setAttribute('stroke','#999999');
-          hexnac.setAttribute('stroke-width','5');
-          return hexnac;
-        };
-        renderer.xyl = function() {
-          var xyl = renderer._canvas.path('M0,-120 L0,-120 -15,-75 22.5,-105 -22.5,-105 15,-75 z');
-          xyl.setAttribute('fill','#ff9999');
-          xyl.setAttribute('stroke','#997777');
-          xyl.setAttribute('stroke-width','5');
-          return xyl;
-        };
-    };
-
     var render_peptides = function(layer) {
       return function(renderer) {
         this.bind('resultReceived',function(e) {
@@ -188,150 +100,6 @@
           jQuery(renderer).trigger('resultsRendered',[self]);
         });        
       };
-    };
-
-    var render_domains = function(renderer,domains,acc) {
-        var target_layer = renderer.acc ? "all_domains" : acc;
-        renderer.text_els = [];
-        MASCP.registerLayer(target_layer, { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
-        var domain_keys = [];
-        for (var domain in domains) {
-          domain_keys.push(domain);
-        }
-        domain_keys.sort(function(a,b) {
-          if (a == 'SIGNALP') {
-            return 1;
-          }
-          if (b == 'SIGNALP') {
-            return -1;
-          }
-          if (a == 'tmhmm-TMhelix') {
-            return 1;
-          }
-          if (b == 'tmhmm-TMhelix') {
-            return -1;
-          }
-          return a.localeCompare(b);
-        });
-        domain_keys.forEach(function(dom) {
-          lay_name = "dom:"+dom;
-          lay_name = lay_name.replace(/\s/g,'_');
-          if (dom == "KDEL") {
-            domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
-          }
-          if ( ! domains[dom].name ) {
-            domains[dom].name = dom;
-          }
-
-          var track_name = (domains[dom].name || dom).replace(/\s/g,'_');
-          if ( dom == "tmhmm-TMhelix") {
-            track_name = "TM Transmembrane";
-          }
-          MASCP.registerLayer(lay_name, { 'fullname' : track_name || dom, 'color' : '#aaaaaa' },[renderer]);
-          renderer.trackOrder.push(lay_name);
-          var done_anno = false;
-          var seen = {};
-          domains[dom].peptides.forEach(function(pos) {
-            var start = parseInt(pos[0]);
-            var end = parseInt(pos[1]);
-            if (isNaN(start)) {
-              return;
-            }
-            if (seen[start]) {
-              return;
-            }
-
-            if ((dom == "tmhmm-TMhelix") && domains["SIGNALP"]) {
-              var signalp_end = parseInt(domains["SIGNALP"].peptides[0][1]);
-              if ( (signalp_end >= end) || (start <= signalp_end) ) {
-                return;
-              }
-            }
-            seen[start] = true;
-            if (start == end) {
-              var shape_func   =  /N\-linked.*GlcNAc/.test(dom)    ? renderer.nlinked :
-                                  /GlcNAc/.test(dom)    ? renderer.glcnac :
-                                  /GalNAc/.test(dom)    ? renderer.small_galnac  :
-                                  /Fuc/.test(dom)       ? renderer.fuc :
-                                  /Man/.test(dom)       ? renderer.man :
-                                  /Glc\)/.test(dom)     ? renderer.glc :
-                                  /Gal[\.\)]/.test(dom) ? renderer.gal :
-                                  /Hex[\.\)]/.test(dom) ? renderer.hex :
-                                  /HexNAc/.test(dom)    ? renderer.hexnac :
-                                  /Xyl/.test(dom)       ? renderer.xyl :
-                                  function() {
-                                    return null;
-                                  };
-              var is_potential = /Potential/.test(dom);
-              var element_func = function() {
-                var box = shape_func.call(renderer);
-                if (is_potential) {
-                  var kids = box.childNodes;
-                  for (var i = 0; i < kids.length; i++) {
-                    kids[i].setAttribute('fill','#67a2fc');
-                  };
-                }
-                return box;
-              };
-              renderer.getAA(start).addToLayer(target_layer, {"height" : 24, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
-              renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : -1, "bare_element" : true });
-            } else {
-              var all_box;
-              var box;
-              var dom_key = (domains[dom].name).replace(/\s/g,'_');
-              if (window.DOMAIN_DEFINITIONS[dom_key]) {
-                  var dats = window.DOMAIN_DEFINITIONS[dom_key];
-                  var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
-                  all_box = renderer.getAA(start).addShapeOverlay(target_layer,end-start+1,{ "shape" : dats[0], "height" : 8, "fill" : fill, "rotate" : dats[2] || 0 });
-                  all_box.setAttribute('stroke','#999999');
-                  all_box.style.strokeWidth = '10px';
-                  box = renderer.getAA(start).addShapeOverlay(lay_name,end-start+1,{ "shape" : dats[0], "fill" : 'url("#grad_'+dats[1]+'")' });
-              } else {
-                  all_box = renderer.getAA(start).addBoxOverlay(target_layer,end-start+1,1);
-                  box = renderer.getAA(start).addBoxOverlay(lay_name,end-start+1,1);                
-              }
-
-              var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : track_name });
-              a_text.setAttribute('fill','#111111');
-              a_text.setAttribute('stroke','#999999');
-              a_text.setAttribute('stroke-width','0.01%');
-              renderer.text_els.push([a_text,all_box]);
-            }
-
-            if (domains[dom].description) {
-              box.addEventListener('click',function() {
-                  if (this.cout) {
-                    return;
-                  }
-                  var left_pos = start;
-                  var right_pos = end;
-                  var left_vis = renderer.leftVisibleResidue();
-                  var right_vis = renderer.rightVisibleResidue();
-                  if (left_vis > start) {
-                    left_pos = left_vis;
-                  }
-                  if (right_vis < end) {
-                    right_pos = right_vis;
-                  }
-                  this.cout = renderer.getAA(parseInt(0.5*(left_pos+right_pos))).callout(thing,'description_tmpl',{ 'width' : 10, 'height' : 3, 'desc' : desc || domains[dom].name, 'start' : start, 'end' : end });
-                  renderer.refresh();
-                  this.cout.addEventListener('click',function() {
-                    if (this.parentNode) {
-                      this.parentNode.removeChild(this);
-                    }
-                    this.cout = null;
-                  },false);
-              },false);
-            }
-            done_anno = true;
-          });
-        });
-        if (renderer.acc) {
-          renderer.trackOrder.push('all_domains');
-          renderer.showLayer('all_domains');
-        }
-        renderer.zoom -= 0.0001;
-
     };
 
 
@@ -662,7 +430,7 @@
         a_doc.close();
         var link = a_doc.createElement('link');
         link.setAttribute('rel','stylesheet');
-        link.setAttribute('href','css/style.css');
+        link.setAttribute('href','/css/style.css');
         link.setAttribute('type','text/css');
         a_doc.head.appendChild(link);
         var counter = 0;
@@ -723,7 +491,7 @@
               rend.navigation.hide();
               rend.navigation.show = function(){};
               retrieve_data(prot,my_rend,function() {
-                my_rend.trackOrder = ["all_domains"];
+                my_rend.trackOrder = [prot];
                 setTimeout(function() {
                   my_rend.printing = true;
                   my_rend.text_els.forEach(function(el) {
@@ -754,9 +522,11 @@
           var self_func = arguments.callee;
           if (acc) {
             counter += 1;
-            setTimeout(function() {
-              print_single(acc.id.toLowerCase(),self_func);
-            },0);
+            if (counter < 10) {
+              setTimeout(function() {
+                print_single(acc.id.toLowerCase(),self_func);
+              },0);
+            }
           }
         })();
     };
@@ -765,13 +535,11 @@
 
         renderer = new MASCP.CondensedSequenceRenderer(container);
         renderer.font_order = 'Helvetica, Arial, sans-serif';
-
         setup_renderer(renderer);
 
-        extend_renderer(renderer);
-
         scale_text_elements(renderer);
-
+        MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+        domain_retriever = new MASCP.DomainRenderer(renderer);
         return renderer;
     };
 
@@ -779,7 +547,11 @@
       wire_renderer(renderer);
     };
 
+    var domain_retriever;
+
+
     var retrieve_data = function(acc,renderer,end_func) {
+        acc = (acc || "").toUpperCase();
         var count = 0;
         var refresher = function() {
           count++;
@@ -788,29 +560,20 @@
               renderer.trackOrder.push(acc);
             }
             renderer.showLayer(acc);
-            // renderer.refresh();
+            renderer.refresh();
 
             if (end_func) {
               end_func.call();
             }
           }
         };
-        get_accepted_domains(acc,function(acc,domains) {
+        domain_retriever.renderDomains(acc,function(){
           if (! /comparison\//.exec(window.location)) {
-            if (renderer.acc) {
-              render_domains(renderer,domains);
-            } else {
-              var obj = { "gotResult" : function() { render_domains(renderer,domains,acc); }, "agi" : acc };
-              jQuery(renderer).trigger('readerRegistered',[obj]);
-              obj.gotResult();
-            }
             get_sites(acc,renderer,refresher);
             get_peptides(acc,renderer,refresher);
             get_predictions(acc,renderer,refresher);
             get_usersets(acc,renderer);
-
           } else {
-            var track_name = renderer.acc ? "all_domains" : acc;
             MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
             if (renderer.trackOrder.indexOf(track_name) < 0 ) {
               renderer.trackOrder.push(track_name);
@@ -1046,8 +809,7 @@
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdC1ESDlXVzlkVEZfTkVHS01POFJ1a0E";
-
-      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc);
+      datareader.setupSequenceRenderer = render_sites(acc);
       datareader.registerSequenceRenderer(renderer);
 
       if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
@@ -1123,7 +885,7 @@
       if  (/comparison\//.exec(window.location)) {
         top_offset = 0;
       }
-      datareader.setupSequenceRenderer = render_sites(renderer.acc ? "all_domains" : acc,true,top_offset);
+      datareader.setupSequenceRenderer = render_sites(acc,true,top_offset);
       datareader.registerSequenceRenderer(renderer);
 
       renderer.bind('resultsRendered',function(e,reader) {
@@ -1209,7 +971,7 @@
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHVYektENmlwcVVqOHZHZzZBZVVBYWc";
 
-      datareader.setupSequenceRenderer = render_peptides(renderer.acc ? "all_domains" : acc );
+      datareader.setupSequenceRenderer = render_peptides(acc);
       datareader.registerSequenceRenderer(renderer);
 
       datareader.retrieve(acc,function() {
@@ -1350,7 +1112,18 @@
 
     var has_ready = MASCP.ready;
 
-    MASCP.ready = function() {
+    init = function() {
+      if (MASCP.ready == true) {
+        ready_func();
+      } else {
+        MASCP.ready = ready_func;
+      }
+    };
+
+    var ready_func = function() {
+      if ( typeof gapi === 'undefined' || ! gapi.auth ) {
+        return;
+      }
       window.svgns = 'http://www.w3.org/2000/svg';
       var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
@@ -1491,5 +1264,5 @@
 
     };
     if (has_ready) {
-      MASCP.ready();
+      ready_func();
     }
