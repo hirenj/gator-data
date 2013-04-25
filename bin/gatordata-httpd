@@ -464,15 +464,15 @@ MASCP.events.once('ready',function() {
             clazz.running = {};
         }
         service.bind('running',function() {
-            clazz.running[this.agi] = true;
+            clazz.running[this.agi.toLowerCase()] = true;
+
             if (res.header) {
                 res.header('Refresh','10;');
             }
             res.send({"status" : "RUNNING"},202);
             res = { "send" : function() {} };
         });
-
-        if (clazz.running[agi] === true) {
+        if (clazz.running[agi.toLowerCase()] === true) {
             if (res.header) {
                 res.header('Refresh','10;');
             }
@@ -480,9 +480,8 @@ MASCP.events.once('ready',function() {
             return true;
         }
 
-
         service.retrieve(agi,function(err) {
-            delete clazz.running[this.agi];
+            delete clazz.running[this.agi.toLowerCase()];
             if (err && ! old_data) {
                 res.send(err.error ? { "error" : err.error } : { "error" : err },200);
                 return;
