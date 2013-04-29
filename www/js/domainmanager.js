@@ -1,6 +1,8 @@
 
 (function() {
 
+  var editing_enabled = false;
+
   MASCP.DomainRenderer = function(renderer) {
     extend_renderer(renderer);
     this.renderer = renderer;
@@ -135,10 +137,10 @@
           });
         };
         if ( ! prefs.editing ) {
-          update_domains = null;
+          editing_enabled = false;
         }
       } else {
-        update_domains = null;
+        editing_enabled = false;
         filter_domains = old_filter_domains;
       }
       waiting_calls.forEach(function(func) {
@@ -226,7 +228,7 @@
         }
         MASCP.registerLayer(lay_name, { 'fullname' : track_name || dom, 'color' : '#aaaaaa' },[renderer]);
         renderer.trackOrder.push(lay_name);
-        if (update_domains) {
+        if (editing_enabled) {
           renderer.showLayer(lay_name);
         }
         var done_anno = false;
@@ -329,6 +331,7 @@
         'gotResult' : function() {
           render_domains(self.renderer,domains,acc);
           self.renderer.trigger('resultsRendered');
+          self.renderer.trigger('domainsRendered');
         },
         'acc'       : acc
       };
@@ -338,14 +341,68 @@
     });
   };
 
+  var write_sync_timeout = null;
+
+  var edit_toggler = function(renderer,read_only) {
+      var needs_edit = renderer.navigation.isEditing();
+      (new MASCP.GoogledataReader()).getPreferences("Editing prefs",function(err,prefs) {
+        if (err || ! prefs ) {
+          return;
+        }
+        if ( ! read_only ) {
+          prefs.editing = needs_edit;
+        } else {
+          if (prefs.editing) {
+            jQuery(renderer.navigation).trigger('toggleEdit');
+          }
+        }
+      });
+      if ( read_only ) {
+        return;
+      }
+      renderer.trackOrder.forEach(function(track) {
+        if (track.match(/^dom\:/)) {
+          if (needs_edit) {
+            renderer.showLayer(track);
+          } else {
+            renderer.hideLayer(track);
+          }
+        }
+      });
+      renderer.refresh();
+      if (write_sync_timeout) {
+        clearTimeout(write_sync_timeout);
+      }
+      write_sync_timeout = setTimeout(function() {
+        write_sync_timeout = null;
+        (new MASCP.GoogledataReader()).writePreferences("Editing prefs",function(err) {
+          if ( ! err ) {
+            console.log("Synced back preferences");
+          }
+        });
+      },5000);
+  };
+
   var setup_editing = function(renderer) {
     var self = this;
+
+    jQuery(renderer).bind('domainsRendered', function() {
+      jQuery(renderer.navigation).bind('toggleEdit',function() {
+        if (edit_toggler.enabled) {
+          edit_toggler(renderer);
+        };
+      });
+      edit_toggler(renderer,true);
+    });
+
     with_user_preferences(function(prefs) {
       if ( ! prefs || ! prefs.supplemental_domains ) {
         return;
       }
+
       (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
         if (! err && file.permissions.write) {
+          edit_toggler.enabled = true;
           console.log("Permissions to update");
           jQuery(renderer).bind('orderChanged',function(e,order) {
             if (renderer.trackOrder.length > 0) {
