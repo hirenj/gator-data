@@ -104,3 +104,41 @@ watch_file("./domains.txt",function(data_array) {
 	return data;
 },"domains");
 
+/* Bootstrap in the reference domain data */
+watch_file("./domains_all_uniprot_cdd.txt",function(data_array) {
+	var data = {};
+	for (var i = 0; i < data_array.length; i++) {
+		var row = data_array[i];
+		var id = row[0];
+		if ( ! data[id] ) {
+			data[id] = { "data": {} };
+		}
+		if ( ! data[id].data[row[4]] ) {
+			data[id].data[row[4]] = { "peptides" : [] };
+		}
+		data[id].data[row[4]].peptides.push([ row[1], row[2] ]);
+		data[id].data[row[4]].name = row[4];
+		data[id].data[row[4]].evalue = row[3];
+
+		if (row[5] && row[6]) {
+			data[id].data[row[4]].name = row[5];
+			data[id].data[row[4]].description = row[6];
+		}
+	}
+	return data;
+},"CddRunner");
+
+
+live_update("fulldomains",MASCP.UnionDomainReader,function(old_data,new_data)  {
+        if ( ! old_data ) {
+                return new_data;
+        }
+        if ( ! new_data ) {
+                return old_data;
+        }
+        for (var key in new_data.data) {
+                old_data.data[key] = new_data.data[key];
+        }
+        return old_data;
+});
+

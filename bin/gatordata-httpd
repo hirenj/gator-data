@@ -45,6 +45,15 @@ MASCP.UserdataReader.datasets(function(service) {
 
 var live_resources = nconf.get('liveupdate') || {};
 
+(function() {
+    var resource;
+    for (resource in live_resources) {
+        if ( ! resource_map[resource] ) {
+            resource_map[resource] = MASCP.UserdataReader;
+        }
+    }
+})();
+
 nconf.save(function(err) {
     if (err) {
         console.log("Could not write config");
@@ -63,7 +72,7 @@ process.on( 'SIGINT', function() {
 
 process.addListener("uncaughtException", function (err) {
     console.log("Uncaught exception: " + err);
-    console.trace();
+    console.log(err.stack);
     // We should make sure state is clean here
 });
 
@@ -78,17 +87,25 @@ var refresh_file = function(file,map,title) {
     var csv = require('csv');
     var data_array = [];
     var inserter = new MASCP.UserdataReader();
+    inserter.datasetname = title;
+    if (MASCP[title]) {
+        inserter.toString = function() {
+            return MASCP[title].toString();
+        };
+    }
+    console.log("Inserting for "+inserter.toString());
     inserter.map = map;
     inserter.bind('progress',function(percent) {
         console.log(title+" insertion ("+percent+"%)");
     });
-    MASCP.Service.ClearCache('MASCP.UserdataReader.'+title,null,function() {
+    MASCP.Service.ClearCache(inserter.toString(),null,function() {
         console.log("Cleared data out");
         csv()
         .fromStream(fs.createReadStream(file), {
-            delimiter : "\t"
+            delimiter : "\t",
+            quote : "☃"
         }).on('data',function(dat) {
-         data_array.push(dat);
+            data_array.push(dat);
         }).on('end',function() {
             inserter.setData(title,data_array);
         });

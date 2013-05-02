@@ -127,9 +127,8 @@
     with_user_preferences(function(prefs) {
       if (prefs && prefs.supplemental_domains) {
         filter_domains = function(all,wanted,acc,callback) {
-          delete MASCP.UserdataReader.SERVICE_URL;
           var file = (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
-            if (file.getData()[acc]) {
+            if (acc in file.getData()) {
               old_filter_domains(all,file.getData()[acc],acc,callback);
             } else {
               old_filter_domains(all,wanted,acc,callback);
@@ -296,7 +295,7 @@
                 box = renderer.getAA(start).addBoxOverlay(lay_name,end-start+1,1);                
             }
 
-            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : track_name });
+            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : domains[dom].name });
             a_text.setAttribute('fill','#111111');
             a_text.setAttribute('stroke','#999999');
             renderer.text_els.push([a_text,all_box]);
@@ -312,7 +311,7 @@
   var get_domains = function(acc,next) {
     MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
     var datareader = new MASCP.UserdataReader();
-    datareader.datasetname = "domains";
+    datareader.datasetname = edit_toggler.enabled ? "fulldomains" : "domains";
           
     datareader.retrieve(acc,function(err) {
       if (! this.result ) {
@@ -383,6 +382,18 @@
       },5000);
   };
 
+  var reset_protein = function(acc) {
+    with_user_preferences(function(prefs) {
+      if ( ! prefs || ! prefs.supplemental_domains ) {
+        return;
+      }
+      (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
+        file.getData()[acc] = null;
+        file.sync();
+      });
+    });
+  };
+
   var setup_editing = function(renderer) {
     var self = this;
 
@@ -399,7 +410,9 @@
       if ( ! prefs || ! prefs.supplemental_domains ) {
         return;
       }
-
+      renderer.clearDataFor = function(acc) {
+        reset_protein(acc);
+      };
       (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
         if (! err && file.permissions.write) {
           edit_toggler.enabled = true;
