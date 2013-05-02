@@ -3,11 +3,11 @@
 
   var editing_enabled = false;
 
-  MASCP.DomainRenderer = function(renderer) {
+  MASCP.DomainRenderer = function(renderer,editing_ready) {
     extend_renderer(renderer);
     this.renderer = renderer;
     setup();
-    setup_editing.call(this,renderer);
+    setup_editing.call(this,renderer,editing_ready);
   };
 
   var extend_renderer = function(renderer) {
@@ -394,7 +394,7 @@
     });
   };
 
-  var setup_editing = function(renderer) {
+  var setup_editing = function(renderer,callback) {
     var self = this;
 
     jQuery(renderer).bind('domainsRendered', function() {
@@ -408,6 +408,7 @@
 
     with_user_preferences(function(prefs) {
       if ( ! prefs ) {
+        callback.call();
         return;
       }
       if ( ! prefs.supplemental_domains ) {
@@ -422,8 +423,9 @@
         if (! err && file.permissions.write) {
           edit_toggler.enabled = true;
           console.log("Permissions to update");
+          callback.call(null,true,self.acc);
           jQuery(renderer).bind('orderChanged',function(e,order) {
-            if ((order.indexOf(self.acc.toUpperCase()) !== 0 && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
+            if ((order.indexOf((self.acc || "").toUpperCase()) !== 0 && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
               renderer.clearDataFor(self.acc);
               return;
             }
