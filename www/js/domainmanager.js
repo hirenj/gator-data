@@ -407,9 +407,14 @@
     });
 
     with_user_preferences(function(prefs) {
-      if ( ! prefs || ! prefs.supplemental_domains ) {
+      if ( ! prefs ) {
         return;
       }
+      if ( ! prefs.supplemental_domains ) {
+        prefs.supplemental_domains = "User specified domains";
+        (new MASCP.GoogledataReader()).writePreferences("Editing prefs",function(err,data) { });
+      }
+
       renderer.clearDataFor = function(acc) {
         reset_protein(acc);
       };
@@ -418,6 +423,10 @@
           edit_toggler.enabled = true;
           console.log("Permissions to update");
           jQuery(renderer).bind('orderChanged',function(e,order) {
+            if ((order.indexOf(self.acc.toUpperCase()) !== 0 && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
+              renderer.clearDataFor(self.acc);
+              return;
+            }
             if (renderer.trackOrder.length > 0) {
               console.log("Removed layer");
               update_domains(renderer,self.acc);
