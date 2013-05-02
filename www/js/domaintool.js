@@ -539,7 +539,15 @@
 
         scale_text_elements(renderer);
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
-        domain_retriever = new MASCP.DomainRenderer(renderer);
+        domain_retriever = new MASCP.DomainRenderer(renderer,function(editing,acc) {
+          if (editing) {
+            show_protein(acc,renderer);
+            if (renderer.navigation) {
+              renderer.navigation.show();
+            }
+          }
+            // show_protein()
+        });
         return renderer;
     };
 
@@ -1102,7 +1110,7 @@
           renderer.sequence = "";
           do_clustal(sequences,renderer,function() {
             sequences.forEach(function(seq) {
-              retrieve_data(seq.agi,renderer);
+              retrieve_data(seq.agi.toUpperCase(),renderer);
             });
             window.showing_clustal = true;
           });
