@@ -100,14 +100,22 @@ var refresh_file = function(file,map,title) {
     });
     MASCP.Service.ClearCache(inserter.toString(),null,function() {
         console.log("Cleared data out");
+        var read_stream = fs.createReadStream(file);
+        if (file.match(/gz$/)) {
+            var zlib = require('zlib');
+            var zipped_stream = read_stream;
+            read_stream = zipped_stream.pipe(zlib.createGunzip());
+        }
         csv()
-        .fromStream(fs.createReadStream(file), {
+        .fromStream(read_stream, {
             delimiter : "\t",
             quote : "☃"
         }).on('data',function(dat) {
             data_array.push(dat);
         }).on('end',function() {
             inserter.setData(title,data_array);
+        }).on('error',function(error) {
+            console.log(error.message)
         });
     });
 
