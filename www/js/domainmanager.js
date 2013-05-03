@@ -116,6 +116,8 @@
     });
   };
 
+  var already_setup = false;
+
   var setup = function() {
     var old_filter_domains = filter_domains;
     var waiting_calls = [];
@@ -125,22 +127,25 @@
       });
     };
     with_user_preferences(function(prefs) {
-      if (prefs && prefs.supplemental_domains) {
-        filter_domains = function(all,wanted,acc,callback) {
-          var file = (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
-            if (acc in file.getData()) {
-              old_filter_domains(all,file.getData()[acc],acc,callback);
-            } else {
-              old_filter_domains(all,wanted,acc,callback);
-            }
-          });
-        };
-        if ( ! prefs.editing ) {
+      if ( ! already_setup ) {
+        if (prefs && prefs.supplemental_domains) {
+          already_setup = true;
+          filter_domains = function(all,wanted,acc,callback) {
+            var file = (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
+              if (acc in file.getData()) {
+                old_filter_domains(all,file.getData()[acc],acc,callback);
+              } else {
+                old_filter_domains(all,wanted,acc,callback);
+              }
+            });
+          };
+          if ( ! prefs.editing ) {
+            editing_enabled = false;
+          }
+        } else {
           editing_enabled = false;
+          filter_domains = old_filter_domains;
         }
-      } else {
-        editing_enabled = false;
-        filter_domains = old_filter_domains;
       }
       waiting_calls.forEach(function(func) {
         func();
@@ -413,7 +418,9 @@
       }
       if ( ! prefs.supplemental_domains ) {
         prefs.supplemental_domains = "User specified domains";
-        (new MASCP.GoogledataReader()).writePreferences("Editing prefs",function(err,data) { });
+        (new MASCP.GoogledataReader()).writePreferences("Editing prefs",function(err,data) {
+          setup();
+        });
       }
 
       renderer.clearDataFor = function(acc) {
