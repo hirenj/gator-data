@@ -82,7 +82,7 @@ watch_spreadsheet("0Ai48KKDu9leCdHVYektENmlwcVVqOHZHZzZBZVVBYWc",function(databl
 
 
 /* Bootstrap in the reference domain data */
-watch_file("./domains.txt",function(data_array) {
+watch_file("./domains.txt.gz",function(data_array) {
 	var data = {};
 	for (var i = 0; i < data_array.length; i++) {
 		var row = data_array[i];
