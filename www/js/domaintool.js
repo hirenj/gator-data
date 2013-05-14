@@ -175,7 +175,10 @@
 
     var wire_renderer = function(renderer) {
       wire_renderer_sequence_change(renderer);
-      wire_renderer_zoom(renderer);      
+      wire_renderer_zoom(renderer);
+      if (MASCP.AnnotationManager) {
+        MASCP.AnnotationManager(renderer);
+      }
     };
 
     var wire_renderer_sequence_change = function(renderer) {
@@ -581,6 +584,9 @@
             get_peptides(acc,renderer,refresher);
             get_predictions(acc,renderer,refresher);
             get_usersets(acc,renderer);
+            if (renderer.showAnnotation) {
+              renderer.showAnnotation(acc);
+            }
           } else {
             MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
             if (renderer.trackOrder.indexOf(track_name) < 0 ) {
