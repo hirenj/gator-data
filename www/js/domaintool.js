@@ -339,7 +339,9 @@
                 fit = true;
                 break;
               }
-
+              if ( ! a_text.parentNode || ! all_box.parentNode ) {
+                break;
+              }
               if (a_text.getBBox().width < all_box.getBBox().width) {
                 fit = true;
                 continue;
