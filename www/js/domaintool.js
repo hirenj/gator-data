@@ -873,17 +873,61 @@
           }
           console.log(err);
         }
-        var method = pref["sites"];
+        var method = pref["sites"] || pref.render_options["sites"];
+        var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
         reader.retrieve(acc,function() {
           if ( ! this.result ) {
             return;
           }
+          if ( renderer.trackOrder.indexOf(track_name) < 0 ) {
+            MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
+            renderer.trackOrder.push(track_name);
+            renderer.showLayer(track_name);
+          }
           var datas = this.result._raw_data.data;
 
           var obj = { "gotResult" : function() {
-            datas.sites.forEach(function(site) {
-              renderer.getAA(parseInt(site)).addToLayer(renderer.acc ? "all_domains" : acc,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
+            (datas.sites || []).forEach(function(site) {
+              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
             });
+            (datas.peptides || []).forEach(function(peptide) {
+              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1);
+              box.removeAttribute('style');
+              box.setAttribute('fill','#999999');
+              box.setAttribute('opacity','1');
+              box.setAttribute('stroke-width','0');
+              box.setAttribute('transform','translate('+box.getAttribute('x')+','+box.getAttribute('y')+')');
+              box.setAttribute('x','0');
+              box.setAttribute('y','-100');
+              box.setHeight = function(hght) {
+                this.setAttribute('y',-2*renderer._RS/renderer.zoom);
+                this.setAttribute('height',hght*0.1);
+              };
+              box.move = function(new_x,new_width) {
+                var transform_attr = this.getAttribute('transform');
+                var matches = /translate\(.*[,\s](.*)\)/.exec(transform_attr);
+                if (matches[1]) {
+                  this.setAttribute('transform','translate('+(new_x*renderer._RS)+','+matches[1]+')');
+                }
+                this.setAttribute('width',new_width*renderer._RS);
+              };
+              box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
+            });
+            for (var symbol in datas) {
+              if (symbol == "peptides" || symbol == "sites") {
+                continue;
+              }
+              var icons = (pref.render_options || {})["icons"];
+              if ( ! icons ) {
+                icons = {};
+              }
+              datas[symbol].forEach(function(site) {
+                var el = renderer.getAA(parseInt(site)).addToLayer(track_name,
+                  { "content" : icons[symbol] || symbol,
+                     "fill": "#ffffff",
+                     "text_fill" : "#000", "border" : "#999", "height" : 16, "bare_element" : true });
+              });
+            }
             renderer.trigger('resultsRendered',[this]);
             renderer.refresh();
           }, "agi" : acc };
@@ -1163,14 +1207,19 @@
 
       if (state.ids) {
         get_usersets = function() {};
+        var defaults = {};
+        //                "sites" : "man",
+        //        "peptides" : "true",
+        var run_parser = false;
         var parser = function(datablock){
-          for (var key in datablock) {
+          run_parser = true;
+          for (var key in datablock.data) {
             if (key == "" || key.match(/\s/)) {
-              delete datablock[key];
+              delete datablock.data[key];
             } else {
-              var dat = datablock[key];
-              delete datablock[key];
-              datablock[key.toLowerCase()] = {
+              var dat = datablock.data[key];
+              delete datablock.data[key];
+              datablock.data[key.toLowerCase()] = {
                 "data" : dat,
                 "retrieved" : datablock.retrieved,
                 "etag" : datablock.etag,
@@ -1178,12 +1227,17 @@
               };
             }
           }
+          defaults = datablock.defaults || defaults;
           delete datablock.retrieved;
           delete datablock.etag;
           delete datablock.title;
-          return datablock;
+          return datablock.data;
         };
-
+        if (sessionStorage.getItem("update_timestamps")) {
+          var json = JSON.parse(sessionStorage.getItem("update_timestamps"))
+          delete json[state.ids[0]];
+          sessionStorage.setItem("update_timestamps",JSON.stringify(json));
+        }
         (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
           if (err) {
             if (err.status === "preferences") {
@@ -1197,7 +1251,27 @@
             window.notify.alert("Problem reading document, please try again");
             return;
           }
-          window.notify.info("Successfully loaded "+(docname || ""));
+          var not = window.notify.info("Saving preferences - please wait");
+          (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+            if ( ! err ) {
+              if (run_parser) {
+                prefs.user_datasets[state.ids[0]].render_options = defaults;
+              }
+              (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
+                if (not) {
+                  not.hide();
+                }
+
+                if (err) {
+                  window.notify.alert("Could not write preferences");
+                } else {
+                  window.notify.info("Successfully loaded "+(docname || ""));
+                }
+              });
+            } else {
+              window.notify.alert("Could not write preferences");
+            }
+          });
         });
       }
 
