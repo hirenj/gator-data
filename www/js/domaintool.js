@@ -1227,7 +1227,9 @@
               };
             }
           }
-          defaults = datablock.defaults || defaults;
+          if (typeof defaults !== 'undefined') {
+            defaults = datablock.defaults || defaults;
+          }
           delete datablock.retrieved;
           delete datablock.etag;
           delete datablock.title;
