@@ -94,6 +94,24 @@
 
     @media screen {
 
+        @-webkit-keyframes pulse {
+          from {
+            -webkit-transform: scale(1);
+          }
+          50% {
+            -webkit-transform: scale(1.2,1.1);
+          }
+          to {
+            -webkit-transform: scale(1);
+          }
+        }
+
+        use.symbol_beat:hover {
+            -webkit-animation-duration: 1s;
+            -webkit-animation-name: pulse;
+            -webkit-animation-iteration-count: 2;
+        }
+
         .notification_container {
             position: fixed;
             top: 0px;

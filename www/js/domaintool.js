@@ -913,6 +913,7 @@
               };
               box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
             });
+            var offsets = {};
             for (var symbol in datas) {
               if (symbol == "peptides" || symbol == "sites") {
                 continue;
@@ -922,10 +923,38 @@
                 icons = {};
               }
               datas[symbol].forEach(function(site) {
+                var offset = -4.1;
+                var size = 24;
+                if (offsets[site]) {
+                  offset = offsets[site];
+                }
+                offsets[site] = offset + 2;
+
+                if (symbol == "HEART") {
+                  icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#heart";
+                  size = 48;
+                }
+                if (symbol == "KIDNEY") {
+                  icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#kidneys";
+                  size = 48;
+                }
                 var el = renderer.getAA(parseInt(site)).addToLayer(track_name,
                   { "content" : icons[symbol] || symbol,
-                     "fill": "#ffffff",
-                     "text_fill" : "#000", "border" : "#999", "height" : 16, "bare_element" : true });
+                     "fill": "none",
+                     "text_fill" : "#f00", "border" : "none", "offset" : offset, "height" : size, "bare_element" : true
+                  });
+                var url = icons[symbol];
+                var symbol_name = symbol;
+                if (el[1].container && el[1].container.contentElement) {
+                  setTimeout(function() {
+                    var href = el[1].container.contentElement.getAttribute('href');
+                    href = href.replace(/\?\d+/,'');
+                    el[1].container.contentElement.setAttribute('href',href);
+                    if (symbol_name == "HEART") {
+                      el[1].container.contentElement.setAttribute('class','symbol_beat');
+                    }
+                  },1000);
+                }
               });
             }
             renderer.trigger('resultsRendered',[this]);
