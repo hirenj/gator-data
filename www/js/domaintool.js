@@ -177,9 +177,16 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        MASCP.AnnotationManager(renderer);
+        var annotation_manager = new MASCP.AnnotationManager(renderer);
+        wire_find(annotation_manager);
       }
     };
+
+    var wire_find = function(manager) {
+      document.getElementById('find').addEventListener('click',function() {
+        manager.toggleSearchField();
+      });
+    }
 
     var wire_renderer_sequence_change = function(renderer) {
       var dragger = new GOMap.Diagram.Dragger();
