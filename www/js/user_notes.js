@@ -59,6 +59,126 @@
     this.search_field.className = 'search_field hidden';
   };
 
+  MASCP.AnnotationManager.prototype.addSelector = function() {
+    var self = this;
+    if ( ! renderer._canvas) {
+      renderer.bind('sequenceChange',function() {
+        self.addSelector();
+      });
+      return;
+    }
+
+    var canvas = self.renderer._canvas;
+    var mousePosition = function(evt) {
+        var posx = 0;
+        var posy = 0;
+        if (!evt) {
+            evt = window.event;
+        }
+        if (evt.pageX || evt.pageY)     {
+            posx = evt.pageX;
+            posy = evt.pageY;
+        } else if (evt.clientX || evt.clientY)  {
+            posx = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+            posy = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        }
+        if (self.targetElement) {
+            posx = evt.screenX;
+            posy = evt.screenY;
+        }
+        return [ posx, posy ];
+    };
+    var start;
+    var end;
+    var end_func;
+
+    var moving_func = function(e) {
+      var positions = mousePosition(e.changedTouches ? e.changedTouches[0] : e);
+      var p = {};
+      if (canvas.nodeName == 'svg') {
+          p = canvas.createSVGPoint();
+          var rootCTM = this.getScreenCTM();
+          p.x = positions[0];
+          p.y = positions[1];
+
+          self.matrix = rootCTM.inverse();
+          p = p.matrixTransform(self.matrix);
+      } else {
+          p.x = positions[0];
+          p.y = positions[1];
+      }
+      end = p.x;
+      if (start < end) {
+        renderer.select(parseInt(start/50)+1,parseInt(end/50));
+      } else {
+        renderer.select(parseInt(end/50)+1,parseInt(start/50));
+      }
+      e.preventDefault();
+    }
+
+
+    canvas.addEventListener('mousedown',function(e) {
+      if (! self.selecting ) {
+        return;
+      }
+      var positions = mousePosition(e);
+      var p = {};
+      if (canvas.nodeName == 'svg') {
+          p = canvas.createSVGPoint();
+          var rootCTM = this.getScreenCTM();
+          p.x = positions[0];
+          p.y = positions[1];
+
+          self.matrix = rootCTM.inverse();
+          p = p.matrixTransform(self.matrix);
+      } else {
+          p.x = positions[0];
+          p.y = positions[1];
+      }
+      start = p.x;
+      end = p.x;
+      canvas.addEventListener('mousemove',moving_func,false);
+
+      e.preventDefault();
+    },false);
+
+    canvas.addEventListener('mouseup',function() {
+      canvas.removeEventListener('mousemove',moving_func);
+    });
+
+    canvas.addEventListener('touchend',function() {
+      canvas.removeEventListener('touchmove',moving_func);
+    });
+
+    canvas.addEventListener('touchstart',function(e) {
+        if (! self.selecting ) {
+          return;
+        }
+        if (e.changedTouches.length == 1) {
+            var positions = mousePosition(e.changedTouches[0]);
+            var p = {};
+            if (canvas.nodeName == 'svg') {
+                p = canvas.createSVGPoint();
+                var rootCTM = this.getScreenCTM();
+                p.x = positions[0];
+                p.y = positions[1];
+
+                self.matrix = rootCTM.inverse();
+                p = p.matrixTransform(self.matrix);
+            } else {
+                p.x = positions[0];
+                p.y = positions[1];
+            }
+            start = p.x;
+            end = p.x;
+            canvas.addEventListener('touchmove',moving_func,false);
+
+            e.preventDefault();
+        }
+    },false);
+  }
+
+
   var show_annotations = function(renderer,acc) {
 
       // Don't trigger any popups
