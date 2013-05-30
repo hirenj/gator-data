@@ -948,6 +948,9 @@
                 if (el[1].container && el[1].container.contentElement) {
                   setTimeout(function() {
                     var href = el[1].container.contentElement.getAttribute('href');
+                    if ( ! href ) {
+                      return;
+                    }
                     href = href.replace(/\?\d+/,'');
                     el[1].container.contentElement.setAttribute('href',href);
                     if (symbol_name == "HEART") {
