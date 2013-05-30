@@ -179,6 +179,8 @@
       if (MASCP.AnnotationManager) {
         var annotation_manager = new MASCP.AnnotationManager(renderer);
         wire_find(annotation_manager);
+        wire_dragging_disable(renderer,annotation_manager);
+        annotation_manager.addSelector();
       }
     };
 
@@ -194,7 +196,7 @@
         var zoomFactor = 0.95 * renderer._container.parentNode.clientWidth / (2 * renderer.sequence.length);
         renderer.zoom = zoomFactor;
         dragger.applyToElement(renderer._canvas);
-        GOMap.Diagram.addTouchZoomControls(renderer, renderer._canvas);
+        dragger.addTouchZoomControls(renderer, renderer._canvas);
         GOMap.Diagram.addScrollZoomControls(renderer, renderer._canvas,0.1);
         GOMap.Diagram.addScrollBar(renderer, renderer._canvas,document.getElementById('scroll_box'));
 
@@ -219,9 +221,30 @@
       };
 
       jQuery(renderer).bind('sequenceChange', seq_change_func);
-
+      bean.add(renderer,'draggingtoggle',function(enabled) {
+        dragger.enabled = enabled;
+      });
     };
 
+    var wire_dragging_disable = function(renderer,manager) {
+      var is_disabled = false;
+      bean.add(document.getElementById('selecttoggle'),'click',function() {
+        bean.fire(renderer,'draggingtoggle',[is_disabled]);
+        is_disabled = ! is_disabled;
+        manager.selecting = is_disabled;
+      });
+      bean.add(document.getElementById('selecttoggle'),'touchstart',function(evt) {
+        bean.fire(renderer,'draggingtoggle',[false]);
+        manager.selecting = true;
+        evt.preventDefault();
+      });
+      bean.add(document.getElementById('selecttoggle'),'touchend',function(evt) {
+        bean.fire(renderer,'draggingtoggle',[true]);
+        manager.selecting = false;
+        evt.preventDefault();
+      });
+
+    };
 
     var wire_renderer_zoom = function(renderer) {
       var start = null;
