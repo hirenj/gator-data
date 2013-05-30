@@ -14,6 +14,10 @@
         display: none;
       }
 
+      #find {
+        display: none;
+      }
+
       @page {
         size: landscape;
       }
@@ -207,7 +211,7 @@
         #help {
             display: block;
         }
-        #drive_install {
+        #drive_install, #find {
             display: block;
             position: absolute;
             background: none;
@@ -229,6 +233,11 @@
         }
         #align {
             display: block;
+        }
+        #find {
+            background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CjxwYXRoIGQ9Ik0yOS43NzIsMjYuNDMzbC03LjEyNi03LjEyNmMwLjk2LTEuNTgzLDEuNTIzLTMuNDM1LDEuNTI0LTUuNDIxQzI0LjE2OSw4LjA5MywxOS40NzgsMy40MDEsMTMuNjg4LDMuMzk5QzcuODk3LDMuNDAxLDMuMjA0LDguMDkzLDMuMjA0LDEzLjg4NWMwLDUuNzg5LDQuNjkzLDEwLjQ4MSwxMC40ODQsMTAuNDgxYzEuOTg3LDAsMy44MzktMC41NjMsNS40MjItMS41MjNsNy4xMjgsNy4xMjdMMjkuNzcyLDI2LjQzM3pNNy4yMDMsMTMuODg1YzAuMDA2LTMuNTgyLDIuOTAzLTYuNDc4LDYuNDg0LTYuNDg2YzMuNTc5LDAuMDA4LDYuNDc4LDIuOTA0LDYuNDg0LDYuNDg2Yy0wLjAwNywzLjU4LTIuOTA1LDYuNDc2LTYuNDg0LDYuNDg0QzEwLjEwNiwyMC4zNjEsNy4yMDksMTcuNDY1LDcuMjAzLDEzLjg4NXoiIGZpbGw9IiMwMDAiLz4KPC9zdmc+);
+            background-size: 22px 22px;
+            right: 130px;
         }
         #scroll_box {
             position: absolute;
@@ -314,6 +323,20 @@
         0% {border: 1px solid #fff;}
         50% {border: 1px solid #000;}
         100% {border: 1px solid #fff;}
+    }
+
+    .search_field {
+        position: absolute;
+        display: block;
+        top: 0px;
+        right: 0px;
+        z-index: 101;
+        height: 32px;
+        overflow: hidden;
+        -webkit-transition:height 0.3s;
+    }
+    .search_field.hidden {
+        height: 0px;
     }
 
     #help:after {

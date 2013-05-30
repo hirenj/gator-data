@@ -7,6 +7,56 @@
     };
     renderer.cheat_annotation = cheat_preferences;
     renderer.nukeSettings = nuke_settings;
+    return this;
+  };
+
+  MASCP.AnnotationManager.prototype.toggleSearchField = function() {
+    if (this.showingSearch == true) {
+      this.hideSearchField();
+      this.showingSearch = false;
+    } else {
+      this.showingSearch = true;
+      this.showSearchField();
+    }
+  }
+
+  MASCP.AnnotationManager.prototype.showSearchField = function() {
+    var self = this;
+    if ( ! this.search_field ) {
+      this.search_field = document.createElement('div');
+      var search_el = document.createElement('input');
+      search_el.setAttribute('type','text');
+      search_el.addEventListener('blur',function() {
+        if (! search_el.value || search_el.value.length < 1) {
+          self.renderer.select();
+          return;
+        }
+        var search_re = new RegExp(search_el.value, "g");
+        var match;
+        var positions = [];
+        while (match=search_re.exec(self.renderer.sequence)) {
+          positions.push(match.index+1);
+          positions.push(match[0].length+match.index);
+        }
+        self.renderer.select.apply(self.renderer,positions);
+      },false);
+      this.search_field.appendChild(search_el);
+      renderer._container.appendChild(this.search_field);
+      this.search_field.className = 'search_field hidden';
+      search_el.setAttribute('value','Foo');
+    }
+    var self = this;
+    setTimeout(function() {
+      self.search_field.className = 'search_field';
+    },0);
+  };
+
+  MASCP.AnnotationManager.prototype.hideSearchField = function() {
+    if ( ! this.search_field ) {
+      return;
+    }
+    this.renderer.select();
+    this.search_field.className = 'search_field hidden';
   };
 
   var show_annotations = function(renderer,acc) {
