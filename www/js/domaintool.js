@@ -227,20 +227,32 @@
     };
 
     var wire_dragging_disable = function(renderer,manager) {
-      var is_disabled = false;
-      bean.add(document.getElementById('selecttoggle'),'click',function() {
-        bean.fire(renderer,'draggingtoggle',[is_disabled]);
-        is_disabled = ! is_disabled;
-        manager.selecting = is_disabled;
+      var toggler = document.getElementById('selecttoggle');
+      manager.selecting = false;
+
+      bean.add(toggler,'click',function() {
+        manager.selecting = ! manager.selecting;
+        toggler.className = manager.selecting ? "selecting" : "";
+        bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
       });
-      bean.add(document.getElementById('selecttoggle'),'touchstart',function(evt) {
-        bean.fire(renderer,'draggingtoggle',[false]);
-        manager.selecting = true;
+      var is_toggle_action = false;
+
+      bean.add(toggler,'touchstart',function(evt) {
+        manager.selecting = ! manager.selecting;
+        bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+        is_toggle_action = true;
+        toggler.className = manager.selecting ? "selecting" : "";
+        setTimeout(function() {
+          is_toggle_action = false;
+        },500);
         evt.preventDefault();
       });
-      bean.add(document.getElementById('selecttoggle'),'touchend',function(evt) {
-        bean.fire(renderer,'draggingtoggle',[true]);
-        manager.selecting = false;
+      bean.add(toggler,'touchend',function(evt) {
+        if ( ! is_toggle_action ) {
+          manager.selecting = ! manager.selecting;
+          toggler.className = manager.selecting ? "selecting" : "";
+          bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+        }
         evt.preventDefault();
       });
 
