@@ -305,8 +305,16 @@
     }
 
     #selecttoggle.selecting {
-        background :#f00;
+        background-color :#dfd;
     }
+    #selecttoggle {
+        background-color: #fff;
+        background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+DQogICAgPHJlY3QgeD0iMTAiIHk9IjEyIiB3aWR0aD0iNDQiIGhlaWdodD0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtZGFzaGFycmF5PSI4LDQiIC8+DQo8L3N2Zz4=);
+        background-size: 21px 22px;
+        background-position: 6px 6px;
+        background-repeat: no-repeat;
+    }
+
     #align {
         top: 10px;
         right: 80px;
@@ -338,20 +346,36 @@
         position: absolute;
         display: block;
         top: 0px;
-        right: 0px;
+        right: 10px;
         z-index: 101;
-        height: 32px;
+        height: auto;
+        background: #fff;
+        border: solid black 1px;
+        border-radius: 5px 5px;
         overflow: hidden;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        box-shadow: 3px 3px 3px #ddd;
+        -webkit-transition:top 0.5s;
+        -moz-transition:top 0.5s;
+        -o-transition:top 0.5s;
+        transition:top 0.5s;
     }
     .search_field.hidden {
+        top: -150%;
         height: 0px;
+        padding: 0px;
+        border: 0px;
     }
 
-    #help:after {
+/*    #help:after {
         content: "?";
         display: block;
         color: #000;
     }
+*/
     div.help_box {
         top: 20%;
         left: 0;
@@ -410,6 +434,15 @@
     }
     .hint--inline:before, .hint--inline:after {
         right: 10px !important;
+    }
+    .hint--bottom-left:before {
+        left: 30% !important;
+    }
+
+    .hint--bottom-left:after {
+        right: 0% !important;
+        left: auto !important;
+        /*left: -150% !important;*/
     }
 
     #protein_list div {
