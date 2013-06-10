@@ -59,11 +59,11 @@
     this.search_field.className = 'search_field hidden';
   };
 
-  MASCP.AnnotationManager.prototype.addSelector = function() {
+  MASCP.AnnotationManager.prototype.addSelector = function(callback) {
     var self = this;
     if ( ! renderer._canvas) {
       renderer.bind('sequenceChange',function() {
-        self.addSelector();
+        self.addSelector(callback);
       });
       return;
     }
@@ -108,12 +108,16 @@
           p.y = positions[1];
       }
       end = p.x;
+      var selected;
       if (start < end) {
         renderer.select(parseInt(start/50)+1,parseInt(end/50));
-        // console.log(renderer.sequence.substr((start/50),parseInt(end/50) - ((start/50)) + 1 ));
+        selected = (renderer.sequence.substr((start/50),parseInt(end/50) - ((start/50)) + 1 ));
       } else {
         renderer.select(parseInt(end/50)+1,parseInt(start/50));
-        // console.log(renderer.sequence.substr((end/50),parseInt(start/50) - ((end/50)) + 1 ));
+        selected = (renderer.sequence.substr((end/50),parseInt(start/50) - ((end/50)) + 1 ));
+      }
+      if (callback) {
+        callback(selected);
       }
       e.preventDefault();
     }
