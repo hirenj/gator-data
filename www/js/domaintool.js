@@ -232,7 +232,8 @@
 
       bean.add(toggler,'click',function() {
         manager.selecting = ! manager.selecting;
-        toggler.className = manager.selecting ? "selecting" : "";
+        var curr_classname = toggler.className.replace('selecting','');
+        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
         bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
       });
       var is_toggle_action = false;
@@ -241,7 +242,8 @@
         manager.selecting = ! manager.selecting;
         bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
         is_toggle_action = true;
-        toggler.className = manager.selecting ? "selecting" : "";
+        var curr_classname = toggler.className.replace('selecting','');
+        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
         setTimeout(function() {
           is_toggle_action = false;
         },500);
@@ -250,7 +252,8 @@
       bean.add(toggler,'touchend',function(evt) {
         if ( ! is_toggle_action ) {
           manager.selecting = ! manager.selecting;
-          toggler.className = manager.selecting ? "selecting" : "";
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
           bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
         }
         evt.preventDefault();

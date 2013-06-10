@@ -43,12 +43,12 @@
       this.search_field.appendChild(search_el);
       renderer._container.appendChild(this.search_field);
       this.search_field.className = 'search_field hidden';
-      search_el.setAttribute('value','Foo');
+      search_el.setAttribute('value','');
     }
-    var self = this;
     setTimeout(function() {
       self.search_field.className = 'search_field';
     },0);
+    return search_field;
   };
 
   MASCP.AnnotationManager.prototype.hideSearchField = function() {
@@ -110,8 +110,10 @@
       end = p.x;
       if (start < end) {
         renderer.select(parseInt(start/50)+1,parseInt(end/50));
+        // console.log(renderer.sequence.substr((start/50),parseInt(end/50) - ((start/50)) + 1 ));
       } else {
         renderer.select(parseInt(end/50)+1,parseInt(start/50));
+        // console.log(renderer.sequence.substr((end/50),parseInt(start/50) - ((end/50)) + 1 ));
       }
       e.preventDefault();
     }
