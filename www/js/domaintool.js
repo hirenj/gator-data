@@ -177,9 +177,21 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        MASCP.AnnotationManager(renderer);
+        var annotation_manager = new MASCP.AnnotationManager(renderer);
+        wire_find(annotation_manager);
+        wire_dragging_disable(renderer,annotation_manager);
+        annotation_manager.addSelector(function(text) {
+          document.getElementById('selecttoggle').firstChild.textContent = text;
+          selectElementContents(document.getElementById('selecttoggle').firstChild);
+        });
       }
     };
+
+    var wire_find = function(manager) {
+      document.getElementById('find').addEventListener('click',function() {
+        manager.toggleSearchField();
+      });
+    }
 
     var wire_renderer_sequence_change = function(renderer) {
       var dragger = new GOMap.Diagram.Dragger();
@@ -187,7 +199,7 @@
         var zoomFactor = 0.95 * renderer._container.parentNode.clientWidth / (2 * renderer.sequence.length);
         renderer.zoom = zoomFactor;
         dragger.applyToElement(renderer._canvas);
-        GOMap.Diagram.addTouchZoomControls(renderer, renderer._canvas);
+        dragger.addTouchZoomControls(renderer, renderer._canvas);
         GOMap.Diagram.addScrollZoomControls(renderer, renderer._canvas,0.1);
         GOMap.Diagram.addScrollBar(renderer, renderer._canvas,document.getElementById('scroll_box'));
 
@@ -212,9 +224,61 @@
       };
 
       jQuery(renderer).bind('sequenceChange', seq_change_func);
-
+      bean.add(renderer,'draggingtoggle',function(enabled) {
+        dragger.enabled = enabled;
+      });
     };
 
+    var selectElementContents = function(el) {
+        if (window.getSelection && document.createRange) {
+            var sel = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (document.selection && document.body.createTextRange) {
+            var textRange = document.body.createTextRange();
+            textRange.moveToElementText(el);
+            textRange.select();
+        }
+    }
+
+    var wire_dragging_disable = function(renderer,manager) {
+      var toggler = document.getElementById('selecttoggle');
+      manager.selecting = false;
+      bean.add(toggler,'click',function(e) {
+        if (e.target != toggler) {
+          return;
+        }
+        manager.selecting = ! manager.selecting;
+        var curr_classname = toggler.className.replace('selecting','');
+        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+        bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+      });
+      var is_toggle_action = false;
+
+      bean.add(toggler,'touchstart',function(evt) {
+        manager.selecting = ! manager.selecting;
+        bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+        is_toggle_action = true;
+        var curr_classname = toggler.className.replace('selecting','');
+        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+        setTimeout(function() {
+          is_toggle_action = false;
+        },500);
+        evt.preventDefault();
+      });
+      bean.add(toggler,'touchend',function(evt) {
+        if ( ! is_toggle_action ) {
+          manager.selecting = ! manager.selecting;
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+        }
+        evt.preventDefault();
+      });
+
+    };
 
     var wire_renderer_zoom = function(renderer) {
       var start = null;
