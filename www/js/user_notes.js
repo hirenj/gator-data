@@ -48,7 +48,7 @@
     setTimeout(function() {
       self.search_field.className = 'search_field';
     },0);
-    return search_field;
+    return self.search_field;
   };
 
   MASCP.AnnotationManager.prototype.hideSearchField = function() {
