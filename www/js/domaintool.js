@@ -180,7 +180,10 @@
         var annotation_manager = new MASCP.AnnotationManager(renderer);
         wire_find(annotation_manager);
         wire_dragging_disable(renderer,annotation_manager);
-        annotation_manager.addSelector();
+        annotation_manager.addSelector(function(text) {
+          document.getElementById('selecttoggle').firstChild.textContent = text;
+          selectElementContents(document.getElementById('selecttoggle').firstChild);
+        });
       }
     };
 
@@ -226,11 +229,27 @@
       });
     };
 
+    var selectElementContents = function(el) {
+        if (window.getSelection && document.createRange) {
+            var sel = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (document.selection && document.body.createTextRange) {
+            var textRange = document.body.createTextRange();
+            textRange.moveToElementText(el);
+            textRange.select();
+        }
+    }
+
     var wire_dragging_disable = function(renderer,manager) {
       var toggler = document.getElementById('selecttoggle');
       manager.selecting = false;
-
-      bean.add(toggler,'click',function() {
+      bean.add(toggler,'click',function(e) {
+        if (e.target != toggler) {
+          return;
+        }
         manager.selecting = ! manager.selecting;
         var curr_classname = toggler.className.replace('selecting','');
         toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
