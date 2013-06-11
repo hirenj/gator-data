@@ -26,12 +26,12 @@
       this.search_field = document.createElement('div');
       var search_el = document.createElement('input');
       search_el.setAttribute('type','text');
-      search_el.addEventListener('blur',function() {
+      search_el.onblur = function() {
         if (! search_el.value || search_el.value.length < 1) {
           self.renderer.select();
           return;
         }
-        var search_re = new RegExp(search_el.value, "g");
+        var search_re = new RegExp(search_el.value, "gi");
         var match;
         var positions = [];
         while (match=search_re.exec(self.renderer.sequence)) {
@@ -39,12 +39,12 @@
           positions.push(match[0].length+match.index);
         }
         self.renderer.select.apply(self.renderer,positions);
-      },false);
+      };
       this.search_field.appendChild(search_el);
       renderer._container.appendChild(this.search_field);
       this.search_field.className = 'search_field hidden';
       search_el.setAttribute('value','');
-    }
+    };
     setTimeout(function() {
       self.search_field.className = 'search_field';
     },0);
@@ -91,6 +91,7 @@
     var start;
     var end;
     var end_func;
+    var selected;
 
     var moving_func = function(e) {
       var positions = mousePosition(e.changedTouches ? e.changedTouches[0] : e);
@@ -108,16 +109,12 @@
           p.y = positions[1];
       }
       end = p.x;
-      var selected;
       if (start < end) {
         renderer.select(parseInt(start/50)+1,parseInt(end/50));
         selected = (renderer.sequence.substr((start/50),parseInt(end/50) - ((start/50)) + 1 ));
       } else {
         renderer.select(parseInt(end/50)+1,parseInt(start/50));
         selected = (renderer.sequence.substr((end/50),parseInt(start/50) - ((end/50)) + 1 ));
-      }
-      if (callback) {
-        callback(selected);
       }
       e.preventDefault();
     }
@@ -149,10 +146,18 @@
     },false);
 
     canvas.addEventListener('mouseup',function() {
+      if (callback) {
+        callback(selected);
+      }
       canvas.removeEventListener('mousemove',moving_func);
     });
 
     canvas.addEventListener('touchend',function() {
+      if (callback) {
+        setTimeout(function() {
+          callback(selected);
+        },500);
+      }
       canvas.removeEventListener('touchmove',moving_func);
     });
 
