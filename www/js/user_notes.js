@@ -146,14 +146,14 @@
     },false);
 
     canvas.addEventListener('mouseup',function() {
-      if (callback) {
+      if (self.selecting && callback) {
         callback(selected);
       }
       canvas.removeEventListener('mousemove',moving_func);
     });
 
     canvas.addEventListener('touchend',function() {
-      if (callback) {
+      if (self.selecting && callback) {
         setTimeout(function() {
           callback(selected);
         },500);
