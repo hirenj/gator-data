@@ -430,7 +430,7 @@
         if (! err && file.permissions.write) {
           edit_toggler.enabled = true;
           console.log("Permissions to update");
-          callback.call(null,true,self.acc);
+          callback.call(null,editing_enabled,self.acc);
           jQuery(renderer).bind('orderChanged',function(e,order) {
             if ((order.indexOf((self.acc || "").toUpperCase()) !== 0 && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
               renderer.clearDataFor(self.acc);
