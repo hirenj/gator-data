@@ -617,13 +617,10 @@
         scale_text_elements(renderer);
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
         domain_retriever = new MASCP.DomainRenderer(renderer,function(editing,acc) {
-          if (editing) {
-            show_protein(acc,renderer);
-            if (renderer.navigation) {
-              renderer.navigation.show();
-            }
+          show_protein(acc,renderer);
+          if (editing && renderer.navigation) {
+            renderer.navigation.show();
           }
-            // show_protein()
         });
         return renderer;
     };
@@ -687,7 +684,9 @@
         return;
       }
       var ucacc = acc.toString().toUpperCase();
-
+      if (document.getElementById('uniprot_id').textContent == ucacc) {
+        return;
+      }
       if (window.ga) {
         setTimeout(function() {
           window.ga('send','pageview','/uniprot/'+ucacc);
@@ -743,9 +742,9 @@
         }
 
         // renderer.acc = acc;
+        document.getElementById('uniprot_id').textContent = ucacc;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
-        document.getElementById('uniprot_id').textContent = ucacc;
         renderer.grow_container = true;
         if (success) {
           success();
