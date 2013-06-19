@@ -326,6 +326,7 @@
         font-family: Courier;
         font-weight: normal;
         font-size: 0.7em;
+        overflow: hidden;
     }
     #selecttoggle {
         background-color: #fff;
