@@ -75,12 +75,12 @@
                   group.forEach(function(site){
                     renderer.getAA(site).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : 24,  "bare_element" : true })[1].zoom_level = 'text';
                   });
-                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : offset });
+                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : 21.5, "height" : 9.75 });
                   var a_galnac = (offset > 0) ? renderer.light_galnac() : renderer.galnac();
                   rect.setAttribute('fill',a_galnac.getAttribute('fill'));
                   rect.setAttribute('stroke',a_galnac.getAttribute('stroke'));
+                  rect.setAttribute('stroke-width',70);
                   a_galnac.parentNode.removeChild(a_galnac);
-                  rect.setAttribute('stroke-width','50');
                   rect.removeAttribute('style');
                   rect.setAttribute('rx','120');
                   rect.setAttribute('ry','120');
