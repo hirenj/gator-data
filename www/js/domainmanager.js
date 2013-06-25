@@ -100,7 +100,7 @@
 
   var with_user_preferences = function(callback) {
     // Don't trigger any popups
-    if ( ! window.event ) {
+    if ( ! "event" in window ) {
       window.event = { "which" : null };
     }
     (new MASCP.GoogledataReader()).getPreferences("Editing prefs",function(err,data) {
