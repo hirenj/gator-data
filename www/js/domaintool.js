@@ -755,7 +755,7 @@
 
     var wire_drive_button = function() {
       drive_install(function(err,auth_func) {
-        if (auth_func) {
+        if (false && auth_func) {
           document.getElementById('drive_install').addEventListener('click',function() {
             if (window.ga) {
               setTimeout(function() {
@@ -774,7 +774,29 @@
         } else if (err) {
           return;
         } else {
-          document.getElementById('drive_install').style.display = 'none';
+          document.getElementById('drive_install').removeEventListener('click',arguments.callee);
+          var flipped;
+          document.getElementById('drive_install').addEventListener('click',function() {
+            if (flipped) {
+              flipped.close();
+              flipped = null;
+              return;
+            }
+            (new MASCP.GoogledataReader()).listWatchedDocuments("Domaintool preferences",function(err,sets) {
+              if (err) {
+                return;
+              }
+              var sets_array = [];
+              for (var set in sets) {
+                sets_array.push( { "name" : sets[set].title || set, "id" : set } );
+              }
+              console.log(sets);
+              renderer.fillTemplate("userset_tmpl",{ "sets" : sets_array },function(error,html) {
+                flipped = flippant.flip(document.getElementById('sequence_frame'), html);
+              });
+            });
+          },false);
+          // document.getElementById('drive_install').style.display = 'none';
         }
 
       });
