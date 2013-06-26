@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
     <link rel="stylesheet" type="text/css" href="/css/hint.css"/>
     <link rel="stylesheet" type="text/css" href="/css/autocomplete.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/flippant.css"/>
     <script src="/js/notifications.js"></script>
 
 <!--[if IE]>
@@ -47,6 +48,14 @@
         <%=start%> to <%=end%><br/>
         <%=desc%>
         </div>
+    </script>
+    <script type="text/html" id="userset_tmpl">
+        <h3>Data set preferences</h3>
+        <ul class="drive_preferences">
+        <% for (var i = 0; i < sets.length; i++ ) { %>
+            <li id="userset_<%= sets[i].id %>" data-docid="<%= sets[i].id %>" ><%= sets[i].name %><div class="remove">Remove</div></li>
+        <% } %>
+        </ul>
     </script>
     <div id="page_canvas">
     <div id="protein_list"></div>?
@@ -99,6 +108,7 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript" src="/js/classlist.js"></script>
     <script type="text/javascript" src="/js/mascp-jstools.js"></script>
     <script type="text/javascript" src="/js/domain_definitions.js"></script>
     <script type="text/javascript" charset="utf-8" src="/js/jquery-1.4.1.min.js"></script>
@@ -107,6 +117,7 @@
     <script type="text/javascript" src="/js/domainmanager.js"></script>
     <script type="text/javascript" src="/js/domaintool.js"></script>
     <script type="text/javascript" src="/js/user_notes.js"></script>
+    <script type="text/javascript" src="/js/flippant.js"></script>
     <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=init"></script>
 </body>
 </html>

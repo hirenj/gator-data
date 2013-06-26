@@ -762,7 +762,6 @@
                 window.ga('send','event','drive_install','click');
               },0);
             }
-
             auth_func(function(err) {
               if (err) {
                 return;
@@ -774,7 +773,48 @@
         } else if (err) {
           return;
         } else {
-          document.getElementById('drive_install').style.display = 'none';
+          document.getElementById('drive_install').removeEventListener('click',arguments.callee);
+          var flipped;
+          document.getElementById('drive_install').classList.add("drive_preferences");
+          document.getElementById('drive_install').setAttribute('data-hint','Data set preferences');
+          document.getElementById('drive_install').addEventListener('click',function() {
+            if (flipped) {
+              if (flipped.close) {
+                flipped.close();
+              }
+              flipped = null;
+              return;
+            }
+            flipped = true;
+            (new MASCP.GoogledataReader()).listWatchedDocuments("Domaintool preferences",function(err,sets) {
+              if (err) {
+                return;
+              }
+              if (flipped != true) {
+                return;
+              }
+              var sets_array = [];
+              for (var set in sets) {
+                sets_array.push( { "name" : sets[set].title || set, "id" : set } );
+              }
+              renderer.fillTemplate("userset_tmpl",{ "sets" : sets_array },function(error,html) {
+                flipped = flippant.flip(document.getElementById('sequence_frame'), html);
+                var matches = flipped.querySelectorAll('ul .remove');
+                for (var i = 0 ; i < matches.length; i++) {
+                  matches[i].addEventListener('click',function() {
+                    var self = this;
+                    var par_doc = self.parentNode.getAttribute('data-docid');
+                    (new MASCP.GoogledataReader()).removeWatchedDocument("Domaintool preferences",par_doc,function(err) {
+                      if ( ! err ) {
+                        self.parentNode.parentNode.removeChild(self.parentNode);
+                      }
+                    });
+                  },false);
+                }
+              });
+            });
+          },false);
+          // document.getElementById('drive_install').style.display = 'none';
         }
 
       });
@@ -1343,39 +1383,46 @@
           delete json[state.ids[0]];
           sessionStorage.setItem("update_timestamps",JSON.stringify(json));
         }
-        (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
-          if (err) {
-            if (err.status === "preferences") {
-              if (err.original_error.cause === "No user event") {
-                window.notify.alert("You have been logged out, please click the drive button to authorize again");
+        MASCP.Service.ClearCache('MASCP.UserdataReader.'+state.ids[0],null,function(err) {
+          console.log("Cleared data");
+          (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState({},"Loading of "+docname);
+              document.title = "Loading of "+docname;
+            }
+            if (err) {
+              if (err.status === "preferences") {
+                if (err.original_error.cause === "No user event") {
+                  window.notify.alert("You have been logged out, please click the drive button to authorize again");
+                  return;
+                }
+                window.notify.alert("Error setting preferences - try opening document again");
                 return;
               }
-              window.notify.alert("Error setting preferences - try opening document again");
+              window.notify.alert("Problem reading document, please try again");
               return;
             }
-            window.notify.alert("Problem reading document, please try again");
-            return;
-          }
-          var not = window.notify.info("Saving preferences - please wait");
-          (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
-            if ( ! err ) {
-              if (run_parser) {
-                prefs.user_datasets[state.ids[0]].render_options = defaults;
-              }
-              (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
-                if (not) {
-                  not.hide();
+            var not = window.notify.info("Saving preferences - please wait");
+            (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+              if ( ! err ) {
+                if (run_parser) {
+                  prefs.user_datasets[state.ids[0]].render_options = defaults;
                 }
+                (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
+                  if (not) {
+                    not.hide();
+                  }
 
-                if (err) {
-                  window.notify.alert("Could not write preferences");
-                } else {
-                  window.notify.info("Successfully loaded "+(docname || ""));
-                }
-              });
-            } else {
-              window.notify.alert("Could not write preferences");
-            }
+                  if (err) {
+                    window.notify.alert("Could not write preferences");
+                  } else {
+                    window.notify.info("Successfully loaded "+(docname || ""));
+                  }
+                });
+              } else {
+                window.notify.alert("Could not write preferences");
+              }
+            });
           });
         });
       }
