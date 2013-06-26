@@ -679,12 +679,12 @@
       document.getElementById("description").textContent = description;
     };
 
-    var show_protein = function(acc,renderer,success) {
+    var show_protein = function(acc,renderer,success,force) {
       if ( ! acc ) {
         return;
       }
       var ucacc = acc.toString().toUpperCase();
-      if (document.getElementById('uniprot_id').textContent == ucacc) {
+      if (! force && document.getElementById('uniprot_id').textContent == ucacc) {
         return;
       }
       if (window.ga) {
@@ -797,7 +797,7 @@
               var clazz = selected.getAttribute('class') || '';
               selected.setAttribute('class',clazz.replace(/selected\s/,''));
             }
-            show_protein(uniprot.textContent,renderer);
+            show_protein(uniprot.textContent,renderer,null,true);
           }
         }
       },false);
