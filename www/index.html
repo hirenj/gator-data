@@ -50,9 +50,10 @@
         </div>
     </script>
     <script type="text/html" id="userset_tmpl">
-        <ul>
+        <h3>Data set preferences</h3>
+        <ul class="drive_preferences">
         <% for (var i = 0; i < sets.length; i++ ) { %>
-            <li id="userset_<%= sets[i].id %>" data-docid="<%= sets[i].id %>" ><%= sets[i].name %></li>
+            <li id="userset_<%= sets[i].id %>" data-docid="<%= sets[i].id %>" ><%= sets[i].name %><div class="remove">Remove</div></li>
         <% } %>
         </ul>
     </script>
