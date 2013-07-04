@@ -829,6 +829,7 @@
           var selected;
           selected = document.getElementById('prot_'+uniprot.textContent.toLowerCase());
           if (selected) {
+            show_protein(uniprot.textContent,renderer,null,true);
             bean.fire(selected,'click');
             selected.scrollIntoView(true);
           } else {
