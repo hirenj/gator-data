@@ -124,7 +124,7 @@ var refresh_file = function(file,map,title) {
 
 var watching_block = nconf.get("watching:spreadsheet") || {};
 
-setTimeout(function() {
+var start_spreadsheet_watching = function() {
     console.log("Checking to see if any documents need to be updated");
     for (var doc_conf in watching_block) {
         var check_interval = watching_block[doc_conf].check_interval || 1000*60*60*24*7;
@@ -148,11 +148,11 @@ setTimeout(function() {
     }
     console.log("Checking next in a day");
     setTimeout(arguments.callee,1000*60*60*24);
-},0);
+};
 
 var watch_file_block = nconf.get("watching:file") || {};
 
-setTimeout(function() {
+var start_document_watching = function() {
     for (var doc_conf in watch_file_block) {
         console.log("Watching "+doc_conf+" for changes");
         (function(doc_name) {
@@ -198,13 +198,16 @@ setTimeout(function() {
         });
         })(doc_conf);
     }
-},0);
+};
 
-var watch_file = function(filename,map,title) {
+var watch_file = function(filename,map,title,callback) {
     if (nconf.get('watching:file:'+filename)) {
         var curr = nconf.get('watching:file:'+filename);
         if (curr.parser_function.toString() === (map || "").toString()) {
             console.log("Already watching file "+filename);
+            if (callback) {
+                callback();
+            }
             return;
         }
     }
@@ -219,14 +222,22 @@ var watch_file = function(filename,map,title) {
                 } else {
                     console.log("Data inserted for "+filename+" - will automatically update");
                 }
+                if (callback) {
+                    callback(err);
+                }
             });
         } else {
             console.log("Please try again with a defined parser function");
         }
     });
+    inserter.bind('error',function() {
+        if (callback) {
+            callback.call("Some file error");
+        }
+    });
 }
 
-var watch_spreadsheet = function(doc,map) {
+var watch_spreadsheet = function(doc,map,callback) {
     if (nconf.get('watching:spreadsheet:'+doc)) {
         var curr = nconf.get('watching:spreadsheet:'+doc);
         if (curr.parser_function.toString() === (map || "").toString()) {
@@ -265,16 +276,24 @@ var watch_spreadsheet = function(doc,map) {
                 if (err) {
                     console.log("Could not write config");
                 } else {
+                    if (callback) {
+                        callback();
+                    }
                     console.log("Data inserted - will automatically update for spreadsheet:"+doc);
                 }
             });
         } else {
             console.log("Please try again with a defined parser function");
+            if (callback) {
+                callback("Please try again with a defined parser function");
+            }
         }
     });
     inserter.bind('error',function(err) {
         console.log("Error retrieving spreadsheet for spreadsheet:"+doc);
-        console.log(arguments);
+        if (callback) {
+            callback(err);
+        }
     });
 };
 
@@ -605,13 +624,31 @@ MASCP.events.once('ready',function() {
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');
+        var running = 0;
+        var auto_exit = function(actual_func) {
+            return function() {
+                running++;
+                actual_func.apply(null,Array.prototype.slice.call(arguments).concat(
+                    function(err) {
+                    running--;
+                    setTimeout(function() {
+                        if (running == 0) {
+                            process.exit();
+                        }
+                    },100);
+                    })
+                );
+            };
+        };
         try {
-            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: watch_spreadsheet, watch_file : watch_file, live_update : live_update }, "<stdin>");
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: auto_exit(watch_spreadsheet), watch_file : auto_exit(watch_file), live_update : live_update }, "<stdin>");
         } catch (e) {
             console.log("Error running script");
             console.log(e);
         }
     } else {
+        start_document_watching();
+        start_spreadsheet_watching();
         repl.start("Gator data server >");
         repl.repl.context.resource_map = resource_map;
         repl.repl.context.watch_spreadsheet = watch_spreadsheet;
