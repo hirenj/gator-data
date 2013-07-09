@@ -5,7 +5,7 @@ MASCP = require('mascp-jstools');
 var nconf = require('nconf');
 var fs = require('fs');
 
-nconf.env().argv();
+nconf.env('__').argv();
 
 nconf.file('config.json');
 
@@ -96,7 +96,7 @@ var refresh_file = function(file,map,title) {
     console.log("Inserting for "+inserter.toString());
     inserter.map = map;
     inserter.bind('progress',function(percent) {
-        console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[34m"+percent.toFixed(0)+"%\u001b[0m)");
+        console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[36;1m"+percent.toFixed(0)+"%\u001b[0m)");
     });
     MASCP.Service.ClearCache(inserter.toString(),null,function() {
         console.log("Cleared data out");
@@ -160,7 +160,7 @@ var start_document_watching = function() {
             if (err) {
                 return;
             }
-            if ((stats.mtime.getTime() - watch_file_block[doc_name].last_check) > 0) {
+            if (((stats.mtime.getTime() - watch_file_block[doc_name].last_check) > 0) || nconf.get("force")) {
                 console.log(doc_name+" has changed, refreshing");
                 var inserter = refresh_file(doc_name, eval("("+watch_file_block[doc_name].parser_function+")"),watch_file_block[doc_name].title);
                 inserter.bind('ready',function() {
@@ -193,7 +193,7 @@ var start_document_watching = function() {
                         console.log("Saved configuration");
                     }
                 });
-                console.log("Reloaded data from "+doc_name);
+                console.log("Reloaded data from "+doc_name+" into "+inserter.toString());
             });
         });
         })(doc_conf);
@@ -647,12 +647,16 @@ MASCP.events.once('ready',function() {
             console.log(e);
         }
     } else {
-        start_document_watching();
-        start_spreadsheet_watching();
-        repl.start("Gator data server >");
-        repl.repl.context.resource_map = resource_map;
-        repl.repl.context.watch_spreadsheet = watch_spreadsheet;
-        repl.repl.context.watch_file = watch_file;
+        if (nconf.get("watch")) {
+            start_document_watching();
+            start_spreadsheet_watching();
+        }
+        if ( ! nconf.get("headless") ) {
+            repl.start("Gator data server >");
+            repl.repl.context.resource_map = resource_map;
+            repl.repl.context.watch_spreadsheet = watch_spreadsheet;
+            repl.repl.context.watch_file = watch_file;
+        }
     }
 
 });
