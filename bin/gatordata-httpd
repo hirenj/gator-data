@@ -96,7 +96,7 @@ var refresh_file = function(file,map,title) {
     console.log("Inserting for "+inserter.toString());
     inserter.map = map;
     inserter.bind('progress',function(percent) {
-        console.log(title+" insertion ("+percent+"%)");
+        console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[34m"+percent.toFixed(0)+"%\u001b[0m)");
     });
     MASCP.Service.ClearCache(inserter.toString(),null,function() {
         console.log("Cleared data out");
