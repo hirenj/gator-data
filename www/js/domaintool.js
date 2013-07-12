@@ -966,7 +966,6 @@
 
     var get_generic_data = function(acc,renderer,datareader,done) {
       datareader._endpointURL = '/data/latest/gator';
-      console.log(datareader.__class__.SERVICE_URL);
       datareader.registerSequenceRenderer(renderer);
 
       if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
@@ -1006,7 +1005,7 @@
         window.event = { "which" : null };
       }
 
-      var allowed = { "PrideRunner" : 1 };
+      var allowed = { "PrideRunner" : 1, "HydropathyRunner" : 1 };
 
       (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
         if ( ! err ) {
