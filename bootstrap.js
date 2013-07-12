@@ -142,3 +142,15 @@ live_update("fulldomains",MASCP.UnionDomainReader,function(old_data,new_data)  {
         return old_data;
 });
 
+live_update("pride",MASCP.PrideRunner,function(old_data,new_data)  {
+        if ( ! old_data ) {
+                return new_data;
+        }
+        if ( ! new_data ) {
+                return old_data;
+        }
+        for (var key in new_data.data) {
+                old_data.data[key] = new_data.data[key];
+        }
+        return old_data;
+});

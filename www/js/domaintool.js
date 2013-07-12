@@ -964,12 +964,62 @@
       });
     };
 
+    var get_generic_data = function(acc,renderer,datareader,done) {
+      datareader._endpointURL = '/data/latest/gator';
+      console.log(datareader.__class__.SERVICE_URL);
+      datareader.registerSequenceRenderer(renderer);
+
+      if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
+        renderer.trackOrder.unshift(renderer.acc ? "all_domains" : acc);
+      }
+      renderer.bind('resultsRendered',function(e,reader) {
+        if (reader == datareader) {
+          renderer.refresh();
+          renderer.unbind('resultsRendered',arguments.callee);
+        }
+      });
+      datareader.retrieve(acc,function(err) {
+        if (this.result) {
+          window.notify.info("Retrieved data").hideLater(1000);
+          if (this.result._raw_data.data.length < 1 ) {
+            window.notify.info("No data for "+acc);
+          }
+        } else {
+            window.notify.info("No data found for "+acc.toUpperCase()).hideLater(2000);
+        }
+        if (err) {
+          if (err !== "No data") {
+            window.notify.warn("Could not retrieve data");
+          }
+        }
+        if (done) {
+          done();
+        }
+      });
+    };
+
+
     var get_usersets = function(acc,renderer) {
 
       // Don't trigger any popups
       if ( ! window.event ) {
         window.event = { "which" : null };
       }
+
+      var allowed = { "PrideRunner" : 1 };
+
+      (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+        if ( ! err ) {
+          for (var set in prefs.user_datasets) {
+            if (allowed[set]) {
+              var reader_class = MASCP[set];
+              var reader = new reader_class();
+              get_generic_data(acc,renderer,reader);
+            }
+          }
+        }
+      });
+
 
       (new MASCP.GoogledataReader()).readWatchedDocuments("Domaintool preferences",function(err,pref,reader) {
         if (err) {
@@ -1348,6 +1398,28 @@
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
+
+      if (state.addservice) {
+        (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+          if ( ! err ) {
+            if ( ! prefs.user_datasets[state.addservice]) {
+              prefs.user_datasets[state.addservice] = {};
+            }
+            prefs.user_datasets[state.addservice].render_options = {};
+
+            (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
+              if (err) {
+                window.notify.alert("Could not write preferences");
+              } else {
+                window.notify.info("Successfully loaded "+(state.addservice || ""));
+              }
+            });
+          } else {
+            console.log(err);
+            window.notify.alert("Could not write preferences");
+          }
+        });
+      }
 
       if (state.ids) {
         get_usersets = function() {};
