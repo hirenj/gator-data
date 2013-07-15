@@ -795,7 +795,7 @@
               }
               var sets_array = [];
               for (var set in sets) {
-                sets_array.push( { "name" : sets[set].title || set, "id" : set } );
+                sets_array.push( { "name" : sets[set].title || sets[set].name || set, "id" : set } );
               }
               renderer.fillTemplate("userset_tmpl",{ "sets" : sets_array },function(error,html) {
                 flipped = flippant.flip(document.getElementById('sequence_frame'), html);
@@ -964,13 +964,31 @@
       });
     };
 
-    var get_generic_data = function(acc,renderer,datareader,done) {
+    var get_generic_data = function(acc,renderer,datareader,options,done) {
       datareader._endpointURL = '/data/latest/gator';
-      datareader.registerSequenceRenderer(renderer);
-
-      if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
-        renderer.trackOrder.unshift(renderer.acc ? "all_domains" : acc);
+      var track = acc;
+      if (! options.inline) {
+        if ( true || ! MASCP.getGroup('extra_data')) {
+          MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
+          MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
+          renderer.createGroupController('extra_data_controller','extra_data');
+          renderer.showLayer('extra_data_controller');
+          if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
+            renderer.trackOrder.push('extra_data_controller');
+          }
+        }
+        MASCP.registerLayer(datareader.toString(),{"fullname" : options.name || datareader.toString(), "group" : "extra_data"});
+        track = datareader.toString();
+        renderer.trackOrder.push(datareader.toString());
+      } else {
+        if (renderer.trackOrder.indexOf(track) < 0) {
+          renderer.trackOrder.unshift(track);
+          renderer.showLayer(track);
+        }
       }
+      options.track = track;
+      datareader.registerSequenceRenderer(renderer,options);
+
       renderer.bind('resultsRendered',function(e,reader) {
         if (reader == datareader) {
           renderer.refresh();
@@ -979,16 +997,16 @@
       });
       datareader.retrieve(acc,function(err) {
         if (this.result) {
-          window.notify.info("Retrieved data").hideLater(1000);
+          window.notify.info("Retrieved data for "+(options.name || datareader.toString()) ).hideLater(1000);
           if (this.result._raw_data.data.length < 1 ) {
-            window.notify.info("No data for "+acc);
+            window.notify.info("No data for "+(options.name || datareader.toString())+" accession " +acc);
           }
         } else {
-            window.notify.info("No data found for "+acc.toUpperCase()).hideLater(2000);
+            window.notify.info("No data found for "+(options.name || datareader.toString())+" "+acc.toUpperCase()).hideLater(2000);
         }
         if (err) {
           if (err !== "No data") {
-            window.notify.warn("Could not retrieve data");
+            window.notify.warn("Could not retrieve data for "+(options.name || datareader.toString()));
           }
         }
         if (done) {
@@ -1013,7 +1031,7 @@
             if (allowed[set]) {
               var reader_class = MASCP[set];
               var reader = new reader_class();
-              get_generic_data(acc,renderer,reader);
+              get_generic_data(acc,renderer,reader,JSON.parse(JSON.stringify(prefs.user_datasets[set])));
             }
           }
         }
@@ -1405,7 +1423,7 @@
               prefs.user_datasets[state.addservice] = {};
             }
             prefs.user_datasets[state.addservice].render_options = {};
-
+            prefs.user_datasets[state.addservice].name = state.name || state.addservice;
             (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
               if (err) {
                 window.notify.alert("Could not write preferences");
