@@ -968,15 +968,20 @@
       datareader._endpointURL = '/data/latest/gator';
       var track = acc;
       if (! options.inline) {
-        if ( true || ! MASCP.getGroup('extra_data')) {
+          if ( ! MASCP.getGroup('extra_data')) {
+            MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
+            jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
+              if (rend.navigation.getController(this)) {
+                window.extra_shown = visible;
+              }
+            });
+          }
           MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
-          MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
           renderer.createGroupController('extra_data_controller','extra_data');
           renderer.showLayer('extra_data_controller');
           if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
             renderer.trackOrder.push('extra_data_controller');
           }
-        }
         MASCP.registerLayer(datareader.toString(),{"fullname" : options.name || datareader.toString(), "group" : "extra_data"});
         track = datareader.toString();
         renderer.trackOrder.push(datareader.toString());
@@ -1031,7 +1036,12 @@
             if (allowed[set]) {
               var reader_class = MASCP[set];
               var reader = new reader_class();
-              get_generic_data(acc,renderer,reader,JSON.parse(JSON.stringify(prefs.user_datasets[set])));
+              get_generic_data(acc,renderer,reader,JSON.parse(JSON.stringify(prefs.user_datasets[set])),function() {
+                if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
+                  renderer.showGroup('extra_data');
+                }
+                renderer.refresh();
+              });
             }
           }
         }
