@@ -31,7 +31,12 @@
           self.renderer.select();
           return;
         }
-        var search_re = new RegExp(search_el.value, "gi");
+        var search_re;
+        try {
+          search_re = new RegExp(search_el.value, "gi");
+        } catch (e) {
+          return;
+        }
         var match;
         var positions = [];
         while (match=search_re.exec(self.renderer.sequence)) {
@@ -40,6 +45,8 @@
         }
         self.renderer.select.apply(self.renderer,positions);
       };
+      search_el.addEventListener('focus',search_el.onblur,false);
+      search_el.addEventListener('keyup',search_el.onblur,false);
       this.search_field.appendChild(search_el);
       renderer._container.appendChild(this.search_field);
       this.search_field.className = 'search_field hidden';
