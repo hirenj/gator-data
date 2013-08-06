@@ -411,8 +411,24 @@
       edit_toggler(renderer,true);
     });
 
+    var old_get_domains = get_domains;
+    var waiting_domains_calls = [];
+    get_domains = function(acc,next) {
+      waiting_domains_calls.push(function() {
+        get_domains(acc,next);
+      });
+    };
+
     with_user_preferences(function(prefs) {
       if ( ! prefs ) {
+
+        get_domains = old_get_domains;
+
+        waiting_domains_calls.forEach(function(func) {
+          func();
+        });
+        waiting_domains_calls = [];
+
         callback.call();
         return;
       }
@@ -429,6 +445,14 @@
       (new MASCP.GoogledataReader()).getSyncableFile(prefs.supplemental_domains,function(err,file) {
         if (! err && file.permissions.write) {
           edit_toggler.enabled = true;
+
+          get_domains = old_get_domains;
+          waiting_domains_calls.forEach(function(func) {
+            func();
+          });
+          waiting_domains_calls = [];
+
+
           console.log("Permissions to update");
           callback.call(null,editing_enabled,self.acc);
           jQuery(renderer).bind('orderChanged',function(e,order) {
