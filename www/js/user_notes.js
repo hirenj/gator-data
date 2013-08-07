@@ -1,9 +1,13 @@
 (function(win) {
 
   MASCP.AnnotationManager = function(renderer) {
+    var self = this;
     this.renderer = renderer;
+    this.annotations = {'self' : []};
     renderer.showAnnotation  = function (acc) {
-      show_annotations(this,acc);
+      self.acc = acc;
+      self.redrawAnnotations();
+      // show_annotations(this,acc);
     };
     renderer.cheat_annotation = cheat_preferences;
     renderer.nukeSettings = nuke_settings;
@@ -116,13 +120,25 @@
           p.y = positions[1];
       }
       end = p.x;
-      if (start < end) {
-        renderer.select(parseInt(start/50)+1,parseInt(end/50));
-        selected = (renderer.sequence.substr((start/50),parseInt(end/50) - ((start/50)) + 1 ));
+
+      var local_start;
+      var local_end;
+      if (start > end) {
+        local_end = parseInt(start / 50);
+        local_start = parseInt(end / 50);
       } else {
-        renderer.select(parseInt(end/50)+1,parseInt(start/50));
-        selected = (renderer.sequence.substr((end/50),parseInt(start/50) - ((end/50)) + 1 ));
+        local_end = parseInt(end/50);
+        local_start = parseInt(start/50);
       }
+      renderer.select(local_start+1,local_end);
+      selected = (renderer.sequence.substr(local_start,local_end - local_start ));
+      self.annotations['hover_targets'] = [];
+      if (Math.abs(local_start - local_end) <= 1) {
+          self.annotations['hover_targets'].push({"type" : "symbol", "class" : "potential", "index" : local_start+1, "acc" : self.acc });
+      } else {
+          self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
+      }
+      self.redrawAnnotations();
       e.preventDefault();
     }
 
@@ -196,6 +212,74 @@
     },false);
   }
 
+  var rendered = [];
+
+  MASCP.AnnotationManager.prototype.redrawAnnotations = function() {
+    var self = this;
+    MASCP.registerLayer("annotations", { 'fullname' : "Annotations", 'color' : '#aaaaaa' },[self.renderer]);
+    rendered.forEach(function(el) {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+    rendered = [];
+    for (var annotation_type in self.annotations) {
+      self.annotations[annotation_type].forEach(function(annotation) {
+        if (annotation.acc != self.acc) {
+          return;
+        }
+        if (annotation.type == "symbol") {
+          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : "X" , "border" : "#f00", "offset" : 0, "height" : 24 });
+          rendered.push(added[0]);
+          rendered.push(added[2]);
+          rendered.push(added[1]);
+        } else {
+          rendered.push(self.renderer.getAA(annotation.index).addShapeOverlay("annotations",annotation.length,{"shape" : "rectangle"}));
+          if (annotation.color) {
+            rendered[rendered.length - 1].setAttribute('fill',annotation.color);
+          }
+        }
+        if (annotation.class == "potential") {
+          rendered[rendered.length - 1].style.opacity = '0.5';
+          rendered[rendered.length - 1].addEventListener('click',function() {
+            delete annotation.class;
+            self.annotations['self'].push(annotation);
+            self.redrawAnnotations();
+          });
+        } else {
+          rendered[rendered.length - 1].addEventListener('mousedown',function(ev) {
+            var canvas = this.parentNode;
+            var bbox = this.getBBox();
+            if (this.getAttribute('transform')) {
+              bbox = canvas.transformedBoundingBox(this);
+              var transform = this.getAttribute('transform');
+              var curr_translate = /translate\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)/.exec(transform);
+              bbox.x = curr_translate[1];
+              bbox.y = curr_translate[2];
+              bbox.width = bbox.width * 0;
+            }
+            var pie = PieMenu.create(canvas,(bbox.x + 0.5*bbox.width)/canvas.RS,(bbox.y + 0.5*bbox.height)/canvas.RS, [
+              {'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.redrawAnnotations(); } },
+              {'symbol' : "url('#grad_grey')", "hover_function" : function() { annotation.color = "url('#grad_grey')"; self.redrawAnnotations(); } },
+              {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.redrawAnnotations(); } },
+              {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.redrawAnnotations(); } },
+              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.redrawAnnotations(); }}]);
+            canvas.addEventListener('mouseup',function(ev) {
+              canvas.removeEventListener('mouseup',arguments.callee);
+              pie.destroy();
+            },false);
+            ev.preventDefault();
+            ev.stopPropagation();
+          });
+        }
+      });
+    }
+    if (renderer.trackOrder.indexOf("annotations") < 0) {
+      renderer.trackOrder.push("annotations");
+    }
+    renderer.showLayer("annotations");
+    renderer.refresh();
+  };
 
   var show_annotations = function(renderer,acc) {
 
