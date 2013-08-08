@@ -177,7 +177,7 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        var annotation_manager = new MASCP.AnnotationManager(renderer);
+        var annotation_manager = new MASCP.AnnotationManager(renderer,"Domaintool preferences");
         wire_find(annotation_manager);
         wire_dragging_disable(renderer,annotation_manager);
         document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {

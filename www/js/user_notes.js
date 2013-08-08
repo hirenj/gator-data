@@ -3,13 +3,24 @@
   MASCP.AnnotationManager = function(renderer,preferences) {
     var self = this;
     this.renderer = renderer;
-    this.annotations = {'self' : []};
+    this.annotations = {};
     this.preferences = preferences;
     renderer.showAnnotation  = function (acc) {
       self.acc = acc;
       self.redrawAnnotations();
       // show_annotations(this,acc);
     };
+    this.sync = function() {
+      if (self.timeout) {
+        clearTimeout(self.timeout);
+        self.timeout = null;
+      }
+      self.timeout = setTimeout(function() {
+        sync_annotations.call(self);
+        self.timeout = null;
+      },1000);
+    };
+    this.sync();
     return this;
   };
 
@@ -222,6 +233,14 @@
       }
     });
     rendered = [];
+
+/*
+          var obj = { "gotResult" : function() {
+          }, "agi" : acc };
+          jQuery(renderer).trigger('readerRegistered',[obj]);
+          obj.gotResult();
+*/
+
     for (var annotation_type in self.annotations) {
       self.annotations[annotation_type].forEach(function(annotation) {
         if (annotation.acc != self.acc) {
@@ -304,22 +323,32 @@
     }
     renderer.showLayer("annotations");
     renderer.refresh();
+    self.sync();
   };
 
-  var sync_annotations = function() {
+  var cloneObject = function(obj) {
+      var clone = {};
+      for(var i in obj) {
+          if (i == "pie") {
+            continue;
+          }
+          if(typeof(obj[i])=="object" && obj[i] != null)
+              clone[i] = cloneObject(obj[i]);
+          else
+              clone[i] = obj[i];
+      }
+      return clone;
+  }
 
+  var sync_annotations = function() {
+      var self = this;
       // Don't trigger any popups
       if ( ! window.event ) {
         window.event = { "which" : null };
       }
-      
-      var current_session = JSON.parse(sessionStorage.getItem("update_timestamps") || "{}");
-      if (sessionStorage.getItem("cheat_document")) {
-        delete current_session[sessionStorage.getItem("cheat_document")];
-      }
-      sessionStorage.setItem("update_timestamps",JSON.stringify(current_session));
-
-      (new MASCP.GoogledataReader()).readWatchedDocuments("Annotations preferences",function(err,pref,reader) {
+      var old_sync_annotations = sync_annotations;
+      sync_annotations = function() { console.log("No-opping sync");};
+      (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
         if (err) {
           // Errs if : No user event / getting preferences
           // actual reader error
@@ -328,39 +357,38 @@
             window.notify.alert("Problem getting user preferences");
             return;
           }
+          if (err.cause == "No user event") {
+            self.redrawAnnotations = function(){};
+            return;
+          }
           if (err) {
             window.notify.alert("Problem reading user data set");
           }
           console.log(err);
         }
-        sessionStorage.setItem("cheat_document",reader.datasetname);
-        reader.retrieve(acc,function() {
-          if ( ! this.result ) {
-            return;
-          }
-          var datas = this.result._raw_data.data;
-          var lay_name = "annotations."+acc;
-          MASCP.registerLayer(lay_name, { 'fullname' : "Annotations", 'color' : '#aaaaaa' },[renderer]);
-
-          var obj = { "gotResult" : function() {
-            datas.sites.forEach(function(site) {
-              var block = renderer.getAA(parseInt(site[0])).addToLayer(lay_name,{"content" : site[2] , "border" : site[1], "offset" : 3, "height" : 24 });
-            });
-            datas.peptides.forEach(function(peptide) {
-              var block = renderer.getAminoAcidsByPeptide(peptide[0]).addToLayer(lay_name);
-              block.style.fill = peptide[1];
-            });
-            renderer.trigger('resultsRendered',[this]);
-            renderer.refresh();
-            if (renderer.trackOrder.indexOf(lay_name) < 0) {
-              renderer.trackOrder.push(lay_name);
+        if ( ! self.annotations['self'] ) {
+          self.annotations['self'] = prefs.annotations || [];
+          sync_annotations = old_sync_annotations;
+          self.redrawAnnotations();
+        } else {
+          var result = [];
+          self.annotations['self'].forEach(function(ann) {
+            var obj = cloneObject(ann);
+            if ( ! obj.deleted ) {
+              result.push(obj);
             }
-            renderer.showLayer(lay_name);
-            renderer.refresh();
-          }, "agi" : acc };
-          jQuery(renderer).trigger('readerRegistered',[obj]);
-          obj.gotResult();
-        });
+            delete obj.pie;
+          });
+          // self.annotations['self'] = result;
+          prefs.annotations = result;
+          (new MASCP.GoogledataReader()).writePreferences(self.preferences,function(err) {
+            if (err) {
+              window.notify.alert("Could not save annotations");
+            }
+            sync_annotations = old_sync_annotations;
+            console.log("Synced");
+          });
+        }
       });
   };
 
