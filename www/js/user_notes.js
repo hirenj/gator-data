@@ -1,16 +1,15 @@
 (function(win) {
 
-  MASCP.AnnotationManager = function(renderer) {
+  MASCP.AnnotationManager = function(renderer,preferences) {
     var self = this;
     this.renderer = renderer;
     this.annotations = {'self' : []};
+    this.preferences = preferences;
     renderer.showAnnotation  = function (acc) {
       self.acc = acc;
       self.redrawAnnotations();
       // show_annotations(this,acc);
     };
-    renderer.cheat_annotation = cheat_preferences;
-    renderer.nukeSettings = nuke_settings;
     return this;
   };
 
@@ -228,8 +227,11 @@
         if (annotation.acc != self.acc) {
           return;
         }
+        if (annotation.deleted) {
+          return;
+        }
         if (annotation.type == "symbol") {
-          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : "X" , "border" : "#f00", "offset" : 0, "height" : 24 });
+          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : annotation.icon ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
           rendered.push(added[0]);
           rendered.push(added[2]);
           rendered.push(added[1]);
@@ -245,9 +247,13 @@
             delete annotation.class;
             self.annotations['self'].push(annotation);
             self.redrawAnnotations();
+            self.renderer.select();
           });
         } else {
           rendered[rendered.length - 1].addEventListener('mousedown',function(ev) {
+            if (annotation.pie) {
+              return;
+            }
             var canvas = this.parentNode;
             var bbox = this.getBBox();
             if (this.getAttribute('transform')) {
@@ -258,16 +264,35 @@
               bbox.y = curr_translate[2];
               bbox.width = bbox.width * 0;
             }
-            var pie = PieMenu.create(canvas,(bbox.x + 0.5*bbox.width)/canvas.RS,(bbox.y + 0.5*bbox.height)/canvas.RS, [
-              {'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.redrawAnnotations(); } },
+            var pie_contents;
+            if (annotation.type != "symbol") {
+              pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_grey')", "hover_function" : function() { annotation.color = "url('#grad_grey')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.redrawAnnotations(); } },
-              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.redrawAnnotations(); }}]);
-            canvas.addEventListener('mouseup',function(ev) {
-              canvas.removeEventListener('mouseup',arguments.callee);
+              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.redrawAnnotations(); }},
+              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.redrawAnnotations(); } }
+              ];
+            } else {
+              pie_contents = [
+              { 'symbol' : self.renderer.small_galnac(), "hover_function" : function() { annotation.icon = "small_galnac"; self.redrawAnnotations(); }  },
+              { 'symbol' : self.renderer.man(), "hover_function" : function() { annotation.icon = "man"; self.redrawAnnotations(); }  },
+              { 'symbol' : self.renderer.xyl(), "hover_function" : function() { annotation.icon = "xyl"; self.redrawAnnotations(); }  },
+              { 'symbol' : self.renderer.fuc(), "hover_function" : function() { annotation.icon = "fuc"; self.redrawAnnotations(); }  },
+              { 'symbol' : self.renderer.small_glcnac(), "hover_function" : function() { annotation.icon = "small_glcnac"; self.redrawAnnotations(); }  },
+              { 'symbol' : self.renderer.nlinked(), "hover_function" : function() { annotation.icon = "nlinked"; self.redrawAnnotations(); }  },
+              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.redrawAnnotations(); } }
+              ]
+            }
+            var pie = PieMenu.create(canvas,(bbox.x + 0.5*bbox.width)/canvas.RS,(bbox.y + 0.5*bbox.height)/canvas.RS, pie_contents);
+            annotation.pie = pie;
+            var end_pie = function(ev) {
+              canvas.removeEventListener('mouseout',end_pie);
+              canvas.removeEventListener('mouseup',end_pie);
               pie.destroy();
-            },false);
+              delete annotation.pie;
+            };
+            canvas.addEventListener('mouseup',end_pie,false);
             ev.preventDefault();
             ev.stopPropagation();
           });
@@ -281,7 +306,7 @@
     renderer.refresh();
   };
 
-  var show_annotations = function(renderer,acc) {
+  var sync_annotations = function() {
 
       // Don't trigger any popups
       if ( ! window.event ) {
@@ -339,44 +364,4 @@
       });
   };
 
-  var nuke_settings = function() {
-    (new MASCP.GoogledataReader()).getPreferences("Annotations preferences",function(err,prefs) {
-      delete prefs.user_datasets;
-      (new MASCP.GoogledataReader()).writePreferences("Annotations preferences",function(err,prefs) {
-      });        
-    });   
-  };
-
-  var cheat_preferences = function(doc_id,callback) {
-      var parser = function(datablock){
-        var results = {};
-        (datablock.data || []).forEach(function(row) {
-          if ( ! row[0] ) {
-            return;
-          }          
-          var key = row[0];
-
-          if ( ! results[key.toLowerCase()]) {
-            results[key.toLowerCase()] = {
-              "retrieved" : datablock.retrieved,
-              "etag" : datablock.etag,
-              "title" : datablock.title,
-              "data" : {
-                "sites" : [],
-                "peptides" : []
-              }
-            };
-          }
-          var block = results[key.toLowerCase()];
-          if (row[1] && row[1].match(/^\d+$/)) {
-            block.data.sites.push([row[1],row[2],row[3]]);
-          } else {
-            block.data.peptides.push([row[1],row[2]]);
-          }
-        });
-        return results;
-      };
-      sessionStorage.setItem("cheat_document",doc_id);
-      (new MASCP.GoogledataReader()).addWatchedDocument("Annotations preferences",doc_id,parser,callback);
-  };
 })(window)
