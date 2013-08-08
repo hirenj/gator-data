@@ -237,6 +237,24 @@
     var wire_dragging_disable = function(renderer,manager) {
       var toggler = document.getElementById('selecttoggle');
       manager.selecting = false;
+      bean.add(document.body,'keydown',function(evt) {
+        if (evt.keyCode == 16) {
+          manager.selecting = true;
+          toggler.firstChild.removeAttribute('value');
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+        }
+      });
+      bean.add(document.body,'keyup',function(evt) {
+        if (evt.keyCode == 16 && manager.selecting) {
+          manager.selecting = false;
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+        }
+      });
+
       bean.add(toggler,'click',function(evt) {
         if (evt.target != toggler) {
           return;
