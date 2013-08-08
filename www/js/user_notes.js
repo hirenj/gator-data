@@ -281,7 +281,7 @@
               var curr_translate = /translate\((-?\d+\.?\d*)\s*,?\s*(-?\d+\.?\d*)\)/.exec(transform);
               bbox.x = curr_translate[1];
               bbox.y = curr_translate[2];
-              bbox.width = bbox.width * 0;
+              bbox.width = 0;
             }
             var pie_contents;
             if (annotation.type != "symbol") {
@@ -303,7 +303,7 @@
               { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.redrawAnnotations(); } }
               ]
             }
-            var pie = PieMenu.create(canvas,(bbox.x + 0.5*bbox.width)/canvas.RS,(bbox.y + 0.5*bbox.height)/canvas.RS, pie_contents);
+            var pie = PieMenu.create(canvas,(parseInt(bbox.x) + parseInt(0.5*bbox.width))/canvas.RS,(parseInt(bbox.y) + parseInt(0.5*bbox.height))/canvas.RS, pie_contents);
             annotation.pie = pie;
             var end_pie = function(ev) {
               canvas.removeEventListener('mouseout',end_pie);
