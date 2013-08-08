@@ -13,7 +13,6 @@ PieMenu.zoomIn = function(el,canvas,x,y) {
 };
 
 PieMenu.create = function(canvas,x,y,contents) {
-	console.log(contents);
 	var i = 0;
 	var center = { 'x' : x, 'y' : y };
 	var radius = 20 / canvas.zoom;
@@ -21,6 +20,17 @@ PieMenu.create = function(canvas,x,y,contents) {
 	var phase = contents ? 2 * Math.PI / contents.length : 0;
 	var menu = new PieMenu();
 	var els = [];
+	menu.container = canvas.group();
+	var observer = new MutationObserver(function(mutations) {
+		mutations.forEach(function(mutation) {
+			if (mutation.type == "childList" && menu.container.nextSibling !== null) {
+				menu.container.parentNode.appendChild(menu.container);
+			}
+		});
+	});
+	observer.observe(canvas,{ childList : true });
+	menu.observer = observer;
+
 	(contents || []).forEach(function(item) {
 		var x_pos = center.x + radius * Math.cos(i*phase);
 		var y_pos = center.y + radius * Math.sin(i*phase);
@@ -70,17 +80,27 @@ PieMenu.create = function(canvas,x,y,contents) {
         	}
         	ev.stopPropagation();
         },true);
+        circ.addEventListener('mouseup',function(ev) {
+        	if (item.select_function) {
+        		item.select_function();
+        	}
+        });
         circ.addEventListener('mouseout',function(ev) {
         	this.setAttribute('stroke','#eee');
         });
 	});
 	menu.elements = els;
+	menu.elements.forEach(function(el) {
+		menu.container.push(el);
+	});
 	return menu;
 };
 
 
 PieMenu.prototype.destroy = function() {
+	var self = this;
 	if (this.elements) {
+		this.observer.disconnect();
 		this.elements.forEach(function(el) {
 			el.setAttribute('pointer-events','none');
 			el.style.webkitTransform = 'rotate(365deg) scale(0)';
@@ -89,4 +109,7 @@ PieMenu.prototype.destroy = function() {
 			},750);
 		});
 	}
+	setTimeout(function() {
+		self.container.parentNode.removeChild(self.container);
+	},1000);
 };
