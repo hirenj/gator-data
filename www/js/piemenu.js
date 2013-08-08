@@ -21,7 +21,8 @@ PieMenu.create = function(canvas,x,y,contents) {
 	var menu = new PieMenu();
 	var els = [];
 	menu.container = canvas.group();
-	if (window.MutationObserver) {
+	if (window.MutationObserver || window.webkitMutationObserver || window.MozMutationObserver) {
+		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 		var observer = new MutationObserver(function(mutations) {
 			mutations.forEach(function(mutation) {
 				if (mutation.type == "childList" && menu.container.nextSibling !== null) {
@@ -32,6 +33,36 @@ PieMenu.create = function(canvas,x,y,contents) {
 		observer.observe(canvas,{ childList : true });
 		menu.observer = observer;
 	}
+	var last_target = null;
+	var touch_dispatcher = function(ev) {
+		var target = document.elementFromPoint(ev.pageX,ev.pageY);
+		if (! target ) {
+			return;
+		}
+		if (last_target !== null && target !== last_target) {
+			if (last_target.moveout_func) {
+				last_target.moveout_func();
+			}
+		}
+		if (target.move_func) {
+			target.move_func(ev);
+			last_target = target;
+			if (menu.end && ("ontouchstart" in window) ) {
+				menu.end();
+			}
+		}
+	};
+	canvas.addEventListener('touchmove',touch_dispatcher,false);
+
+	canvas.addEventListener('touchend',function(ev) {
+		if (last_target.end_func) {
+			last_target.end_func();
+			ev.stopPropagation();
+		}
+		canvas.removeEventListener('touchmove',touch_dispatcher);
+		canvas.removeEventListener('touchend',arguments.callee);
+	},false);
+
 	(contents || []).forEach(function(item) {
 		var x_pos = center.x + radius * Math.cos(i*phase);
 		var y_pos = center.y + radius * Math.sin(i*phase);
@@ -74,21 +105,24 @@ PieMenu.create = function(canvas,x,y,contents) {
             g.setAttribute('pointer-events','none');
     		PieMenu.zoomIn(g,canvas,x,y);
         }
-        circ.addEventListener('mouseover',function(ev) {
+        circ.move_func = function(ev) {
         	this.setAttribute('stroke','#0f0');
         	if (item.hover_function) {
         		item.hover_function();
         	}
         	ev.stopPropagation();
-        },true);
-        circ.addEventListener('mouseup',function(ev) {
+        };
+        circ.end_func = function(ev) {
         	if (item.select_function) {
         		item.select_function();
         	}
-        });
-        circ.addEventListener('mouseout',function(ev) {
+        };
+        circ.moveout_func = function(ev) {
         	this.setAttribute('stroke','#eee');
-        });
+        };
+        circ.addEventListener('mouseover',circ.move_func,true);
+        circ.addEventListener('mouseup',circ.end_func);
+        circ.addEventListener('mouseout',circ.moveout_func);
 	});
 	menu.elements = els;
 	menu.elements.forEach(function(el) {
@@ -105,14 +139,23 @@ PieMenu.prototype.destroy = function() {
 			this.observer.disconnect();
 		}
 		this.elements.forEach(function(el) {
-			el.setAttribute('pointer-events','none');
-			el.style.webkitTransform = 'rotate(365deg) scale(0)';
+			if (el.setAttribute) {
+				el.setAttribute('pointer-events','none');
+			}
+			if (el.style) {
+				el.style.webkitTransform = 'rotate(365deg) scale(0)';
+			}
 			setTimeout(function() {
-				el.parentNode.removeChild(el);
+				if (el && el.parentNode) {
+					el.parentNode.removeChild(el);
+				}
 			},750);
 		});
+		this.elements = [];
 	}
 	setTimeout(function() {
-		self.container.parentNode.removeChild(self.container);
+		if (self.container && self.container.parentNode) {
+			self.container.parentNode.removeChild(self.container);
+		}
 	},1000);
 };
