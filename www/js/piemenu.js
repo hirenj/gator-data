@@ -21,16 +21,17 @@ PieMenu.create = function(canvas,x,y,contents) {
 	var menu = new PieMenu();
 	var els = [];
 	menu.container = canvas.group();
-	var observer = new MutationObserver(function(mutations) {
-		mutations.forEach(function(mutation) {
-			if (mutation.type == "childList" && menu.container.nextSibling !== null) {
-				menu.container.parentNode.appendChild(menu.container);
-			}
+	if (window.MutationObserver) {
+		var observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(mutation) {
+				if (mutation.type == "childList" && menu.container.nextSibling !== null) {
+					menu.container.parentNode.appendChild(menu.container);
+				}
+			});
 		});
-	});
-	observer.observe(canvas,{ childList : true });
-	menu.observer = observer;
-
+		observer.observe(canvas,{ childList : true });
+		menu.observer = observer;
+	}
 	(contents || []).forEach(function(item) {
 		var x_pos = center.x + radius * Math.cos(i*phase);
 		var y_pos = center.y + radius * Math.sin(i*phase);
@@ -100,7 +101,9 @@ PieMenu.create = function(canvas,x,y,contents) {
 PieMenu.prototype.destroy = function() {
 	var self = this;
 	if (this.elements) {
-		this.observer.disconnect();
+		if (this.observer) {
+			this.observer.disconnect();
+		}
 		this.elements.forEach(function(el) {
 			el.setAttribute('pointer-events','none');
 			el.style.webkitTransform = 'rotate(365deg) scale(0)';
