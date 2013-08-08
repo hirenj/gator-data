@@ -250,7 +250,7 @@
           return;
         }
         if (annotation.type == "symbol") {
-          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : annotation.icon ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
+          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
           rendered.push(added[0]);
           rendered.push(added[2]);
           rendered.push(added[1]);
@@ -269,7 +269,7 @@
             self.renderer.select();
           });
         } else {
-          rendered[rendered.length - 1].addEventListener('mousedown',function(ev) {
+          var trigger_pie = function(ev) {
             if (annotation.pie) {
               return;
             }
@@ -311,10 +311,14 @@
               pie.destroy();
               delete annotation.pie;
             };
+            annotation.pie.end = end_pie;
             canvas.addEventListener('mouseup',end_pie,false);
             ev.preventDefault();
             ev.stopPropagation();
-          });
+          };
+          rendered[rendered.length - 1].addEventListener('mousedown',trigger_pie,false);
+          rendered[rendered.length - 1].addEventListener('touchstart',trigger_pie,false);
+          rendered[rendered.length - 1].addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); } },false);
         }
       });
     }
