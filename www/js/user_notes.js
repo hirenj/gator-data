@@ -346,8 +346,6 @@
       if ( ! window.event ) {
         window.event = { "which" : null };
       }
-      var old_sync_annotations = sync_annotations;
-      sync_annotations = function() { console.log("No-opping sync");};
       (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
         if (err) {
           // Errs if : No user event / getting preferences
@@ -368,7 +366,6 @@
         }
         if ( ! self.annotations['self'] ) {
           self.annotations['self'] = prefs.annotations || [];
-          sync_annotations = old_sync_annotations;
           self.redrawAnnotations();
         } else {
           var result = [];
@@ -385,7 +382,6 @@
             if (err) {
               window.notify.alert("Could not save annotations");
             }
-            sync_annotations = old_sync_annotations;
             console.log("Synced");
           });
         }
