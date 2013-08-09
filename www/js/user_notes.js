@@ -286,7 +286,7 @@
             var pie_contents;
             if (annotation.type != "symbol") {
               pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.redrawAnnotations(); } },
-              {'symbol' : "url('#grad_grey')", "hover_function" : function() { annotation.color = "url('#grad_grey')"; self.redrawAnnotations(); } },
+              {'symbol' : "url('#grad_blue')", "hover_function" : function() { annotation.color = "url('#grad_blue')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.redrawAnnotations(); } },
               {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.redrawAnnotations(); }},
@@ -308,8 +308,10 @@
             var end_pie = function(ev) {
               canvas.removeEventListener('mouseout',end_pie);
               canvas.removeEventListener('mouseup',end_pie);
-              pie.destroy();
-              delete annotation.pie;
+              if (annotation.pie) {
+                annotation.pie.destroy();
+                delete annotation.pie;
+              }
             };
             annotation.pie.end = end_pie;
             canvas.addEventListener('mouseup',end_pie,false);
@@ -318,7 +320,7 @@
           };
           rendered[rendered.length - 1].addEventListener('mousedown',trigger_pie,false);
           rendered[rendered.length - 1].addEventListener('touchstart',trigger_pie,false);
-          rendered[rendered.length - 1].addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); } },false);
+          rendered[rendered.length - 1].addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
         }
       });
     }
@@ -386,7 +388,6 @@
             if (err) {
               window.notify.alert("Could not save annotations");
             }
-            console.log("Synced");
           });
         }
       });
