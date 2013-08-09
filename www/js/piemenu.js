@@ -15,7 +15,7 @@ PieMenu.zoomIn = function(el,canvas,x,y) {
 PieMenu.create = function(canvas,x,y,contents) {
 	var i = 0;
 	var center = { 'x' : x, 'y' : y };
-	var radius = 20 / canvas.zoom;
+	var radius = ("ontouchstart" in window) ? (30 / canvas.zoom) : (20 / canvas.zoom);
 	var icon_size = 10 / canvas.zoom;
 	var phase = contents ? 2 * Math.PI / contents.length : 0;
 	var menu = new PieMenu();
@@ -55,7 +55,7 @@ PieMenu.create = function(canvas,x,y,contents) {
 	canvas.addEventListener('touchmove',touch_dispatcher,false);
 
 	canvas.addEventListener('touchend',function(ev) {
-		if (last_target.end_func) {
+		if (last_target && last_target.end_func) {
 			last_target.end_func();
 			ev.stopPropagation();
 		}
