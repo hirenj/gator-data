@@ -31,6 +31,14 @@
         galnac.setAttribute('fill','#ffff00');
         return galnac;
       };
+
+      renderer.small_glcnac = function() {
+        var glcnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+        glcnac.setAttribute('fill','#0000ff');
+        glcnac.setAttribute('stroke','#009');
+        return glcnac;
+      };
+
       renderer.light_galnac = function() {
         var result = renderer.galnac();
         result.setAttribute('fill','#ffffB3');
