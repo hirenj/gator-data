@@ -249,17 +249,24 @@
         if (annotation.deleted) {
           return;
         }
-        if (annotation.type == "symbol") {
-          var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
-          rendered.push(added[0]);
-          rendered.push(added[2]);
-          rendered.push(added[1]);
-        } else {
-          rendered.push(self.renderer.getAA(annotation.index).addShapeOverlay("annotations",annotation.length,{"shape" : "rectangle"}));
-          if (annotation.color) {
-            rendered[rendered.length - 1].setAttribute('fill',annotation.color);
+
+        var obj = { "gotResult" : function() {
+          if (annotation.type == "symbol") {
+            var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
+            rendered.push(added[0]);
+            rendered.push(added[2]);
+            rendered.push(added[1]);
+          } else {
+            rendered.push(self.renderer.getAA(annotation.index).addShapeOverlay("annotations",annotation.length,{"shape" : "rectangle"}));
+            if (annotation.color) {
+              rendered[rendered.length - 1].setAttribute('fill',annotation.color);
+            }
           }
-        }
+        }, "agi" : self.acc };
+        jQuery(self.renderer).trigger('readerRegistered',[obj]);
+        obj.gotResult();
+
+
         if (annotation.class == "potential") {
           rendered[rendered.length - 1].style.opacity = '0.5';
           rendered[rendered.length - 1].addEventListener('click',function() {
