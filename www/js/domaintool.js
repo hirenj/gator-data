@@ -986,23 +986,25 @@
       datareader._endpointURL = '/data/latest/gator';
       var track = acc;
       if (! options.inline) {
-          if ( ! MASCP.getGroup('extra_data')) {
-            MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
-            jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
-              if (rend.navigation.getController(this)) {
-                window.extra_shown = visible;
-              }
-            });
-          }
-          MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
-          renderer.createGroupController('extra_data_controller','extra_data');
-          renderer.showLayer('extra_data_controller');
-          if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
-            renderer.trackOrder.push('extra_data_controller');
-          }
+        if ( ! MASCP.getGroup('extra_data')) {
+          MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
+          jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
+            if (rend.navigation.getController(this)) {
+              window.extra_shown = visible;
+            }
+          });
+        }
+        MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
+        renderer.createGroupController('extra_data_controller','extra_data');
+        renderer.showLayer('extra_data_controller');
+        if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
+          renderer.trackOrder.push('extra_data_controller');
+        }
         MASCP.registerLayer(datareader.toString(),{"fullname" : options.name || datareader.toString(), "group" : "extra_data"});
         track = datareader.toString();
-        renderer.trackOrder.push(datareader.toString());
+        if (renderer.trackOrder.indexOf(datareader.toString()) < 0) {
+          renderer.trackOrder.push(datareader.toString());
+        }
       } else {
         if (renderer.trackOrder.indexOf(track) < 0) {
           renderer.trackOrder.unshift(track);
