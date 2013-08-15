@@ -177,7 +177,7 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        var annotation_manager = new MASCP.AnnotationManager(renderer);
+        var annotation_manager = new MASCP.AnnotationManager(renderer,"Domaintool preferences");
         wire_find(annotation_manager);
         wire_dragging_disable(renderer,annotation_manager);
         document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
@@ -237,6 +237,24 @@
     var wire_dragging_disable = function(renderer,manager) {
       var toggler = document.getElementById('selecttoggle');
       manager.selecting = false;
+      bean.add(document.body,'keydown',function(evt) {
+        if (evt.keyCode == 16) {
+          manager.selecting = true;
+          toggler.firstChild.removeAttribute('value');
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+        }
+      });
+      bean.add(document.body,'keyup',function(evt) {
+        if (evt.keyCode == 16 && manager.selecting) {
+          manager.selecting = false;
+          var curr_classname = toggler.className.replace('selecting','');
+          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+        }
+      });
+
       bean.add(toggler,'click',function(evt) {
         if (evt.target != toggler) {
           return;
@@ -968,23 +986,25 @@
       datareader._endpointURL = '/data/latest/gator';
       var track = acc;
       if (! options.inline) {
-          if ( ! MASCP.getGroup('extra_data')) {
-            MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
-            jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
-              if (rend.navigation.getController(this)) {
-                window.extra_shown = visible;
-              }
-            });
-          }
-          MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
-          renderer.createGroupController('extra_data_controller','extra_data');
-          renderer.showLayer('extra_data_controller');
-          if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
-            renderer.trackOrder.push('extra_data_controller');
-          }
+        if ( ! MASCP.getGroup('extra_data')) {
+          MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
+          jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
+            if (rend.navigation.getController(this)) {
+              window.extra_shown = visible;
+            }
+          });
+        }
+        MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
+        renderer.createGroupController('extra_data_controller','extra_data');
+        renderer.showLayer('extra_data_controller');
+        if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
+          renderer.trackOrder.push('extra_data_controller');
+        }
         MASCP.registerLayer(datareader.toString(),{"fullname" : options.name || datareader.toString(), "group" : "extra_data"});
         track = datareader.toString();
-        renderer.trackOrder.push(datareader.toString());
+        if (renderer.trackOrder.indexOf(datareader.toString()) < 0) {
+          renderer.trackOrder.push(datareader.toString());
+        }
       } else {
         if (renderer.trackOrder.indexOf(track) < 0) {
           renderer.trackOrder.unshift(track);
