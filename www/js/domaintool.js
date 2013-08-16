@@ -750,8 +750,11 @@
                 window.ga('send','event','protein','missing',acc);
               },0);
             }
-
-            window.notify.alert("Problem contacting the UniProt servers");
+            if (err.status == 404) {
+              window.notify.warn("Invalid UniProt identifier");
+            } else {
+              window.notify.alert("Problem contacting the UniProt servers");
+            }
             return;
           }
 
