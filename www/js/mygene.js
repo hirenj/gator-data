@@ -136,7 +136,10 @@
         callback(err || { "error" : "No matches"});
         return;
       }
-      var uniprot = data.uniprot['Swiss-Prot'] || data.uniprot['TrEMBL'][0];
+      var uniprot = data.uniprot['Swiss-Prot'] || data.uniprot['TrEMBL'];
+      if (uniprot instanceof Array) {
+        uniprot = uniprot[0];
+      }
       callback.call(setup,null,uniprot);
     });
   };
