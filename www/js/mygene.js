@@ -18,7 +18,7 @@
 
 
 
-  var do_http_request = function(url,cback) {
+  var do_http_request = function(url,cback,timeout) {
       var xmlhttp =  new XMLHttpRequest();
       if(window.XDomainRequest) {
         xmlhttp = new XDomainRequest();
@@ -39,10 +39,14 @@
             };
           }
           if (xmlhttp.addEventListener) {
-            xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); },false);
+            xmlhttp.addEventListener('error',function() { cback({"error" : "XMLHTTP error"}); cback = function() {}; },false);
+            xmlhttp.addEventListener('timeout',function() { cback({"error" : "XMLHTTP error"}); cback = function() {}; },false);
           }
       }
       xmlhttp.open("GET", url, true);
+      if (timeout) {
+        xmlhttp.timeout = timeout;
+      }
       if (xmlhttp.setRequestHeader) {
         xmlhttp.setRequestHeader("Content-type",
             "application/x-www-form-urlencoded");
@@ -51,7 +55,7 @@
   };
 
   var test_mygene = function(success,failure) {
-    do_http_request('http://mygene.info/gene/1',function(err,val) {
+    do_http_request('http://mygene.info/v2/metadata',function(err,val) {
       if (err) {
         failure();
         failure = function() {};
@@ -59,7 +63,7 @@
       }
       success();
       success = function() {};
-    });
+    },2000);
   }
 
   var searchTimeout = null;
