@@ -105,15 +105,34 @@
       return search_cache[newValue];
     }
     show_persistent_message('Searching..');
-    do_http_request('http://mygene.info/query?q='+newValue+'*+AND+species:human',function(err,val) {
+    do_http_request('http://mygene.info/v2/query?species=human&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
       if (err) {
         flash_message('Error searching');
         return;
       }
       clear_messages();
       var prots = [];
-      (val.rows || []).forEach(function(prot) {
-        var val = { "name" : prot.name, "id" : prot.id, "symbol" : prot.symbol };
+      var uprot_re1 = /^([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]$/;
+      var uprot_re2 = /^[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]$/;
+
+
+      (val.hits || []).forEach(function(prot) {
+        var val = { "name" : prot.name, "id" : prot['_id'], "symbol" : prot.symbol };
+        var uniprot;
+        if (prot.uniprot) {
+          uniprot =  prot.uniprot['Swiss-Prot'] || prot.uniprot['TrEMBL'];
+          if (uniprot instanceof Array) {
+            uniprot = uniprot[0];
+          }
+        } else if (prot['accession.protein']) {
+          for (var i = 0; i < prot['accession.protein'].length; i++ ) {
+            if (prot['accession.protein'][i].match(uprot_re1) || prot['accession.protein'][i].match(uprot_re2)) {
+              uniprot = prot['accession.protein'][i];
+              break;
+            }
+          }
+        }
+        val.uniprot = uniprot;
         val.toString = function() {
           return this.name + " ("+ this.symbol +")";
         };
@@ -130,7 +149,7 @@
   };
 
   var get_mygene_uniprotid = function(id,callback) {
-    do_http_request('http://mygene.info/gene/'+id,function(err,data) {
+    do_http_request('http://mygene.info/v2/gene/'+id,function(err,data) {
       if ( err || ! data.uniprot ) {
         flash_message('No matches');
         callback(err || { "error" : "No matches"});
@@ -159,6 +178,10 @@
         return;
       }
       if ( ! this.value ) {
+        return;
+      }
+      if (this.rawValue.uniprot) {
+        callback.call(setup,null,this.rawValue.uniprot);
         return;
       }
       get_mygene_uniprotid(this.rawValue.id,callback);
