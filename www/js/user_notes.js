@@ -151,7 +151,13 @@
       self.redrawAnnotations();
       e.preventDefault();
     }
-
+    canvas.addEventListener('click',function(e) {
+      if (! self.selecting && self.annotations && self.annotations['hover_targets'] && self.annotations['hover_targets'].length > 0) {
+        self.annotations['hover_targets'] = [];
+        renderer.select();
+        self.redrawAnnotations();
+      }
+    },true);
 
     canvas.addEventListener('mousedown',function(e) {
       if (! self.selecting ) {
@@ -178,11 +184,12 @@
       e.preventDefault();
     },false);
 
-    canvas.addEventListener('mouseup',function() {
+    canvas.addEventListener('mouseup',function(e) {
       if (self.selecting && callback) {
         callback(selected);
       }
       canvas.removeEventListener('mousemove',moving_func);
+      e.preventDefault();
     });
 
     canvas.addEventListener('touchend',function() {
