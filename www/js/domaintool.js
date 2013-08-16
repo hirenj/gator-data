@@ -1095,6 +1095,26 @@
           }
           var datas = this.result._raw_data.data;
 
+          if (pref.render_options["renderer"]) {
+            (new MASCP.GoogledataReader()).getDocument(pref.render_options["renderer"],null,function(err,doc) {
+              if (window.md5(doc) === pref.render_options["renderer_md5"] ) {
+                console.log("Matching MD5");
+              } else {
+                console.log("Bad MD5");
+                return;
+              }
+              var render_func = new Function("renderer","datas","track","acc",doc);
+              var obj = ({ "gotResult" : function() {
+                render_func(renderer,datas,track_name,acc);
+                renderer.trigger('resultsRendered',[this]);
+                renderer.refresh();
+              }, "agi" : acc });
+              jQuery(renderer).trigger('readerRegistered',[obj]);
+              obj.gotResult();
+            });
+            return;
+          }
+
           var obj = { "gotResult" : function() {
             (datas.sites || []).forEach(function(site) {
               renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
@@ -1475,7 +1495,9 @@
         //        "peptides" : "true",
         var run_parser = false;
         var parser = function(datablock){
-          run_parser = true;
+          if (typeof run_parser !== 'undefined') {
+            run_parser = true;
+          }
           for (var key in datablock.data) {
             if (key == "" || key.match(/\s/)) {
               delete datablock.data[key];
@@ -1525,7 +1547,7 @@
             var not = window.notify.info("Saving preferences - please wait");
             (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
               if ( ! err ) {
-                if (run_parser) {
+                if (run_parser && prefs.user_datasets[state.ids[0]]) {
                   prefs.user_datasets[state.ids[0]].render_options = defaults;
                 }
                 (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
