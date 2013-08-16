@@ -1101,6 +1101,7 @@
                 console.log("Matching MD5");
               } else {
                 console.log("Bad MD5");
+                return;
               }
               var render_func = new Function("renderer","datas","track","acc",doc);
               var obj = ({ "gotResult" : function() {
