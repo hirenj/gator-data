@@ -287,8 +287,8 @@
               }
               return box;
             };
-            renderer.getAA(start).addToLayer(target_layer, {"height" : 24, "content" : element_func(), "offset" : 3, "angle": 0, "bare_element" : true });
-            renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : -1, "bare_element" : true });
+            renderer.getAA(start).addToLayer(target_layer, {"height" : 24, "content" : element_func(), "offset" : 24, "angle": 0, "bare_element" : true });
+            renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
             var box;
