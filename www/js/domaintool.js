@@ -12,29 +12,8 @@
             if ( ! renderer.getAA(start)) {
               continue;
             }
-            var box = renderer.getAA(start).addBoxOverlay(layer,end-start+1);
-            box.aa = start;
-            box.aa_width = end-start+1;
-            box.removeAttribute('style');
-            box.setAttribute('fill','#999999');
-            box.setAttribute('opacity','1');
-            box.setAttribute('stroke-width','0');
-            box.setAttribute('transform','translate('+box.getAttribute('x')+','+box.getAttribute('y')+')');
-            box.setAttribute('x','0');
-            box.setAttribute('y','-100');
-            box.setHeight = function(hght) {
-              this.setAttribute('y',-2*renderer._RS/renderer.zoom);
-              this.setAttribute('height',hght*0.1);
-            };
-            box.move = function(new_x,new_width) {
-              var transform_attr = this.getAttribute('transform');
-              var matches = /translate\(.*[,\s](.*)\)/.exec(transform_attr);
-              if (matches[1]) {
-                this.setAttribute('transform','translate('+(new_x*renderer._RS)+','+matches[1]+')');
-              }
-              this.setAttribute('width',new_width*renderer._RS);
-            };
-            box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
+            var el = renderer.getAA(start).addBoxOverlay(layer,end-start+1,1,{ "offset" : -3, "height_scale": 0.1, "fill" : "#999", "merge" : false });
+            el.parentNode.insertBefore(el,el.parentNode.firstChild.nextSibling);
           }
           renderer.showLayer(layer);
           renderer.refresh();
@@ -47,7 +26,7 @@
 
     var render_sites = function(layer,do_grouping,offset) {
       if (typeof(offset) == 'undefined' || offset === null) {
-        offset = -3;
+        offset = 0;
       }
       return function(renderer) {
         this.bind('resultReceived',function(e) {
@@ -68,15 +47,15 @@
                 if (group.length < 3) {
                   group.push(current);
                   group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : 24,  "bare_element" : true });
+                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 18,  "bare_element" : true });
                   });
                 } else {
                   group.push(current);
                   group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : 24,  "bare_element" : true })[1].zoom_level = 'text';
+                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 18,  "bare_element" : true })[1].zoom_level = 'text';
                   });
-                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : 21.5, "height" : 9.75 });
-                  var a_galnac = (offset > 0) ? renderer.light_galnac() : renderer.galnac();
+                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : offset - 4.875, "height" : 9.75 });
+                  var a_galnac = (offset < 1) ? renderer.galnac() : renderer.light_galnac();
                   rect.setAttribute('fill',a_galnac.getAttribute('fill'));
                   rect.setAttribute('stroke',a_galnac.getAttribute('stroke'));
                   rect.setAttribute('stroke-width',70);
@@ -958,7 +937,7 @@
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdC1ESDlXVzlkVEZfTkVHS01POFJ1a0E";
-      datareader.setupSequenceRenderer = render_sites(acc);
+      datareader.setupSequenceRenderer = render_sites(acc,true);
       datareader.registerSequenceRenderer(renderer);
 
       if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
@@ -1205,7 +1184,7 @@
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
       datareader.datasetname = "predictions";
-      var top_offset = 3;
+      var top_offset = 18;
       if  (/comparison\//.exec(window.location)) {
         top_offset = 0;
       }
