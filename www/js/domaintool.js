@@ -689,7 +689,7 @@
           window.ga('send','pageview','/uniprot/'+ucacc);
         },0);
       }
-      if (history && history.pushState && (history.state || {})['uniprot_id'] !== ucacc ) {
+      if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
       }
 
@@ -698,6 +698,7 @@
       window.showing_clustal = false;
 
       setup_renderer(renderer);
+      get_orthologs(ucacc,renderer);
 
 
       var a_reader = new MASCP.UniprotReader();
@@ -829,7 +830,6 @@
           var selected;
           selected = document.getElementById('prot_'+uniprot.textContent.toLowerCase());
           if (selected) {
-            show_protein(uniprot.textContent,renderer,null,true);
             bean.fire(selected,'click');
             selected.scrollIntoView(true);
           } else {
@@ -1264,6 +1264,36 @@
       });
     };
 
+
+    var get_orthologs = function(acc,renderer) {
+      var orthos_parent =  document.getElementById('orthos');
+      while (orthos_parent.firstChild) {
+        orthos_parent.removeChild(orthos_parent.firstChild);
+      }
+      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+      var datareader = new MASCP.UserdataReader();
+      datareader.datasetname = "homologene";
+      datareader.retrieve(acc,function(err) {
+        if ( ! err ) {
+          var orthos = this.result._raw_data.data.orthologs;
+          var ids=[10029,10090,10116];
+          ids.forEach(function(id) {
+            var accession = orthos[id];
+            if (accession) {
+              var button = document.createElement('div');
+              button.setAttribute('class','ortho_'+id);
+              button.addEventListener('click',function() {
+                window.location += '+'+accession;
+                // show_protein(accession,renderer);
+              },false);
+              orthos_parent.appendChild(button);
+            }
+          });
+        }
+      });
+    };
+
+
     var get_domains = function(acc,next) {
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
       var datareader = new MASCP.UserdataReader();
@@ -1388,6 +1418,12 @@
               retrieve_data(seq.agi.toUpperCase(),renderer);
             });
             window.showing_clustal = true;
+            set_description("ClustalW alignment");
+            document.getElementById('uniprot_id').textContent = "";
+            var orthos_parent =  document.getElementById('orthos');
+            while (orthos_parent.firstChild) {
+              orthos_parent.removeChild(orthos_parent.firstChild);
+            }
           });
         }
       };
@@ -1535,26 +1571,10 @@
         protein_doc_id = state.exportIds[0];
         document.getElementById('drive_install').style.display = 'none';
       }
-      if (window.location.toString().match(/uniprot/)) {
-        var results = /uniprot\/(.*)/.exec(window.location);
-        if (results && results[1]) {
-          var prot = { "id" : results[1], "name" : results[1] };
-          prot.toString = function() { return this.id; };
-          if (history && history.replaceState) {
-            history.replaceState({"uniprot_id" : results[1]},results[1],"/uniprot/"+results[1]);
-          }
-          show_protein(prot,renderer);
-          // update_protein_list([prot],renderer);
-        }
-        // document.getElementById('print').addEventListener('click',function() {
-        //   do_printing([prot]);
-        // },false);
-        // return;
-      }
-
 
       var handle_proteins = function(prots,auth_func) {
         if (prots.length < 25) {
+          document.getElementById('drive_install').style.display = 'none';
           document.getElementById('align').style.display = 'block';
           document.getElementById('align').addEventListener('click',function() {
             var my_prots = [].concat(prots);
@@ -1574,38 +1594,37 @@
         add_keyboard_navigation();
       };
 
-      if (/cazy\//.exec(window.location)) {
-        document.getElementById('drive_install').style.display = 'none';
-        (function() {
-            var family = window.location.href.split('/').reverse().shift();
-            xmlhttp =  new XMLHttpRequest();
-            if (xmlhttp) {
-                xmlhttp.onreadystatechange = function() {
-                  if (xmlhttp.readyState == 4) {
-                      if (xmlhttp.status == 200) {
-                          var prots = [];
-                          (JSON.parse(xmlhttp.responseText)).forEach(function(prot) {
-                            prot.toString = function() { return this.id };
-                            prots.push(prot);
-                            MASCP.registerLayer(prot.id.toLowerCase(),{'fullname': prot.name, 'color' : '#aaa'});
-                          });
-                          handle_proteins(prots);
-                      }
-                  }
-                };
+      if (window.location.toString().match(/uniprot/)) {
+        var results = /uniprot\/(.*)/.exec(window.location);
+        if (results && results[1]) {
+          var prots = [];
+          results[1].split(/\+/).forEach(function(prot_name) {
+            var prot = { "id" : prot_name, "name" : prot_name };
+            prot.toString = function() { return this.id; };
+            prots.push(prot);
+          });
+
+          if (history && history.replaceState) {
+            if (prots.length == 1) {
+              history.replaceState({"uniprot_id" : prots[0].id},prots[0].id,"/uniprot/"+prots[0].id);
+            } else {
+              history.replaceState({"uniprot_ids" : results[1] },prots.join(','),window.location);
             }
-            xmlhttp.open("GET", '/data/latest/cazy/'+family, true);
-            xmlhttp.setRequestHeader("Content-type",
-                "application/x-www-form-urlencoded");
-            xmlhttp.send('');
-        })();
-      } else {
-        get_proteins(protein_doc_id,handle_proteins);
-        if (state.exportIds) {
-          setInterval(function() {
-            get_proteins(protein_doc_id,handle_proteins);
-          },10*60*1000);
+          }
+          // show_protein(prots[0],renderer);
+          handle_proteins(prots,renderer);
+          if (prots.length > 1) {
+            return;
+          }
         }
+      }
+
+      get_proteins(protein_doc_id,handle_proteins);
+
+      if (state.exportIds) {
+        setInterval(function() {
+          get_proteins(protein_doc_id,handle_proteins);
+        },10*60*1000);
       }
 
     };

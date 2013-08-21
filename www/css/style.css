@@ -116,6 +116,32 @@
             -webkit-animation-iteration-count: 2;
         }
 
+        .ortho_10029 {
+            background-image: url(http://images5.fanpop.com/image/photos/29600000/a-Hamster-with-a-Weapon-hamsters-29682175-430-416.jpg);
+            width: 100px;
+            height: 100px;
+            background-size: 100px;
+        }
+        .ortho_10090 {
+            background-image: url(http://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Lab_mouse_mg_3263.jpg/320px-Lab_mouse_mg_3263.jpg);
+            width: 100px;
+            height: 100px;
+            background-size: 100px;
+            background-repeat: no-repeat;
+        }
+
+        .ortho_10116 {
+            background-image: url(http://vetmed.duhs.duke.edu/Photos/rt2.jpg);
+            width: 100px;
+            height: 100px;
+            background-size: 100px;
+            background-repeat: no-repeat;
+        }
+
+/*10090‎
+
+10116
+*/
         .notification_container {
             position: fixed;
             top: 0px;
