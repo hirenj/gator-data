@@ -27,13 +27,13 @@
       };
 
       renderer.small_galnac = function() {
-        var galnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+        var galnac = renderer._canvas.rect(-0.5,-0.5,1,1);
         galnac.setAttribute('fill','#ffff00');
         return galnac;
       };
 
       renderer.small_glcnac = function() {
-        var glcnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+        var glcnac = renderer._canvas.rect(-0.5,-0.5,1,1);
         glcnac.setAttribute('fill','#0000ff');
         glcnac.setAttribute('stroke','#009');
         return glcnac;
@@ -47,58 +47,58 @@
       }
       renderer.nlinked = function() {
         var n_glc = renderer._canvas.group();
-        var glcnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+        var glcnac = renderer._canvas.rect(-0.45,-1,0.9,0.9);
         glcnac.setAttribute('fill','#0000ff');
         n_glc.push(glcnac);
-        glcnac = renderer._canvas.rect(-0.5,-1,1,1);
+        glcnac = renderer._canvas.rect(-0.45,0.2,0.9,0.9);
         glcnac.setAttribute('fill','#0000ff');
         n_glc.push(glcnac);
         return n_glc;
       };
       renderer.fuc = function() {
-        var fuc = renderer._canvas.path("M0,-125 25,-75 -25,-75 z");
+        var fuc = renderer._canvas.path("M0,-25 25,25 -25,25 z");
         fuc.setAttribute('fill','#ff0000');
         fuc.setAttribute('stroke','#990000');
         fuc.setAttribute('stroke-width','5');
         return fuc;
       };
       renderer.man = function() {
-        var man = renderer._canvas.circle(0,-2,0.5);
+        var man = renderer._canvas.circle(0,0,0.8);
         man.setAttribute('fill','#00ff00');
         man.setAttribute('stroke','#009900');
         man.setAttribute('stroke-width','5');
         return man;
       };
       renderer.glc = function() {
-        var glc = renderer._canvas.circle(0,-2,0.5);
+        var glc = renderer._canvas.circle(0,0,0.8);
         glc.setAttribute('fill','#0000ff');
         glc.setAttribute('stroke','#000099');
         glc.setAttribute('stroke-width','5');
         return glc;
       };
       renderer.gal = function() {
-        var gal = renderer._canvas.circle(0,-2,0.5);
+        var gal = renderer._canvas.circle(0,0,0.8);
         gal.setAttribute('fill','#ffff00');
         gal.setAttribute('stroke','#999900');
         gal.setAttribute('stroke-width','5');
         return gal;
       };
       renderer.hex = function() {
-        var hex = renderer._canvas.circle(0,-2,0.5);
+        var hex = renderer._canvas.circle(0,0,0.8);
         hex.setAttribute('fill','#ffffff');
         hex.setAttribute('stroke','#999999');
         hex.setAttribute('stroke-width','5');
         return hex;
       };
       renderer.hexnac = function() {
-        var hexnac = renderer._canvas.rect(-0.5,-2.3,1,1);
+        var hexnac = renderer._canvas.rect(-0.5,-0.5,1,1);
         hexnac.setAttribute('fill','#ffffff');
         hexnac.setAttribute('stroke','#999999');
         hexnac.setAttribute('stroke-width','5');
         return hexnac;
       };
       renderer.xyl = function() {
-        var xyl = renderer._canvas.path('M0,-120 L0,-120 -15,-75 22.5,-105 -22.5,-105 15,-75 z');
+        var xyl = renderer._canvas.path('M0,-30 L0,-30 -15,15 22.5,-15 -22.5,-15 15,15 z');
         xyl.setAttribute('fill','#ff9999');
         xyl.setAttribute('stroke','#997777');
         xyl.setAttribute('stroke-width','5');
@@ -287,8 +287,8 @@
               }
               return box;
             };
-            renderer.getAA(start).addToLayer(target_layer, {"height" : 24, "content" : element_func(), "offset" : 24, "angle": 0, "bare_element" : true });
-            renderer.getAA(start).addToLayer(lay_name, {"height" : 16, "content" : element_func(), "offset" : 12, "bare_element" : true });
+            renderer.getAA(start).addToLayer(target_layer, {"height" : 16, "content" : element_func(), "offset" : 28, "angle": 0, "bare_element" : true });
+            renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : element_func(), "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
             var box;
