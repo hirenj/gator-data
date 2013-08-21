@@ -76,6 +76,8 @@ process.addListener("uncaughtException", function (err) {
     // We should make sure state is clean here
 });
 
+var id_mapper;
+
 var refresh_document = function(doc,map) {
     var reader = new MASCP.GoogledataReader();
     var inserter;
@@ -95,6 +97,11 @@ var refresh_file = function(file,map,title) {
     }
     console.log("Inserting for "+inserter.toString());
     inserter.map = map;
+    if (id_mapper) {
+        inserter.map_id = id_mapper;
+    } else {
+        inserter.map_id = function(id) { return id; };
+    }
     inserter.bind('progress',function(percent) {
         console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[36;1m"+percent.toFixed(0)+"%\u001b[0m)");
     });
@@ -298,7 +305,18 @@ var watch_spreadsheet = function(doc,map,callback) {
 };
 
 var live_update = function(resource,clazz,merger) {
-    var conf = { "merger_function" : merger.toString(), "class" : (new clazz()).toString() };
+    var class_string;
+    var dataset;
+    if (typeof(clazz) == "string") {
+        class_string = "MASCP.UserdataReader";
+        dataset = clazz;
+    } else {
+        class_string = (new clazz()).toString();
+    }
+    var conf = { "merger_function" : merger.toString(), "class" : class_string };
+    if (dataset) {
+        conf['dataset'] = dataset;
+    }
     nconf.set('liveupdate:'+resource,conf);
     nconf.save(function(err) {
         if (err) {
@@ -365,7 +383,7 @@ if (port == 3702) {
 
 repl = require('repl');
 
-MASCP.events.once('ready',function() {
+MASCP.events.once('all_ready',function() {
     MASCP.Service.BeginCaching();
     var express = require('express'),
         app = express.createServer();
@@ -504,6 +522,10 @@ MASCP.events.once('ready',function() {
         var merger_func = eval("("+live_resource.merger_function+")");
         var clazz = eval("("+live_resource.class+")");
         var service = new clazz();
+        if (clazz === MASCP.UserdataReader) {
+            service.datasetname = live_resource.dataset;
+            MASCP.Service.BeginCaching(service);
+        }
         if ( ! clazz.running ) {
             clazz.running = {};
         }
@@ -536,6 +558,10 @@ MASCP.events.once('ready',function() {
             }
             if ( ! old_data ) {
                 old_data = {};
+            }
+            if ( ! this.result ) {
+                res.send({"error" : "No data"},200);
+                return;
             }
             old_data._raw_data = merger_func(old_data._raw_data,this.result._raw_data);
             res.send(old_data._raw_data,200);
@@ -659,6 +685,47 @@ MASCP.events.once('ready',function() {
         }
     }
 
+});
+
+MASCP.events.once('ready',function() {
+    if (nconf.get("mappings")) {
+        var file = nconf.get("mappings");
+        var read_stream = fs.createReadStream(file);
+        (function() {
+            var csv = require('csv');
+            var mappings = {};
+            if (file.match(/gz$/)) {
+                var zlib = require('zlib');
+                var zipped_stream = read_stream;
+                read_stream = zipped_stream.pipe(zlib.createGunzip());
+            }
+            console.log("Loading mappings");
+            csv()
+            .fromStream(read_stream, {
+                delimiter : "\t",
+                quote : "☃"
+            }).on('data',function(dat) {
+                var ids = dat[3].split(/;\s+/);
+                ids.forEach(function(id) {
+                    mappings[id.toLowerCase()] = dat[0].toLowerCase();
+                });
+            }).on('end',function() {
+                id_mapper = function(id) {
+                    if (mappings[id.toLowerCase()]) {
+                        return mappings[id.toLowerCase()];
+                    } else {
+                        return id;
+                    }
+                };
+                console.log("Loaded up mappings");
+                MASCP.events.emit('all_ready');
+            }).on('error',function(error) {
+                console.log(error.message)
+            });
+        })();
+    } else {
+        MASCP.events.emit('all_ready');
+    }
 });
 
 MASCP.events.emit('ready');
