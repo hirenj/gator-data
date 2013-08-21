@@ -47,12 +47,12 @@
                 if (group.length < 3) {
                   group.push(current);
                   group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 18,  "bare_element" : true });
+                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 9,  "bare_element" : true });
                   });
                 } else {
                   group.push(current);
                   group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 18,  "bare_element" : true })[1].zoom_level = 'text';
+                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 9,  "bare_element" : true })[1].zoom_level = 'text';
                   });
                   var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : offset - 4.875, "height" : 9.75 });
                   var a_galnac = (offset < 1) ? renderer.galnac() : renderer.light_galnac();
@@ -1096,32 +1096,12 @@
             });
             return;
           }
-
           var obj = { "gotResult" : function() {
             (datas.sites || []).forEach(function(site) {
-              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 3, "height" : 24,  "bare_element" : true });
+              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 30, "height" : 8,  "bare_element" : true });
             });
             (datas.peptides || []).forEach(function(peptide) {
-              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1);
-              box.removeAttribute('style');
-              box.setAttribute('fill','#999999');
-              box.setAttribute('opacity','1');
-              box.setAttribute('stroke-width','0');
-              box.setAttribute('transform','translate('+box.getAttribute('x')+','+box.getAttribute('y')+')');
-              box.setAttribute('x','0');
-              box.setAttribute('y','-100');
-              box.setHeight = function(hght) {
-                this.setAttribute('y',-2*renderer._RS/renderer.zoom);
-                this.setAttribute('height',hght*0.1);
-              };
-              box.move = function(new_x,new_width) {
-                var transform_attr = this.getAttribute('transform');
-                var matches = /translate\(.*[,\s](.*)\)/.exec(transform_attr);
-                if (matches[1]) {
-                  this.setAttribute('transform','translate('+(new_x*renderer._RS)+','+matches[1]+')');
-                }
-                this.setAttribute('width',new_width*renderer._RS);
-              };
+              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1,{ "offset" : 30, "height_scale" : 0.1, "fill" : "#999", "merge" : false  });
               box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
             });
             var offsets = {};
@@ -1135,19 +1115,19 @@
               }
               datas[symbol].forEach(function(site) {
                 var offset = -4.1;
-                var size = 24;
+                var size = 12;
                 if (offsets[site]) {
                   offset = offsets[site];
                 }
-                offsets[site] = offset + 2;
+                offsets[site] = offset + 4;
 
                 if (symbol == "HEART") {
                   icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#heart";
-                  size = 48;
+                  size = 24;
                 }
                 if (symbol == "KIDNEY") {
                   icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#kidneys";
-                  size = 48;
+                  size = 24;
                 }
                 var el = renderer.getAA(parseInt(site)).addToLayer(track_name,
                   { "content" : icons[symbol] || symbol,

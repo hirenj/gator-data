@@ -98,7 +98,7 @@ PieMenu.create = function(canvas,x,y,contents) {
         } else {
             var g = canvas.group();
             var next_g = canvas.group();
-			next_g.setAttribute('transform','translate('+(((x_pos)*canvas.RS))+','+((y_pos+2*icon_size)*canvas.RS)+') scale('+(icon_size)+')');
+			next_g.setAttribute('transform','translate('+(((x_pos)*canvas.RS))+','+((y_pos)*canvas.RS)+') scale('+(0.75*icon_size)+')');
 			next_g.push(symbol);
             g.push(next_g);
             els.push(g);

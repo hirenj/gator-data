@@ -259,7 +259,7 @@
 
         var obj = { "gotResult" : function() {
           if (annotation.type == "symbol") {
-            var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 0, "height" : 24 });
+            var added = self.renderer.getAA(annotation.index).addToLayer("annotations",{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 12, "height" : 24 });
             rendered.push(added[0]);
             rendered.push(added[2]);
             rendered.push(added[1]);
