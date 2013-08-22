@@ -1283,7 +1283,7 @@
               var button = document.createElement('div');
               button.setAttribute('class','ortho_'+id);
               button.addEventListener('click',function() {
-                window.location += '+'+accession;
+                window.location += '+'+accession.toUpperCase();
                 // show_protein(accession,renderer);
               },false);
               orthos_parent.appendChild(button);

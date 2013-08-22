@@ -106,7 +106,7 @@ var refresh_file = function(file,map,title) {
         console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[36;1m"+percent.toFixed(0)+"%\u001b[0m)");
     });
     MASCP.Service.ClearCache(inserter.toString(),null,function() {
-        console.log("Cleared data out");
+        console.log("Cleared data out on "+inserter.toString());
         var read_stream = fs.createReadStream(file);
         if (file.match(/gz$/)) {
             var zlib = require('zlib');
@@ -120,6 +120,7 @@ var refresh_file = function(file,map,title) {
         }).on('data',function(dat) {
             data_array.push(dat);
         }).on('end',function() {
+            console.log("Read file "+file+" for "+inserter.toString());
             inserter.setData(title,data_array);
         }).on('error',function(error) {
             console.log(error.message)
