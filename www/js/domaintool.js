@@ -614,6 +614,8 @@
         scale_text_elements(renderer);
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
         domain_retriever = new MASCP.DomainRenderer(renderer,function(editing,acc) {
+          get_orthologs = _get_orthologs;
+          get_orthologs(acc,renderer);
           show_protein(acc,renderer);
           if (editing && renderer.navigation) {
             renderer.navigation.show();
@@ -691,6 +693,8 @@
       }
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
+        window.showFullProteinList();
+        console.log("Killing protein list");
       }
 
       end_clustal();
@@ -838,6 +842,7 @@
               var clazz = selected.getAttribute('class') || '';
               selected.setAttribute('class',clazz.replace(/selected\s/,''));
             }
+            console.log("Going into show_protein");
             show_protein(uniprot.textContent,renderer,null,true);
           }
         }
@@ -1264,8 +1269,16 @@
       });
     };
 
+    var get_orthologs = function() {
+    };
 
-    var get_orthologs = function(acc,renderer) {
+    var _get_orthologs = function(acc,renderer) {
+      if ( ! gapi || ! gapi.auth.getToken() ) {
+        return;
+      }
+      if ( ! acc ) {
+        return;
+      }
       var orthos_parent =  document.getElementById('orthos');
       while (orthos_parent.firstChild) {
         orthos_parent.removeChild(orthos_parent.firstChild);
@@ -1277,11 +1290,13 @@
         if ( ! err ) {
           var orthos = this.result._raw_data.data.orthologs;
           var ids=[10029,10090,10116];
+          var labels={ 10029 : "CHO", 10090 : "Mouse", 10116 : "Rat "};
           ids.forEach(function(id) {
             var accession = orthos[id];
             if (accession) {
-              var button = document.createElement('div');
-              button.setAttribute('class','ortho_'+id);
+              var button = document.createElement('button');
+              button.setAttribute('class','ortho_button ortho_'+id);
+              button.textContent = labels[id];
               button.addEventListener('click',function() {
                 window.location += '+'+accession.toUpperCase();
                 // show_protein(accession,renderer);
@@ -1585,6 +1600,9 @@
               callback_func();
             },false);
           },false);
+        } else {
+          document.getElementById('drive_install').style.display = 'block';
+          document.getElementById('align').style.display = 'none';
         }
         update_protein_list(prots,renderer,auth_func);
         document.getElementById('print').addEventListener('click',function() {
@@ -1592,6 +1610,10 @@
         },false);
 
         add_keyboard_navigation();
+      };
+
+      window.showFullProteinList = function() {
+        get_proteins(protein_doc_id,handle_proteins);
       };
 
       if (window.location.toString().match(/uniprot/)) {
