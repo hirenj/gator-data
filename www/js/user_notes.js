@@ -247,14 +247,6 @@
     });
     rendered = [];
 
-/*
-          var obj = { "gotResult" : function() {
-          }, "agi" : acc };
-          jQuery(renderer).trigger('readerRegistered',[obj]);
-          obj.gotResult();
-*/
-
-
     for (var annotation_type in self.annotations) {
       self.annotations[annotation_type].forEach(function(annotation) {
         if (wanted_accs.indexOf(annotation.acc) < 0 ) {

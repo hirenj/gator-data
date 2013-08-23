@@ -1084,20 +1084,42 @@
 
           if (pref.render_options["renderer"]) {
             (new MASCP.GoogledataReader()).getDocument(pref.render_options["renderer"],null,function(err,doc) {
+              var valid_md5 = false;
               if (window.md5(doc) === pref.render_options["renderer_md5"] ) {
                 console.log("Matching MD5");
+                valid_md5 = true;
               } else {
+                valid_md5 = false;
                 console.log("Bad MD5");
-                return;
               }
-              var render_func = new Function("renderer","datas","track","acc",doc);
-              var obj = ({ "gotResult" : function() {
-                render_func(renderer,datas,track_name,acc);
-                renderer.trigger('resultsRendered',[this]);
-                renderer.refresh();
-              }, "agi" : acc });
-              jQuery(renderer).trigger('readerRegistered',[obj]);
-              obj.gotResult();
+              var render_func;
+
+              if (pref.render_options['sandbox']) {
+                var sandbox = new JSandbox();
+                sandbox.exec(doc,function() {
+                  this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
+                              "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
+                              "callback" : function(r) {
+                                var obj = ({ "gotResult" : function() {
+                                  renderer.renderObjects(track_name,r);
+                                  renderer.trigger('resultsRendered',[this]);
+                                  renderer.refresh();
+                                }, "agi" : acc });
+                                jQuery(renderer).trigger('readerRegistered',[obj]);
+                                obj.gotResult();
+                              }
+                            });
+                });
+              } else if (valid_md5) {
+                render_func = new Function("renderer","datas","track","acc",doc);
+                var obj = ({ "gotResult" : function() {
+                  render_func(renderer,datas,track_name,acc);
+                  renderer.trigger('resultsRendered',[this]);
+                  renderer.refresh();
+                }, "agi" : acc });
+                jQuery(renderer).trigger('readerRegistered',[obj]);
+                obj.gotResult();
+              }
             });
             return;
           }
