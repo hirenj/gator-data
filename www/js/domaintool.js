@@ -1010,8 +1010,8 @@
       datareader.retrieve(acc,function(err) {
         if (this.result) {
           window.notify.info("Retrieved data for "+(options.name || datareader.toString()) ).hideLater(1000);
-          if (this.result._raw_data.data.length < 1 ) {
-            window.notify.info("No data for "+(options.name || datareader.toString())+" accession " +acc);
+          if (! this.result._raw_data.data || this.result._raw_data.data.length < 1 ) {
+            window.notify.info("No data for "+(options.name || datareader.toString())+" accession " +acc).hideLater(1000);
           }
         } else {
             window.notify.info("No data found for "+(options.name || datareader.toString())+" "+acc.toUpperCase()).hideLater(2000);
@@ -1035,7 +1035,7 @@
         window.event = { "which" : null };
       }
 
-      var allowed = { "PrideRunner" : 1, "HydropathyRunner" : 1 };
+      var allowed = { "PrideRunner" : 1, "HydropathyRunner" : 1, "UniprotSecondaryStructureReader" : 1 };
 
       (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
         if ( ! err ) {
