@@ -693,8 +693,10 @@
       }
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
-        window.showFullProteinList();
-        console.log("Killing protein list");
+        if ( ! document.getElementById('prot_'+(ucacc.toLowerCase())) ) {
+          console.log("Killing protein list");
+          window.showFullProteinList();
+        }
       }
 
       end_clustal();
