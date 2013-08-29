@@ -1526,6 +1526,7 @@
       }
 
       if (state.ids) {
+        var old_get_usersets = get_usersets;
         get_usersets = function() {};
         var defaults = {};
         //                "sites" : "man",
@@ -1596,6 +1597,7 @@
                     window.notify.alert("Could not write preferences");
                   } else {
                     window.notify.info("Successfully loaded "+(docname || ""));
+                    get_usersets = old_get_usersets;
                   }
                 });
               } else {
