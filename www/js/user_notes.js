@@ -281,6 +281,7 @@
           rendered[rendered.length - 1].addEventListener('click',function() {
             delete annotation.class;
             self.annotations['self'].push(annotation);
+            self.dirty = true;
             self.redrawAnnotations(annotation.acc);
             self.renderer.select();
           });
@@ -301,22 +302,22 @@
             }
             var pie_contents;
             if (annotation.type != "symbol") {
-              pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_blue')", "hover_function" : function() { annotation.color = "url('#grad_blue')"; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.redrawAnnotations(annotation.acc); }},
-              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.redrawAnnotations(annotation.acc); } }
+              pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
+              {'symbol' : "url('#grad_blue')", "hover_function" : function() { annotation.color = "url('#grad_blue')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
+              {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
+              {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
+              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.dirty = true; self.redrawAnnotations(annotation.acc); }},
+              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.dirty = true; self.redrawAnnotations(annotation.acc); } }
               ];
             } else {
               pie_contents = [
-              { 'symbol' : self.renderer.small_galnac(), "hover_function" : function() { annotation.icon = "small_galnac"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.man(), "hover_function" : function() { annotation.icon = "man"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.xyl(), "hover_function" : function() { annotation.icon = "xyl"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.fuc(), "hover_function" : function() { annotation.icon = "fuc"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.small_glcnac(), "hover_function" : function() { annotation.icon = "small_glcnac"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.nlinked(), "hover_function" : function() { annotation.icon = "nlinked"; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.redrawAnnotations(annotation.acc); } }
+              { 'symbol' : self.renderer.small_galnac(), "hover_function" : function() { annotation.icon = "small_galnac"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : self.renderer.man(), "hover_function" : function() { annotation.icon = "man"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : self.renderer.xyl(), "hover_function" : function() { annotation.icon = "xyl"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : self.renderer.fuc(), "hover_function" : function() { annotation.icon = "fuc"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : self.renderer.small_glcnac(), "hover_function" : function() { annotation.icon = "small_glcnac"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : self.renderer.nlinked(), "hover_function" : function() { annotation.icon = "nlinked"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
+              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.dirty = true; self.redrawAnnotations(annotation.acc); } }
               ]
             }
             var pie = PieMenu.create(canvas,(parseInt(bbox.x) + parseInt(0.5*bbox.width))/canvas.RS,(parseInt(bbox.y) + parseInt(0.5*bbox.height))/canvas.RS, pie_contents);
@@ -368,28 +369,25 @@
       if ( ! window.event ) {
         window.event = { "which" : null };
       }
-      (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
-        if (err) {
-          // Errs if : No user event / getting preferences
-          // actual reader error
-
-          if (err.status === "preferences") {
-            window.notify.alert("Problem getting user preferences");
-            return;
-          }
-          if (err.cause == "No user event") {
-            self.redrawAnnotations = function(){};
-            return;
-          }
+      if (self.annotations['self'] && self.dirty) {
+        (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
           if (err) {
-            window.notify.alert("Problem reading user data set");
+            // Errs if : No user event / getting preferences
+            // actual reader error
+
+            if (err.status === "preferences") {
+              window.notify.alert("Problem getting user preferences");
+              return;
+            }
+            if (err.cause == "No user event") {
+              self.redrawAnnotations = function(){};
+              return;
+            }
+            if (err) {
+              window.notify.alert("Problem reading user data set");
+            }
+            console.log(err);
           }
-          console.log(err);
-        }
-        if ( ! self.annotations['self'] ) {
-          self.annotations['self'] = prefs.annotations || [];
-          self.redrawAnnotations();
-        } else {
           var result = [];
           self.annotations['self'].forEach(function(ann) {
             var obj = cloneObject(ann);
@@ -398,15 +396,45 @@
             }
             delete obj.pie;
           });
-          // self.annotations['self'] = result;
           prefs.annotations = result;
+
           (new MASCP.GoogledataReader()).writePreferences(self.preferences,function(err) {
             if (err) {
+              if (err.cause == "File too old") {
+                delete self.annotations['self'];
+                window.notify.info("Refreshing annotations from server").hideLater(1000);
+                self.sync();
+                return;
+              }
               window.notify.alert("Could not save annotations");
             }
+            self.dirty = false;
           });
-        }
-      });
+        });
+      } else if ( ! self.annotations['self'] ) {
+        (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
+          if (err) {
+            // Errs if : No user event / getting preferences
+            // actual reader error
+
+            if (err.status === "preferences") {
+              window.notify.alert("Problem getting user preferences");
+              return;
+            }
+            if (err.cause == "No user event") {
+              self.redrawAnnotations = function(){};
+              return;
+            }
+            if (err) {
+              window.notify.alert("Problem reading user data set");
+            }
+            console.log(err);
+          }
+          self.annotations['self'] = prefs.annotations || [];
+          self.dirty = false;
+          self.redrawAnnotations();
+        });
+      }
   };
 
 })(window)
