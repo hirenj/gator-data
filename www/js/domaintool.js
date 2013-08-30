@@ -1106,6 +1106,7 @@
                                   renderer.renderObjects(track_name,r);
                                   renderer.trigger('resultsRendered',[this]);
                                   renderer.refresh();
+                                  renderer.navigation.show();
                                 }, "agi" : acc });
                                 jQuery(renderer).trigger('readerRegistered',[obj]);
                                 obj.gotResult();
@@ -1118,6 +1119,7 @@
                   render_func(renderer,datas,track_name,acc);
                   renderer.trigger('resultsRendered',[this]);
                   renderer.refresh();
+                  renderer.navigation.show();
                 }, "agi" : acc });
                 jQuery(renderer).trigger('readerRegistered',[obj]);
                 obj.gotResult();
