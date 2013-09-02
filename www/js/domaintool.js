@@ -779,6 +779,7 @@
             });
           },false);
         } else if (err) {
+          document.getElementById('drive_install').style.display = 'none';
           return;
         } else {
           document.getElementById('drive_install').removeEventListener('click',arguments.callee);
@@ -897,6 +898,9 @@
             }
           },0);
           callback.call(null,err);
+        } else if (err && err.cause && err.cause == "Browser not supported" ) {
+          window.notify.info("Browser support for Google Drive not detected").hideLater(1000);
+          callback.call(null,err);
         } else {
           callback.call(null);
         }
@@ -931,7 +935,7 @@
         datareader.bind('error',function(e,err) {
           notification.hide();
           var err_obj = err || e;
-          if (err_obj.cause && err_obj.cause == "No user event") {
+          if (err_obj.cause && (err_obj.cause == "No user event" || err_obj.cause == "Access is denied.")) {
             callback.call(null,protein_doc,err_obj.authorize);
             return;
           }
@@ -1071,6 +1075,7 @@
           if (err) {
             window.notify.alert("Problem reading user data set");
           }
+          console.log("Getting prefs");
           console.log(err);
         }
         var method = pref["sites"] || pref.render_options["sites"];
@@ -1085,7 +1090,6 @@
             renderer.showLayer(track_name);
           }
           var datas = this.result._raw_data.data;
-
           if (pref.render_options["renderer"]) {
             (new MASCP.GoogledataReader()).getDocument(pref.render_options["renderer"],null,function(err,doc) {
               var valid_md5 = false;
@@ -1521,6 +1525,7 @@
               }
             });
           } else {
+            console.log("Writing prefs");
             console.log(err);
             window.notify.alert("Could not write preferences");
           }
@@ -1629,8 +1634,10 @@
             },false);
           },false);
         } else {
-          document.getElementById('drive_install').style.display = 'block';
-          document.getElementById('align').style.display = 'none';
+          if (document.getElementById('align').style.display == 'block') {
+            document.getElementById('drive_install').style.display = 'block';
+            document.getElementById('align').style.display = 'none';
+          }
         }
         update_protein_list(prots,renderer,auth_func);
         document.getElementById('print').addEventListener('click',function() {
