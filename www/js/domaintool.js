@@ -429,7 +429,8 @@
         }
         if (typeof(prots) == "string") {
           var input = document.createElement('button');
-          input.textContent = "Load proteins";
+          window.notify.alert("Cannot load, please log in to Google Drive again");
+          input.textContent = "Click to log in again";
           input.addEventListener('click',function() {
             auth_func(function(err) {
             if (err) {
@@ -929,8 +930,9 @@
         });
         datareader.bind('error',function(e,err) {
           notification.hide();
-          if (err.cause && err.cause == "No user event") {
-            callback.call(null,protein_doc,err.authorize);
+          var err_obj = err || e;
+          if (err_obj.cause && err_obj.cause == "No user event") {
+            callback.call(null,protein_doc,err_obj.authorize);
             return;
           }
           window.notify.alert("Could not retrieve desired protein list, please try again");
