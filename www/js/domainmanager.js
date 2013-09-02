@@ -113,11 +113,10 @@
     }
     (new MASCP.GoogledataReader()).getPreferences("Editing prefs",function(err,data) {
       if (err) {
-        if (err.cause == "No user event") {
+        if (err.cause == "No user event" || err.cause == "Browser not supported") {
           callback.call();
           return;
         }
-        console.log(err);
         return;
       }
       callback.call(null,data);

@@ -379,13 +379,17 @@
               window.notify.alert("Problem getting user preferences");
               return;
             }
-            if (err.cause == "No user event") {
+
+
+            if (err.cause == "No user event" || err.cause == "Browser not supported") {
               self.redrawAnnotations = function(){};
               return;
             }
+
             if (err) {
               window.notify.alert("Problem reading user data set");
             }
+            console.log("User notes here");
             console.log(err);
           }
           var result = [];
@@ -421,13 +425,14 @@
               window.notify.alert("Problem getting user preferences");
               return;
             }
-            if (err.cause == "No user event") {
+            if (err.cause == "No user event" || err.cause == "Access is denied." || err.cause == "Browser not supported") {
               self.redrawAnnotations = function(){};
               return;
             }
             if (err) {
               window.notify.alert("Problem reading user data set");
             }
+            console.log("User notes there");
             console.log(err);
             return;
           }
