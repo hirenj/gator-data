@@ -429,6 +429,7 @@
               window.notify.alert("Problem reading user data set");
             }
             console.log(err);
+            return;
           }
           self.annotations['self'] = prefs.annotations || [];
           self.dirty = false;
