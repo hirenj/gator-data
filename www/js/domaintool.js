@@ -761,10 +761,13 @@
 
     };
 
-    var wire_drive_button = function() {
+    var wire_drive_button = function(renderer) {
       drive_install(function(err,auth_func) {
+        var self_func = arguments.callee;
+
         if (auth_func) {
           document.getElementById('drive_install').addEventListener('click',function() {
+            var this_ev = arguments.callee;
             if (window.ga) {
               setTimeout(function() {
                 window.ga('send','event','drive_install','click');
@@ -774,7 +777,12 @@
               if (err) {
                 return;
               } else {
-                document.getElementById('drive_install').style.display = 'none';
+                document.getElementById('drive_install').removeEventListener('click',this_ev);
+                if (document.getElementById('uniprot_id').textContent) {
+                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); self_func(); },true);
+                } else {
+                  self_func();
+                }
               }
             });
           },false);
@@ -1500,7 +1508,7 @@
       },false);
 
 
-      wire_drive_button();
+      wire_drive_button(renderer);
       wire_uniprot_id_changer(renderer);
       wire_clipboarder();
       wire_genesearch(renderer);
