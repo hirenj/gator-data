@@ -683,6 +683,10 @@
       if ( ! acc ) {
         return;
       }
+      if (document.getElementById('drive_install').classList.contains('drive_preferences') && ! MASCP["GOOGLE_AUTH_TOKEN"] ) {
+        document.getElementById('drive_install').classList.remove('drive_preferences');
+        wire_drive_button(renderer);
+      }
       var ucacc = acc.toString().toUpperCase();
       if (! force && document.getElementById('uniprot_id').textContent == ucacc) {
         return;
