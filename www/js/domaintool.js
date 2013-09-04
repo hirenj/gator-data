@@ -126,7 +126,14 @@
             }
             if (document.getElementById('prot_'+uniprot.toLowerCase())) {
               document.getElementById('prot_'+uniprot.toLowerCase()).click();
+              document.getElementById('prot_'+uniprot.toLowerCase()).scrollIntoView(true);
               return;
+            } else {
+              var selected = (document.getElementsByClassName('selected') || [])[0];
+              if (selected) {
+                var clazz = selected.getAttribute('class') || '';
+                selected.setAttribute('class',clazz.replace(/selected\s/,''));
+              }
             }
             MyGeneCompleter.flash_message("Not in SimpleCell",2000);
             show_protein(uniprot,renderer);
@@ -841,14 +848,28 @@
       });
     };
 
-    var wire_uniprot_id_changer = function(renderer) {
+    var wire_uniprot_id_changer = function(renderer,handle_proteins) {
       var uniprot = document.getElementById('uniprot_id');
       uniprot.addEventListener('input',function() {
+        var all_ids = [];
         var uprot_re1 = /([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
         var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
-        if (uniprot.textContent.toUpperCase().match(uprot_re1) || uniprot.textContent.toUpperCase().match(uprot_re2)) {
+
+        (uniprot.textContent || "").split(/\n/).forEach(function(id) {
+          id = id.replace(/\s+/g,'');
+          if (id.toUpperCase().match(uprot_re1) || id.toUpperCase().match(uprot_re2)) {
+            var prot = { "id" : id, "name" : id };
+            prot.toString = function() { return this.id; };
+            all_ids.push(prot);
+          }
+        });
+        if (all_ids.length > 1) {
+          handle_proteins(all_ids);
+        }
+        var text_content = (all_ids[0] || "").toString().replace(/\s+/g,'');
+        if (text_content.toUpperCase().match(uprot_re1) || text_content.toUpperCase().match(uprot_re2)) {
           var selected;
-          selected = document.getElementById('prot_'+uniprot.textContent.toLowerCase());
+          selected = document.getElementById('prot_'+text_content.toLowerCase());
           if (selected) {
             bean.fire(selected,'click');
             selected.scrollIntoView(true);
@@ -859,7 +880,7 @@
               selected.setAttribute('class',clazz.replace(/selected\s/,''));
             }
             console.log("Going into show_protein");
-            show_protein(uniprot.textContent,renderer,null,true);
+            show_protein(text_content,renderer,null,true);
           }
         }
       },false);
@@ -920,6 +941,13 @@
     };
 
     var get_proteins = function(protein_doc,callback) {
+        var self = window;
+        if ( ! self.protein_cache ) {
+          self.protein_cache = {};
+        } else if (self.protein_cache[protein_doc]) {
+          callback( [].concat(self.protein_cache[protein_doc]) );
+          return;
+        }
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
@@ -939,6 +967,7 @@
             };
             results.push(prot);
           });
+          self.protein_cache[protein_doc] = [].concat(results);
           callback(results);
         });
         datareader.bind('ready',function() {
@@ -1512,8 +1541,35 @@
       },false);
 
 
+      var handle_proteins = function(prots,auth_func) {
+        if (prots.length < 25) {
+          document.getElementById('drive_install').style.display = 'none';
+          document.getElementById('align').style.display = 'block';
+          document.getElementById('align').addEventListener('click',function() {
+            var my_prots = [].concat(prots);
+            this.removeEventListener('click',arguments.callee);
+            callback_func = prepare_alignment(my_prots);
+            document.getElementById('align').setAttribute('class','running');
+            this.addEventListener('click',function() {
+              callback_func();
+            },false);
+          },false);
+        } else {
+          if (document.getElementById('align').style.display == 'block') {
+            document.getElementById('drive_install').style.display = 'block';
+            document.getElementById('align').style.display = 'none';
+          }
+        }
+        update_protein_list(prots,renderer,auth_func);
+        document.getElementById('print').addEventListener('click',function() {
+          do_printing(prots);
+        },false);
+
+        add_keyboard_navigation();
+      };
+
       wire_drive_button(renderer);
-      wire_uniprot_id_changer(renderer);
+      wire_uniprot_id_changer(renderer,handle_proteins);
       wire_clipboarder();
       wire_genesearch(renderer);
       wire_history(renderer);
@@ -1631,33 +1687,6 @@
         protein_doc_id = state.exportIds[0];
         document.getElementById('drive_install').style.display = 'none';
       }
-
-      var handle_proteins = function(prots,auth_func) {
-        if (prots.length < 25) {
-          document.getElementById('drive_install').style.display = 'none';
-          document.getElementById('align').style.display = 'block';
-          document.getElementById('align').addEventListener('click',function() {
-            var my_prots = [].concat(prots);
-            this.removeEventListener('click',arguments.callee);
-            callback_func = prepare_alignment(my_prots);
-            document.getElementById('align').setAttribute('class','running');
-            this.addEventListener('click',function() {
-              callback_func();
-            },false);
-          },false);
-        } else {
-          if (document.getElementById('align').style.display == 'block') {
-            document.getElementById('drive_install').style.display = 'block';
-            document.getElementById('align').style.display = 'none';
-          }
-        }
-        update_protein_list(prots,renderer,auth_func);
-        document.getElementById('print').addEventListener('click',function() {
-          do_printing(prots);
-        },false);
-
-        add_keyboard_navigation();
-      };
 
       window.showFullProteinList = function() {
         get_proteins(protein_doc_id,handle_proteins);
