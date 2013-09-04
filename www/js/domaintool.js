@@ -2,9 +2,30 @@
 
     var DomaintoolPreferences = function() {
       this.waiting = [];
-      this.useDefaultPreferences();
-      // this.addRealtime("0By48KKDu9leCal9kYl9zMkk1Ums");
+      if (this.getActiveSession()) {
+        this.addRealtime(this.getActiveSession());
+      } else {
+        this.useDefaultPreferences();
+      }
     };
+
+    DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
+      if ( ! file ) {
+        sessionStorage.removeItem("active_session");
+        this.useDefaultPreferences();
+      } else {
+        sessionStorage.setItem("active_session",file);
+        sessionStorage.setItem("active_session_title",title);
+      }
+    }
+
+    DomaintoolPreferences.prototype.getActiveSession = function() {
+      return sessionStorage.getItem("active_session");
+    }
+
+    DomaintoolPreferences.prototype.getActiveSessionTitle = function() {
+      return sessionStorage.getItem("active_session_title");
+    }
 
     DomaintoolPreferences.prototype.addService = function(service,name) {
       var preferences = this;
@@ -459,6 +480,17 @@
           show_protein((event.state || {})['uniprot_id'],renderer);
         }
       }
+    };
+
+    var wire_clearsession = function(title) {
+      document.getElementById('clearsession').textContent = title;
+      document.getElementById('clearsession').style.display = 'block';
+      console.log(title);
+      document.getElementById('clearsession').onclick = function() {
+        console.log("Clearing session");
+        get_preferences().setActiveSession(null);
+        this.style.display = 'none';
+      };
     };
 
     var wire_renderer = function(renderer) {
@@ -1786,8 +1818,23 @@
 
       if (state.ids) {
         state.ids.forEach(function(doc_id) {
-          get_preferences().watchFile(doc_id);
+          (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title) {
+            if ( ! err ) {
+              if (type === 'application/json; data-type=msdata') {
+                get_preferences().watchFile(doc_id);
+              }
+              if (type === 'application/json; data-type=domaintool-session') {
+                get_preferences().addRealtime(doc_id);
+                get_preferences().setActiveSession(doc_id,title);
+                wire_clearsession(get_preferences().getActiveSessionTitle());
+              }
+            }
+          });
         });
+      }
+
+      if (get_preferences().getActiveSession()) {
+        wire_clearsession(get_preferences().getActiveSessionTitle());
       }
 
       if (state.exportIds && state.exportIds.length > 0) {
