@@ -133,9 +133,28 @@
     DomaintoolPreferences.prototype.addRealtime = function(file) {
       var self = this;
       gapi.load("drive-realtime", function() {
-        gapi.drive.realtime.load(file, function(doc) {
-          self.usePreferenceFile(file,doc);
-        }, function(model) { model.getRoot().set('doc-etag',model.createString('none')); });
+        if (MASCP.AnnotationManager) {
+          MASCP.AnnotationManager.InitRealtime();
+        }
+        var callback = function(err) {
+          if (err) {
+            return;
+          }
+
+          gapi.drive.realtime.load(file, function(doc) {
+            self.usePreferenceFile(file,doc);
+            self.realtime = doc;
+            bean.fire(self,'realtimeready');
+          }, function(model) {
+            model.getRoot().set('doc-etag',model.createString('none'));
+            model.getRoot().set('annotations',model.createList());
+          });
+        }
+        if ( ! self.prefs_object ) {
+          (new MASCP.GoogledataReader()).getDocument(null,null,callback);
+        } else {
+          self.getPreferences(callback);
+        }
       });
     };
 
@@ -234,10 +253,12 @@
         });
         self.waiting = [];
       }
+      bean.fire(self,'prefschange');
       return;
     };
 
     DomaintoolPreferences.prototype.useDefaultPreferences = function() {
+      var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
 
@@ -273,6 +294,8 @@
           google_obj.writePreferences.apply(google_obj,args);
         }
       };
+      delete self.realtime;
+      bean.fire(self,'prefschange');
     };
 
     DomaintoolPreferences.prototype.addWatchedDocument = function() {
@@ -482,14 +505,14 @@
       }
     };
 
-    var wire_clearsession = function(title) {
+    var wire_clearsession = function(title,renderer) {
       document.getElementById('clearsession').textContent = title;
       document.getElementById('clearsession').style.display = 'block';
-      console.log(title);
       document.getElementById('clearsession').onclick = function() {
         console.log("Clearing session");
         get_preferences().setActiveSession(null);
         this.style.display = 'none';
+        show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
       };
     };
 
@@ -497,17 +520,31 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        var annotation_manager = new MASCP.AnnotationManager(renderer,"Domaintool preferences");
-        wire_find(annotation_manager);
-        wire_dragging_disable(renderer,annotation_manager);
-        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
-          evt.preventDefault();
-        });
-        annotation_manager.addSelector(function(text) {
-          if ( ! text ) {
+        get_preferences().getPreferences(function(err,prefs) {
+          if ( err || ! prefs ) {
             return;
           }
-          document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
+          var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
+          bean.add(get_preferences(),'prefschange',function() {
+            annotation_manager.initialiseAnnotations();
+          });
+          wire_find(annotation_manager);
+          wire_dragging_disable(renderer,annotation_manager);
+          var selector_callback = function() {
+            annotation_manager.addSelector(function(text) {
+              if ( ! text ) {
+                return;
+              }
+              document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
+            });
+          };
+          if (renderer.sequence) {
+            selector_callback();
+          }
+          renderer.bind('sequenceChange',selector_callback);
+        });
+        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
+          evt.preventDefault();
         });
       }
     };
@@ -821,7 +858,7 @@
               setTimeout(function() {
                 a_div.removeAttribute('data-hint');
               },500);
-            });
+            },true);
             a_div.setAttribute('data-hint',"Loading..");
           },false);
           if (curr_acc == prot) {
@@ -1040,7 +1077,6 @@
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
         if ( ! document.getElementById('prot_'+(ucacc.toLowerCase())) ) {
-          console.log("Killing protein list");
           window.showFullProteinList();
         }
       }
@@ -1124,7 +1160,8 @@
               } else {
                 document.getElementById('drive_install').removeEventListener('click',this_ev);
                 if (document.getElementById('uniprot_id').textContent) {
-                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); self_func(); },true);
+                  self_func();
+                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); },true);
                 } else {
                   self_func();
                 }
@@ -1199,7 +1236,6 @@
               var clazz = selected.getAttribute('class') || '';
               selected.setAttribute('class',clazz.replace(/selected\s/,''));
             }
-            console.log("Going into show_protein");
             show_protein(uniprot.textContent,renderer,null,true);
           }
         }
@@ -1811,8 +1847,10 @@
       }
 
       if (state.action && state.action == 'create') {
-        (new MASCP.GoogledataReader()).createPreferences(state.folderId,function(err,prefs) {
-          console.log(prefs);
+        (new MASCP.GoogledataReader()).createPreferences(state.folderId,function(err,prefs,doc_id,title) {
+          get_preferences().addRealtime(doc_id);
+          get_preferences().setActiveSession(doc_id,title);
+          wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
       }
 
@@ -1826,7 +1864,7 @@
               if (type === 'application/json; data-type=domaintool-session') {
                 get_preferences().addRealtime(doc_id);
                 get_preferences().setActiveSession(doc_id,title);
-                wire_clearsession(get_preferences().getActiveSessionTitle());
+                wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
               }
             }
           });
@@ -1834,7 +1872,7 @@
       }
 
       if (get_preferences().getActiveSession()) {
-        wire_clearsession(get_preferences().getActiveSessionTitle());
+        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
       }
 
       if (state.exportIds && state.exportIds.length > 0) {
