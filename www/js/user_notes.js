@@ -174,16 +174,18 @@
       renderer.select(local_start+1,local_end);
       selected = (renderer.sequence.substr(local_start,local_end - local_start ));
       self.annotations['hover_targets'] = [];
-      if (Math.abs(local_start - local_end) <= 1) {
-          self.annotations['hover_targets'].push({"type" : "symbol", "class" : "potential", "index" : local_start+1, "acc" : self.acc });
-      } else {
-          self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
+      if (! self.readonly ) {
+        if (Math.abs(local_start - local_end) <= 1) {
+            self.annotations['hover_targets'].push({"type" : "symbol", "class" : "potential", "index" : local_start+1, "acc" : self.acc });
+        } else {
+            self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
+        }
       }
       self.redrawAnnotations();
       e.preventDefault();
     }
     canvas.addEventListener('click',function(e) {
-      if (! self.selecting && self.annotations && self.annotations['hover_targets'] && self.annotations['hover_targets'].length > 0) {
+      if (! self.selecting && self.annotations && self.annotations['hover_targets']) {
         self.annotations['hover_targets'] = [];
         renderer.select();
         self.redrawAnnotations();
@@ -272,6 +274,8 @@
       };
 
       var model = prefs.realtime.getModel();
+      self.readonly = model.isReadOnly;
+
       var all_annos = model.getRoot().get('annotations');
       self.annotations['self'] = all_annos.asArray();
       all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_ADDED,function(ev) {
@@ -390,13 +394,15 @@
 
         if (annotation.class == "potential") {
           rendered[rendered.length - 1].style.opacity = '0.5';
-          rendered[rendered.length - 1].addEventListener('click',function() {
-            delete annotation.class;
-            self.promoteAnnotation('self',annotation);
-            self.dirty = true;
-            self.redrawAnnotations(annotation.acc);
-            self.renderer.select();
-          });
+          if (! self.readonly) {
+            rendered[rendered.length - 1].addEventListener('click',function() {
+              delete annotation.class;
+              self.promoteAnnotation('self',annotation);
+              self.dirty = true;
+              self.redrawAnnotations(annotation.acc);
+              self.renderer.select();
+            });
+          }
         } else {
 
           self.watchAnnotation(annotation);
@@ -450,9 +456,11 @@
             ev.preventDefault();
             ev.stopPropagation();
           };
-          rendered[rendered.length - 1].addEventListener('mousedown',trigger_pie,false);
-          rendered[rendered.length - 1].addEventListener('touchstart',trigger_pie,false);
-          rendered[rendered.length - 1].addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
+          if ( ! self.readonly ) {
+            rendered[rendered.length - 1].addEventListener('mousedown',trigger_pie,false);
+            rendered[rendered.length - 1].addEventListener('touchstart',trigger_pie,false);
+            rendered[rendered.length - 1].addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
+          }
         }
       });
     }
