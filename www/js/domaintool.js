@@ -182,7 +182,9 @@
       };
       google_obj.writePreferences = function(dom,callback) {
         old_write_preferences.call(google_obj,dom,function(err,prefs) {
-          send_etag(file_obj);
+          old_get_preferences.call(google_obj,file_obj,function(err,pr) {
+            send_etag(file_obj);
+          });
           callback.call(null,err,prefs);
         });
       };
