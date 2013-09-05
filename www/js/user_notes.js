@@ -5,11 +5,6 @@
     this.renderer = renderer;
     this.annotations = {};
     this.preferences = preferences;
-    renderer.showAnnotation  = function (acc) {
-      self.acc = acc;
-      self.redrawAnnotations(acc);
-      // show_annotations(this,acc);
-    };
     this.sync = function() {
       if (self.timeout) {
         clearTimeout(self.timeout);
@@ -20,9 +15,45 @@
         self.timeout = null;
       },1000);
     };
-    this.sync();
+    this.initialiseAnnotations(preferences);
     return this;
   };
+
+  MASCP.AnnotationManager.InitRealtime = function() {
+    if (MASCP.AnnotationManager.Annotation) {
+      return;
+    }
+    MASCP.AnnotationManager.Annotation = function() {};
+    gapi.drive.realtime.custom.registerType(MASCP.AnnotationManager.Annotation, 'Annotation');
+    MASCP.AnnotationManager.Annotation.prototype.type = gapi.drive.realtime.custom.collaborativeField('type');
+    MASCP.AnnotationManager.Annotation.prototype.acc = gapi.drive.realtime.custom.collaborativeField('acc');
+    MASCP.AnnotationManager.Annotation.prototype.index = gapi.drive.realtime.custom.collaborativeField('index');
+    MASCP.AnnotationManager.Annotation.prototype.length = gapi.drive.realtime.custom.collaborativeField('length');
+    MASCP.AnnotationManager.Annotation.prototype.color = gapi.drive.realtime.custom.collaborativeField('color');
+    MASCP.AnnotationManager.Annotation.prototype.icon = gapi.drive.realtime.custom.collaborativeField('icon');
+
+    gapi.drive.realtime.custom.setInitializer(MASCP.AnnotationManager.Annotation,function(type,acc,index,length,color,icon) {
+      var model = gapi.drive.realtime.custom.getModel(this);
+      if (type) {
+        this.type = type;
+      }
+      if (acc) {
+        this.acc = acc;
+      }
+      if (index) {
+        this.index = index;
+      }
+      if (length) {
+        this.length = length;
+      }
+      if (color) {
+        this.color = color;
+      }
+      if (icon) {
+        this.icon = icon;
+      }
+    });
+  }
 
   MASCP.AnnotationManager.prototype.toggleSearchField = function() {
     if (this.showingSearch == true) {
@@ -229,6 +260,86 @@
     },false);
   }
 
+  MASCP.AnnotationManager.prototype.initialiseAnnotations = function(prefs) {
+    var self = this;
+    var prefs = self.preferences;
+
+    self.renderer.showAnnotation = function() {};
+    var callback = function() {
+      self.renderer.showAnnotation  = function (acc) {
+        self.acc = acc;
+        self.redrawAnnotations(acc);
+      };
+
+      var model = prefs.realtime.getModel();
+      var all_annos = model.getRoot().get('annotations');
+      self.annotations['self'] = all_annos.asArray();
+      all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_ADDED,function(ev) {
+          self.annotations['self'].splice.apply(self.annotations['self'],[ev.index,0].concat(ev.values));
+          self.redrawAnnotations();
+      });
+      all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_REMOVED,function(ev) {
+          self.annotations['self'].splice.apply(self.annotations['self'],[ev.index, ev.values.length]);
+          self.redrawAnnotations();
+      });
+      all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_SET,function(ev) {
+          self.annotations['self'].splice.apply(self.annotations['self'],[ev.index, ev.oldValues.length, ev.newValues]);
+          self.redrawAnnotations();
+      });
+    };
+    if ( ! prefs.realtime ) {
+      bean.add(prefs,'realtimeready', callback);
+    } else {
+      callback();
+    }
+  };
+
+  MASCP.AnnotationManager.prototype.promoteAnnotation = function(group,annotation) {
+    var self = this;
+    if (! self.preferences.realtime) {
+      self.annotations[group].push(annotation);
+      return;
+    }
+    var model =  self.preferences.realtime.getModel();
+    var item = model.create(MASCP.AnnotationManager.Annotation, annotation.type, annotation.acc, annotation.index, annotation.length );
+    model.getRoot().get('annotations').push(item);
+  };
+
+  MASCP.AnnotationManager.prototype.demoteAnnotation = function(group,annotation) {
+    var self = this;
+    if (! self.preferences.realtime) {
+      self.annotations[group].splice(self.annotations[group].indexOf(annotation),1);
+      return;
+    }
+    var model =  self.preferences.realtime.getModel();
+    model.getRoot().get('annotations').removeValue(annotation);
+  };
+
+  MASCP.AnnotationManager.prototype.watchAnnotation = function(annotation) {
+    var self = this;
+    if (! self.preferences.realtime) {
+      return;
+    }
+    if (annotation.addEventListener) {
+      annotation.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,self);
+    }
+  };
+
+  MASCP.AnnotationManager.prototype.unWatchAnnotation = function(annotation) {
+    var self = this;
+    if (! self.preferences.realtime) {
+      return;
+    }
+    if (annotation.removeEventListener) {
+      annotation.removeEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,self);
+    }
+  };
+
+  MASCP.AnnotationManager.prototype.handleEvent = function(ev) {
+    var self = this;
+    self.redrawAnnotations();
+  }
+
   var rendered = [];
   var wanted_accs = [];
 
@@ -250,6 +361,7 @@
     for (var annotation_type in self.annotations) {
       self.annotations[annotation_type].forEach(function(annotation) {
         if (wanted_accs.indexOf(annotation.acc) < 0 ) {
+          self.unWatchAnnotation(annotation);
           return;
         }
         if ( MASCP.getLayer("annotations"+annotation.acc) && MASCP.getLayer("annotations"+annotation.acc).disabled ) {
@@ -280,12 +392,15 @@
           rendered[rendered.length - 1].style.opacity = '0.5';
           rendered[rendered.length - 1].addEventListener('click',function() {
             delete annotation.class;
-            self.annotations['self'].push(annotation);
+            self.promoteAnnotation('self',annotation);
             self.dirty = true;
             self.redrawAnnotations(annotation.acc);
             self.renderer.select();
           });
         } else {
+
+          self.watchAnnotation(annotation);
+
           var trigger_pie = function(ev) {
             if (annotation.pie) {
               return;
@@ -302,22 +417,22 @@
             }
             var pie_contents;
             if (annotation.type != "symbol") {
-              pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_blue')", "hover_function" : function() { annotation.color = "url('#grad_blue')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')"; self.dirty = true; self.redrawAnnotations(annotation.acc); } },
-              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; self.dirty = true; self.redrawAnnotations(annotation.acc); }},
-              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.dirty = true; self.redrawAnnotations(annotation.acc); } }
+              pie_contents = [{'symbol' : "url('#grad_green')", "hover_function" : function() { annotation.color = "url('#grad_green')"; } },
+              {'symbol' : "url('#grad_blue')", "hover_function" : function() { annotation.color = "url('#grad_blue')"; } },
+              {'symbol' : "url('#grad_yellow')", "hover_function" : function() { annotation.color = "url('#grad_yellow')";  } },
+              {'symbol' : "url('#grad_red')", "hover_function" : function() { annotation.color = "url('#grad_red')";  } },
+              {'symbol' : "url('#grad_pink')", "hover_function" : function() { annotation.color = "url('#grad_pink')"; }},
+              { 'symbol' : 'X', "select_function" : function() { self.demoteAnnotation('self',annotation); } }
               ];
             } else {
               pie_contents = [
-              { 'symbol' : self.renderer.small_galnac(), "hover_function" : function() { annotation.icon = "small_galnac"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.man(), "hover_function" : function() { annotation.icon = "man"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.xyl(), "hover_function" : function() { annotation.icon = "xyl"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.fuc(), "hover_function" : function() { annotation.icon = "fuc"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.small_glcnac(), "hover_function" : function() { annotation.icon = "small_glcnac"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : self.renderer.nlinked(), "hover_function" : function() { annotation.icon = "nlinked"; self.dirty = true; self.redrawAnnotations(annotation.acc); }  },
-              { 'symbol' : 'X', "select_function" : function() { annotation.deleted = true; self.dirty = true; self.redrawAnnotations(annotation.acc); } }
+              { 'symbol' : self.renderer.small_galnac(), "hover_function" : function() { annotation.icon = "small_galnac"; }  },
+              { 'symbol' : self.renderer.man(), "hover_function" : function() { annotation.icon = "man"; }  },
+              { 'symbol' : self.renderer.xyl(), "hover_function" : function() { annotation.icon = "xyl"; }  },
+              { 'symbol' : self.renderer.fuc(), "hover_function" : function() { annotation.icon = "fuc"; }  },
+              { 'symbol' : self.renderer.small_glcnac(), "hover_function" : function() { annotation.icon = "small_glcnac"; }  },
+              { 'symbol' : self.renderer.nlinked(), "hover_function" : function() { annotation.icon = "nlinked"; }  },
+              { 'symbol' : 'X', "select_function" : function() { self.demoteAnnotation('self',annotation); } }
               ]
             }
             var pie = PieMenu.create(canvas,(parseInt(bbox.x) + parseInt(0.5*bbox.width))/canvas.RS,(parseInt(bbox.y) + parseInt(0.5*bbox.height))/canvas.RS, pie_contents);
@@ -346,7 +461,6 @@
     }
     renderer.showLayer(layer_name);
     renderer.refresh();
-    self.sync();
   };
 
   var cloneObject = function(obj) {
@@ -364,6 +478,7 @@
   }
 
   var sync_annotations = function() {
+      return;
       var self = this;
       // Don't trigger any popups
       if ( ! window.event ) {
