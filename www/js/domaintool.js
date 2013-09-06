@@ -140,14 +140,16 @@
           if (err) {
             return;
           }
-
-          gapi.drive.realtime.load(file, function(doc) {
-            self.usePreferenceFile(file,doc);
-            self.realtime = doc;
-            bean.fire(self,'realtimeready');
-          }, function(model) {
-            model.getRoot().set('doc-etag',model.createString('none'));
-            model.getRoot().set('annotations',model.createList());
+          self.usePreferenceFile(file);
+          self.getPreferences(function(err,prefs,etag) {
+            gapi.drive.realtime.load(file, function(doc) {
+              self.realtime = doc;
+              bean.fire(self,'realtimeready');
+            }, function(model) {
+              console.log("Firing model init");
+              bean.fire(self,'modelinit',[model,prefs,etag]);
+              model.getRoot().set('doc-etag',model.createString('none'));
+            });
           });
         }
         if ( ! self.prefs_object ) {
@@ -158,7 +160,7 @@
       });
     };
 
-    DomaintoolPreferences.prototype.usePreferenceFile = function(file,realtime) {
+    DomaintoolPreferences.prototype.usePreferenceFile = function(file) {
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var prefs_data = {};
@@ -166,56 +168,63 @@
       var file_obj = {"id" : file, "content" : prefs_data };
       var old_get_preferences = google_obj.getPreferences;
       var old_write_preferences = google_obj.writePreferences;
-      google_obj.getPreferences = function(dom,callback) {
+      google_obj.getPreferences = function(dom,callback,force) {
+        if (force) {
+          delete file_obj.etag;
+        }
         if ( file_obj.etag && file_obj.content ) {
-          callback.call(null,null,file_obj.content)
+          callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified)
           return;
         }
         old_get_preferences.call(google_obj,dom,function(err,prefs) {
           if (err && err.cause && err.cause.status == 304) {
-            callback.call(null,null,file_obj.content);
+            callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified);
             return;
           }
-          file_obj.content = prefs;
-          callback.call(null,err,prefs);
+          if (err) {
+            callback.call(null,err);
+          }
+          var key;
+          for (key in (file_obj.content)) {
+            delete file_obj.content[key];
+          }
+          for (key in prefs) {
+            file_obj.content[key] = prefs[key];
+          }
+          callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
         });
       };
+
+      send_etag = function() {};
+
       google_obj.writePreferences = function(dom,callback) {
-        old_write_preferences.call(google_obj,dom,function(err,prefs) {
+        old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
           old_get_preferences.call(google_obj,file_obj,function(err,pr) {
             send_etag(file_obj);
+            callback.call(null,err,prefs,file_obj.etag,file_obj.modified);
           });
-          callback.call(null,err,prefs);
         });
       };
 
-
-      try {
-        var str = realtime.getModel().getRoot().get("doc-etag");
+      bean.add(self,'realtimeready',function() {
+        var str = self.realtime.getModel().getRoot().get("doc-etag");
         str.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,function(ev) {
           if (! ev.isLocal) {
-            file_obj.etag = null;
-            self.getPreferences(function() { window.notify.info("Synchronised changes").hideLater(500); });
+            if (str.toString() !== file_obj.etag) {
+              file_obj.etag = null;
+              console.log("Refreshing etag from server");
+              self.getPreferences(function() { window.notify.info("Synchronised changes").hideLater(500); });
+            }
           }
         });
 
-        // realtime.getModel().getRoot().addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,function(ev) {
-        //   console.log(ev.events);
-        //   ev.events.forEach(function(ev) {
-        //     console.log(ev);
-        //   });
-        // });
-        // console.log("Bound");
-      } catch (e) {
-        console.log(e);
-      };
+        send_etag = function(obj) {
+          if (obj.etag && self.realtime.getModel().getRoot().get("doc-etag").toString() !== obj.etag ) {
+            self.realtime.getModel().getRoot().get("doc-etag").setText(obj.etag);
+          }
+        };
 
-      var send_etag = function(obj) {
-        if (realtime.getModel().getRoot().get("doc-etag").toString() !== obj.etag ) {
-          realtime.getModel().getRoot().get("doc-etag").setText(obj.etag);
-        }
-      };
-
+      });
       this.prefs_object = {
         addWatchedDocument : function() {
           var args = Array.prototype.slice.call(arguments);
