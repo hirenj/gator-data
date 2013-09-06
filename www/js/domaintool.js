@@ -531,31 +531,32 @@
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
+        var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
+        wire_find(annotation_manager);
+        wire_dragging_disable(renderer,annotation_manager);
+        var selector_callback = function() {
+          annotation_manager.addSelector(function(text) {
+            if ( ! text ) {
+              return;
+            }
+            document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
+          });
+        };
+        if (renderer.sequence) {
+          selector_callback();
+        }
+        renderer.bind('sequenceChange',selector_callback);
+        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
+          evt.preventDefault();
+        });
+
         get_preferences().getPreferences(function(err,prefs) {
           if ( err || ! prefs ) {
             return;
           }
-          var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
           bean.add(get_preferences(),'prefschange',function() {
             annotation_manager.initialiseAnnotations();
           });
-          wire_find(annotation_manager);
-          wire_dragging_disable(renderer,annotation_manager);
-          var selector_callback = function() {
-            annotation_manager.addSelector(function(text) {
-              if ( ! text ) {
-                return;
-              }
-              document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
-            });
-          };
-          if (renderer.sequence) {
-            selector_callback();
-          }
-          renderer.bind('sequenceChange',selector_callback);
-        });
-        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
-          evt.preventDefault();
         });
       }
     };
