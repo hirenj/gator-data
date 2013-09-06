@@ -1,5 +1,369 @@
     if (!(window.console && console.log)) { (function() { var noop = function() {}; var methods = ['assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error', 'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log', 'markTimeline', 'profile', 'profileEnd', 'markTimeline', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'warn']; var length = methods.length; var console = window.console = {}; while (length--) { console[methods[length]] = noop; } }()); }
 
+    var DomaintoolPreferences = function() {
+      this.waiting = [];
+      if (this.getActiveSession()) {
+        this.addRealtime(this.getActiveSession());
+      } else {
+        this.useDefaultPreferences();
+      }
+    };
+
+    DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
+      if ( ! file ) {
+        sessionStorage.removeItem("active_session");
+        this.useDefaultPreferences();
+      } else {
+        sessionStorage.setItem("active_session",file);
+        sessionStorage.setItem("active_session_title",title);
+      }
+    }
+
+    DomaintoolPreferences.prototype.getActiveSession = function() {
+      return sessionStorage.getItem("active_session");
+    }
+
+    DomaintoolPreferences.prototype.getActiveSessionTitle = function() {
+      return sessionStorage.getItem("active_session_title");
+    }
+
+    DomaintoolPreferences.prototype.addService = function(service,name) {
+      var preferences = this;
+      preferences.getPreferences(function(err,prefs) {
+        if ( ! err ) {
+          if ( ! prefs.user_datasets[service]) {
+            prefs.user_datasets[service] = {};
+          }
+          prefs.user_datasets[service].render_options = {};
+          prefs.user_datasets[service].name = name || service;
+          preferences.sync(function(err,prefs) {
+            if (err) {
+              window.notify.alert("Could not write preferences");
+            } else {
+              window.notify.info("Successfully loaded "+(name || service || ""));
+            }
+          });
+        } else {
+          console.log("Reading prefs");
+          console.log(err);
+          window.notify.alert("Could not read preferences");
+        }
+      });
+    };
+
+    DomaintoolPreferences.prototype.watchFile = function(doc) {
+      var preferences = this;
+      var defaults = {};
+      var run_parser = false;
+      var parser = function(datablock){
+        if (typeof run_parser !== 'undefined') {
+          run_parser = true;
+        }
+        for (var key in datablock.data) {
+          if (key == "" || key.match(/\s/)) {
+            delete datablock.data[key];
+          } else {
+            var dat = datablock.data[key];
+            delete datablock.data[key];
+            datablock.data[key.toLowerCase()] = {
+              "data" : dat,
+              "retrieved" : datablock.retrieved,
+              "etag" : datablock.etag,
+              "title" : datablock.title
+            };
+          }
+        }
+        if (typeof defaults !== 'undefined') {
+          defaults = datablock.defaults || defaults;
+        }
+        delete datablock.retrieved;
+        delete datablock.etag;
+        delete datablock.title;
+        return datablock.data;
+      };
+      if (sessionStorage.getItem("update_timestamps")) {
+        var json = JSON.parse(sessionStorage.getItem("update_timestamps"))
+        delete json[doc];
+        sessionStorage.setItem("update_timestamps",JSON.stringify(json));
+      }
+      MASCP.Service.ClearCache('MASCP.UserdataReader.'+doc,null,function(err) {
+        console.log("Cleared data");
+        preferences.addWatchedDocument(doc,parser,function(err,docname) {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({},"Loading of "+docname);
+            document.title = "Loading of "+docname;
+          }
+          if (err) {
+            if (err.status === "preferences") {
+              if (err.original_error.cause === "No user event") {
+                window.notify.alert("You have been logged out, please click the drive button to authorize again");
+                return;
+              }
+              window.notify.alert("Error setting preferences - try opening document again");
+              return;
+            }
+            window.notify.alert("Problem reading document, please try again");
+            return;
+          }
+          var not = window.notify.info("Saving preferences - please wait");
+          preferences.getPreferences(function(err,prefs) {
+            if ( ! err ) {
+              if (run_parser && prefs.user_datasets[doc]) {
+                prefs.user_datasets[doc].render_options = defaults;
+              }
+              preferences.sync(function(err,prefs) {
+                if (not) {
+                  not.hide();
+                }
+
+                if (err) {
+                  window.notify.alert("Could not write preferences");
+                } else {
+                  window.notify.info("Successfully loaded "+(docname || ""));
+                }
+              });
+            } else {
+              window.notify.alert("Could not write preferences");
+            }
+          });
+        });
+      });
+    }
+
+    DomaintoolPreferences.prototype.addRealtime = function(file) {
+      var self = this;
+      gapi.load("drive-realtime", function() {
+        if (MASCP.AnnotationManager) {
+          MASCP.AnnotationManager.InitRealtime();
+        }
+        var callback = function(err) {
+          if (err) {
+            return;
+          }
+          self.usePreferenceFile(file);
+          self.getPreferences(function(err,prefs,etag) {
+            gapi.drive.realtime.load(file, function(doc) {
+              self.realtime = doc;
+              bean.fire(self,'realtimeready');
+            }, function(model) {
+              console.log("Firing model init");
+              bean.fire(self,'modelinit',[model,prefs,etag]);
+              model.getRoot().set('doc-etag',model.createString('none'));
+            });
+          });
+        }
+        if ( ! self.prefs_object ) {
+          (new MASCP.GoogledataReader()).getDocument(null,null,callback);
+        } else {
+          self.getPreferences(callback);
+        }
+      });
+    };
+
+    DomaintoolPreferences.prototype.usePreferenceFile = function(file) {
+      var self = this;
+      var google_obj = new MASCP.GoogledataReader();
+      var prefs_data = {};
+
+      var file_obj = {"id" : file, "content" : prefs_data };
+      var old_get_preferences = google_obj.getPreferences;
+      var old_write_preferences = google_obj.writePreferences;
+      google_obj.getPreferences = function(dom,callback,force) {
+        if (force) {
+          delete file_obj.etag;
+        }
+        if ( file_obj.etag && file_obj.content ) {
+          callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified)
+          return;
+        }
+        old_get_preferences.call(google_obj,dom,function(err,prefs) {
+          if (err && err.cause && err.cause.status == 304) {
+            callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified);
+            return;
+          }
+          if (err) {
+            callback.call(null,err);
+          }
+          var key;
+          for (key in (file_obj.content)) {
+            delete file_obj.content[key];
+          }
+          for (key in prefs) {
+            file_obj.content[key] = prefs[key];
+          }
+          callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
+        });
+      };
+
+      send_etag = function() {};
+
+      google_obj.writePreferences = function(dom,callback) {
+        old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
+          old_get_preferences.call(google_obj,file_obj,function(err,pr) {
+            send_etag(file_obj);
+            callback.call(null,err,prefs,file_obj.etag,file_obj.modified);
+          });
+        });
+      };
+
+      bean.add(self,'realtimeready',function() {
+        var str = self.realtime.getModel().getRoot().get("doc-etag");
+        str.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,function(ev) {
+          if (! ev.isLocal) {
+            if (str.toString() !== file_obj.etag) {
+              file_obj.etag = null;
+              console.log("Refreshing etag from server");
+              self.getPreferences(function() { window.notify.info("Synchronised changes").hideLater(500); });
+            }
+          }
+        });
+
+        send_etag = function(obj) {
+          if (obj.etag && self.realtime.getModel().getRoot().get("doc-etag").toString() !== obj.etag ) {
+            self.realtime.getModel().getRoot().get("doc-etag").setText(obj.etag);
+          }
+        };
+
+      });
+      this.prefs_object = {
+        addWatchedDocument : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          google_obj.addWatchedDocument.apply(google_obj,args);
+        },
+        removeWatchedDocument : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          file_obj.etag = "force";
+          google_obj.removeWatchedDocument.apply(google_obj,args);
+        },
+        readWatchedDocuments : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          google_obj.readWatchedDocuments.apply(google_obj,args);
+        },
+        listWatchedDocuments : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          google_obj.listWatchedDocuments.apply(google_obj,args);
+        },
+        getPreferences : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          google_obj.getPreferences.apply(google_obj,args);
+        },
+        writePreferences : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(file_obj);
+          google_obj.writePreferences.apply(google_obj,args);
+        }
+      };
+      if (self.waiting) {
+        self.waiting.forEach(function(waiting) {
+          self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
+        });
+        self.waiting = [];
+      }
+      bean.fire(self,'prefschange');
+      return;
+    };
+
+    DomaintoolPreferences.prototype.useDefaultPreferences = function() {
+      var self = this;
+      var google_obj = new MASCP.GoogledataReader();
+      var domain = "Domaintool preferences";
+
+      this.prefs_object = {
+        addWatchedDocument : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.addWatchedDocument.apply(google_obj,args);
+        },
+        removeWatchedDocument : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.removeWatchedDocument.apply(google_obj,args);
+        },
+        readWatchedDocuments : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.readWatchedDocuments.apply(google_obj,args);
+        },
+        listWatchedDocuments : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.listWatchedDocuments.apply(google_obj,args);
+        },
+        getPreferences : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.getPreferences.apply(google_obj,args);
+        },
+        writePreferences : function() {
+          var args = Array.prototype.slice.call(arguments);
+          args.unshift(domain);
+          google_obj.writePreferences.apply(google_obj,args);
+        }
+      };
+      delete self.realtime;
+      bean.fire(self,'prefschange');
+    };
+
+    DomaintoolPreferences.prototype.addWatchedDocument = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "addWatchedDocument", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+
+      this.prefs_object.addWatchedDocument.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+    DomaintoolPreferences.prototype.removeWatchedDocument = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "removeWatchedDocument", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+
+      this.prefs_object.removeWatchedDocument.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+    DomaintoolPreferences.prototype.readWatchedDocuments = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "readWatchedDocuments", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+
+      this.prefs_object.readWatchedDocuments.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+    DomaintoolPreferences.prototype.listWatchedDocuments = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "listWatchedDocuments", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+
+      this.prefs_object.listWatchedDocuments.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+    DomaintoolPreferences.prototype.getPreferences = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "getPreferences", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+      this.prefs_object.getPreferences.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+
+    DomaintoolPreferences.prototype.sync = function() {
+      if ( ! this.prefs_object ) {
+        this.waiting.push({ "method" : "sync", "args" : Array.prototype.slice.call(arguments)});
+        return;
+      }
+      this.prefs_object.writePreferences.apply(this.prefs_object,Array.prototype.slice.call(arguments));
+    };
+
+    var get_preferences = function() {
+      if ( ! window.prefs ) {
+        window.prefs = (new DomaintoolPreferences());
+      }
+      return window.prefs;
+    }
+
     var render_peptides = function(layer) {
       return function(renderer) {
         this.bind('resultReceived',function(e) {
@@ -159,21 +523,47 @@
       }
     };
 
+    var wire_clearsession = function(title,renderer) {
+      document.getElementById('clearsession').textContent = title;
+      document.getElementById('clearsession').style.display = 'block';
+      document.getElementById('clearsession').onclick = function() {
+        console.log("Clearing session");
+        get_preferences().setActiveSession(null);
+        this.style.display = 'none';
+        show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
+      };
+    };
+
     var wire_renderer = function(renderer) {
       wire_renderer_sequence_change(renderer);
       wire_renderer_zoom(renderer);
       if (MASCP.AnnotationManager) {
-        var annotation_manager = new MASCP.AnnotationManager(renderer,"Domaintool preferences");
+        var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
         wire_find(annotation_manager);
         wire_dragging_disable(renderer,annotation_manager);
+        var selector_callback = function() {
+          annotation_manager.addSelector(function(text) {
+            if ( ! text ) {
+              return;
+            }
+            document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
+          });
+        };
+        if (renderer.sequence) {
+          selector_callback();
+        }
+        renderer.bind('sequenceChange',selector_callback);
         document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
           evt.preventDefault();
         });
-        annotation_manager.addSelector(function(text) {
-          if ( ! text ) {
+
+        get_preferences().getPreferences(function(err,prefs) {
+          if ( err || ! prefs ) {
             return;
           }
-          document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
+          bean.add(get_preferences(),'prefschange',function() {
+            annotation_manager.initialiseAnnotations();
+          });
         });
       }
     };
@@ -487,7 +877,7 @@
               setTimeout(function() {
                 a_div.removeAttribute('data-hint');
               },500);
-            });
+            },true);
             a_div.setAttribute('data-hint',"Loading..");
           },false);
           if (curr_acc == prot) {
@@ -706,7 +1096,6 @@
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
         if ( ! document.getElementById('prot_'+(ucacc.toLowerCase())) ) {
-          console.log("Killing protein list");
           window.showFullProteinList();
         }
       }
@@ -790,7 +1179,8 @@
               } else {
                 document.getElementById('drive_install').removeEventListener('click',this_ev);
                 if (document.getElementById('uniprot_id').textContent) {
-                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); self_func(); },true);
+                  self_func();
+                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); },true);
                 } else {
                   self_func();
                 }
@@ -814,7 +1204,7 @@
               return;
             }
             flipped = true;
-            (new MASCP.GoogledataReader()).listWatchedDocuments("Domaintool preferences",function(err,sets) {
+            get_preferences().listWatchedDocuments(function(err,sets) {
               if (err) {
                 return;
               }
@@ -832,7 +1222,7 @@
                   matches[i].addEventListener('click',function() {
                     var self = this;
                     var par_doc = self.parentNode.getAttribute('data-docid');
-                    (new MASCP.GoogledataReader()).removeWatchedDocument("Domaintool preferences",par_doc,function(err) {
+                    get_preferences().removeWatchedDocument(par_doc,function(err) {
                       if ( ! err ) {
                         self.parentNode.parentNode.removeChild(self.parentNode);
                       }
@@ -1086,7 +1476,7 @@
 
       var allowed = { "PrideRunner" : 1, "HydropathyRunner" : 1, "UniprotSecondaryStructureReader" : 1 };
 
-      (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
+      get_preferences().getPreferences(function(err,prefs) {
         if ( ! err ) {
           for (var set in prefs.user_datasets) {
             if (allowed[set]) {
@@ -1104,7 +1494,7 @@
       });
 
 
-      (new MASCP.GoogledataReader()).readWatchedDocuments("Domaintool preferences",function(err,pref,reader) {
+      get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
           // Errs if : No user event / getting preferences
           // actual reader error
@@ -1379,62 +1769,6 @@
       });
     };
 
-
-    var get_domains = function(acc,next) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "domains";
-            
-      datareader.retrieve(acc,function(err) {
-        if (! this.result ) {
-          next();
-          return;
-        }
-        next(this.result._raw_data.data);
-      });
-    };
-
-    var get_accepted_domains = function(acc,next) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc";
-      datareader.retrieve(acc,function(err) {
-        var wanted_domains = null;
-        if (! err && this.result ) {
-          wanted_domains = this.result._raw_data.data.domains;
-        }
-        get_domains(acc,function(all_domains) {
-          next(acc,filter_domains(all_domains,wanted_domains));
-        });
-      });
-    };
-
-    var filter_domains = function(all_domains,wanted_domains) {
-      var results = {};
-      if (! wanted_domains ) {
-        return all_domains;
-      }
-      if (! all_domains ) {
-        return results;
-      }
-      for (var dom in all_domains) {
-        if (! all_domains.hasOwnProperty(dom)) {
-          continue;
-        }
-        var dom_key = dom.replace(/\s/g,'_');
-        if (wanted_domains.indexOf(dom_key) >= 0) {
-          results[dom] = all_domains[dom];
-        }
-        if (dom_key.match(/GlcNAc/)) {
-          results[dom] = all_domains[dom];
-        }
-      }
-      if (all_domains["tmhmm-TMhelix"]) {
-        results["tmhmm-TMhelix"] = all_domains["tmhmm-TMhelix"];
-      }
-      return results;
-    };
-
     var get_passed_in_state = function() {
       return JSON.parse((function getParameterByName(name) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -1578,109 +1912,36 @@
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
 
       if (state.addservice) {
-        (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
-          if ( ! err ) {
-            if ( ! prefs.user_datasets[state.addservice]) {
-              prefs.user_datasets[state.addservice] = {};
-            }
-            prefs.user_datasets[state.addservice].render_options = {};
-            prefs.user_datasets[state.addservice].name = state.name || state.addservice;
-            (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
-              if (err) {
-                window.notify.alert("Could not write preferences");
-              } else {
-                window.notify.info("Successfully loaded "+(state.addservice || ""));
-              }
-            });
-          } else {
-            console.log("Writing prefs");
-            console.log(err);
-            window.notify.alert("Could not write preferences");
-          }
+        get_preferences().addService(state.addservice, state.name);
+      }
+
+      if (state.action && state.action == 'create') {
+        (new MASCP.GoogledataReader()).createPreferences(state.folderId,function(err,prefs,doc_id,title) {
+          get_preferences().addRealtime(doc_id);
+          get_preferences().setActiveSession(doc_id,title);
+          wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
       }
 
       if (state.ids) {
-        var old_get_usersets = get_usersets;
-        get_usersets = function() {};
-        var defaults = {};
-        //                "sites" : "man",
-        //        "peptides" : "true",
-        var run_parser = false;
-        var parser = function(datablock){
-          if (typeof run_parser !== 'undefined') {
-            run_parser = true;
-          }
-          for (var key in datablock.data) {
-            if (key == "" || key.match(/\s/)) {
-              delete datablock.data[key];
-            } else {
-              var dat = datablock.data[key];
-              delete datablock.data[key];
-              datablock.data[key.toLowerCase()] = {
-                "data" : dat,
-                "retrieved" : datablock.retrieved,
-                "etag" : datablock.etag,
-                "title" : datablock.title
-              };
-            }
-          }
-          if (typeof defaults !== 'undefined') {
-            defaults = datablock.defaults || defaults;
-          }
-          delete datablock.retrieved;
-          delete datablock.etag;
-          delete datablock.title;
-          return datablock.data;
-        };
-        if (sessionStorage.getItem("update_timestamps")) {
-          var json = JSON.parse(sessionStorage.getItem("update_timestamps"))
-          delete json[state.ids[0]];
-          sessionStorage.setItem("update_timestamps",JSON.stringify(json));
-        }
-        MASCP.Service.ClearCache('MASCP.UserdataReader.'+state.ids[0],null,function(err) {
-          console.log("Cleared data");
-          (new MASCP.GoogledataReader()).addWatchedDocument("Domaintool preferences",state.ids[0],parser,function(err,docname) {
-            if (window.history && window.history.replaceState) {
-              window.history.replaceState({},"Loading of "+docname);
-              document.title = "Loading of "+docname;
-            }
-            if (err) {
-              if (err.status === "preferences") {
-                if (err.original_error.cause === "No user event") {
-                  window.notify.alert("You have been logged out, please click the drive button to authorize again");
-                  return;
-                }
-                window.notify.alert("Error setting preferences - try opening document again");
-                return;
+        state.ids.forEach(function(doc_id) {
+          (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title) {
+            if ( ! err ) {
+              if (type === 'application/json; data-type=msdata') {
+                get_preferences().watchFile(doc_id);
               }
-              window.notify.alert("Problem reading document, please try again");
-              return;
-            }
-            var not = window.notify.info("Saving preferences - please wait");
-            (new MASCP.GoogledataReader()).getPreferences("Domaintool preferences",function(err,prefs) {
-              if ( ! err ) {
-                if (run_parser && prefs.user_datasets[state.ids[0]]) {
-                  prefs.user_datasets[state.ids[0]].render_options = defaults;
-                }
-                (new MASCP.GoogledataReader()).writePreferences("Domaintool preferences",function(err,prefs) {
-                  if (not) {
-                    not.hide();
-                  }
-
-                  if (err) {
-                    window.notify.alert("Could not write preferences");
-                  } else {
-                    window.notify.info("Successfully loaded "+(docname || ""));
-                    get_usersets = old_get_usersets;
-                  }
-                });
-              } else {
-                window.notify.alert("Could not write preferences");
+              if (type === 'application/json; data-type=domaintool-session') {
+                get_preferences().addRealtime(doc_id);
+                get_preferences().setActiveSession(doc_id,title);
+                wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
               }
-            });
+            }
           });
         });
+      }
+
+      if (get_preferences().getActiveSession()) {
+        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
       }
 
       if (state.exportIds && state.exportIds.length > 0) {
