@@ -5,15 +5,9 @@
     this.renderer = renderer;
     this.annotations = {};
     this.preferences = preferences;
+
     this.sync = function() {
-      if (self.timeout) {
-        clearTimeout(self.timeout);
-        self.timeout = null;
-      }
-      self.timeout = setTimeout(function() {
-        sync_annotations.call(self);
-        self.timeout = null;
-      },1000);
+      sync_annotations.call(self);
     };
     this.initialiseAnnotations(preferences);
     return this;
@@ -31,6 +25,22 @@
     MASCP.AnnotationManager.Annotation.prototype.length = gapi.drive.realtime.custom.collaborativeField('length');
     MASCP.AnnotationManager.Annotation.prototype.color = gapi.drive.realtime.custom.collaborativeField('color');
     MASCP.AnnotationManager.Annotation.prototype.icon = gapi.drive.realtime.custom.collaborativeField('icon');
+    MASCP.AnnotationManager.Annotation.prototype.asObject = function () {
+      var result =  {};
+      if (this.type)
+        result.type = this.type.toString();
+      if (this.acc)
+        result.acc = this.acc.toString();
+      if (this.index)
+        result.index = this.index.toString();
+      if (this.length)
+        result.length = this.length.toString();
+      if (this.color)
+        result.color = this.color.toString();
+      if (this.icon)
+        result.icon = this.icon.toString();
+      return result;
+    }
 
     gapi.drive.realtime.custom.setInitializer(MASCP.AnnotationManager.Annotation,function(type,acc,index,length,color,icon) {
       var model = gapi.drive.realtime.custom.getModel(this);
@@ -267,29 +277,46 @@
     var prefs = self.preferences;
 
     self.renderer.showAnnotation = function() {};
+
+    var init = function(model,prefs,etag) {
+      model.getRoot().set('annotations',model.createList());
+      if (prefs.annotations) {
+        prefs.annotations.forEach(function(anno) {
+          console.log(anno);
+          self.promoteAnnotation('self',anno,model);
+        });
+      }
+    };
+    bean.remove(prefs,'modelinit');
+    bean.add(prefs,'modelinit',init);
+
     var callback = function() {
       self.renderer.showAnnotation  = function (acc) {
         self.acc = acc;
         self.redrawAnnotations(acc);
       };
-
       var model = prefs.realtime.getModel();
       self.readonly = model.isReadOnly;
-
       var all_annos = model.getRoot().get('annotations');
+
       self.annotations['self'] = all_annos.asArray();
+
       all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_ADDED,function(ev) {
           self.annotations['self'].splice.apply(self.annotations['self'],[ev.index,0].concat(ev.values));
           self.redrawAnnotations();
+          self.sync();
       });
       all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_REMOVED,function(ev) {
           self.annotations['self'].splice.apply(self.annotations['self'],[ev.index, ev.values.length]);
           self.redrawAnnotations();
+          self.sync();
       });
       all_annos.addEventListener(gapi.drive.realtime.EventType.VALUES_SET,function(ev) {
           self.annotations['self'].splice.apply(self.annotations['self'],[ev.index, ev.oldValues.length, ev.newValues]);
           self.redrawAnnotations();
+          self.sync();
       });
+
     };
     if ( ! prefs.realtime ) {
       bean.add(prefs,'realtimeready', callback);
@@ -298,13 +325,13 @@
     }
   };
 
-  MASCP.AnnotationManager.prototype.promoteAnnotation = function(group,annotation) {
+  MASCP.AnnotationManager.prototype.promoteAnnotation = function(group,annotation,model) {
     var self = this;
-    if (! self.preferences.realtime) {
+    if (! (model || self.preferences.realtime) ) {
       self.annotations[group].push(annotation);
       return;
     }
-    var model =  self.preferences.realtime.getModel();
+    model = model || self.preferences.realtime.getModel();
     var item = model.create(MASCP.AnnotationManager.Annotation, annotation.type, annotation.acc, annotation.index, annotation.length );
     model.getRoot().get('annotations').push(item);
   };
@@ -342,6 +369,7 @@
   MASCP.AnnotationManager.prototype.handleEvent = function(ev) {
     var self = this;
     self.redrawAnnotations();
+    self.sync();
   }
 
   var rendered = [];
@@ -471,99 +499,50 @@
     renderer.refresh();
   };
 
-  var cloneObject = function(obj) {
-      var clone = {};
-      for(var i in obj) {
-          if (i == "pie") {
-            continue;
-          }
-          if(typeof(obj[i])=="object" && obj[i] != null)
-              clone[i] = cloneObject(obj[i]);
-          else
-              clone[i] = obj[i];
+  var cloneObject = function(obj,shallow) {
+    var clone = {};
+    for(var i in obj) {
+      if (i == "pie") {
+        continue;
       }
-      return clone;
+      if(typeof(obj[i])=="object" && obj[i] != null)
+          clone[i] = shallow ? obj[i].toString : cloneObject(obj[i]);
+      else
+          clone[i] = obj[i];
+    }
+    return clone;
   }
 
   var sync_annotations = function() {
+    var self = this;
+
+    if ( self.readonly ) {
       return;
-      var self = this;
-      // Don't trigger any popups
-      if ( ! window.event ) {
-        window.event = { "which" : null };
-      }
-      if (self.annotations['self'] && self.dirty) {
-        (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
-          if (err) {
-            // Errs if : No user event / getting preferences
-            // actual reader error
+    }
 
-            if (err.status === "preferences") {
-              window.notify.alert("Problem getting user preferences");
-              return;
-            }
-
-
-            if (err.cause == "No user event" || err.cause == "Browser not supported") {
-              self.redrawAnnotations = function(){};
-              return;
-            }
-
-            if (err) {
-              window.notify.alert("Problem reading user data set");
-            }
-            console.log("User notes here");
-            console.log(err);
-          }
-          var result = [];
-          self.annotations['self'].forEach(function(ann) {
-            var obj = cloneObject(ann);
-            if ( ! obj.deleted ) {
-              result.push(obj);
-            }
-            delete obj.pie;
-          });
-          prefs.annotations = result;
-
-          (new MASCP.GoogledataReader()).writePreferences(self.preferences,function(err) {
-            if (err) {
-              if (err.cause == "File too old") {
-                delete self.annotations['self'];
-                window.notify.info("Refreshing annotations from server").hideLater(1000);
-                self.sync();
-                return;
-              }
-              window.notify.alert("Could not save annotations");
-            }
-            self.dirty = false;
-          });
+    var model = self.preferences.realtime.getModel();
+    self.preferences.getPreferences(function(err,prefs,etag,modified) {
+      if ( ! err ) {
+        var objects = [];
+        model.getRoot().get('annotations').asArray().forEach(function(collab) {
+          objects.push(collab.asObject());
         });
-      } else if ( ! self.annotations['self'] ) {
-        (new MASCP.GoogledataReader()).getPreferences(self.preferences,function(err,prefs) {
-          if (err) {
-            // Errs if : No user event / getting preferences
-            // actual reader error
-
-            if (err.status === "preferences") {
-              window.notify.alert("Problem getting user preferences");
-              return;
-            }
-            if (err.cause == "No user event" || err.cause == "Access is denied." || err.cause == "Browser not supported") {
-              self.redrawAnnotations = function(){};
-              return;
-            }
-            if (err) {
-              window.notify.alert("Problem reading user data set");
-            }
-            console.log("User notes there");
-            console.log(err);
-            return;
-          }
-          self.annotations['self'] = prefs.annotations || [];
-          self.dirty = false;
-          self.redrawAnnotations();
-        });
+        prefs.annotations = objects;
+        if (self.timeout) {
+          clearTimeout(self.timeout);
+          self.timeout = null;
+        }
+        self.timeout = setTimeout(function() {
+          self.timeout = null;
+          self.preferences.sync(function(err,prefs,etag) {
+            console.log("Wrote prefs");
+          });
+        },5000);
       }
+    },true);
+
+
+    return;
   };
 
 })(window)
