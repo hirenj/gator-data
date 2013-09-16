@@ -334,6 +334,12 @@
     });
   };
 
+  MASCP.DomainRenderer.prototype.getDomains = function(acc,callback) {
+    get_accepted_domains(acc,function(acc,domains) {
+      callback.call(null,domains);
+    });
+  };
+
   MASCP.DomainRenderer.prototype.renderDomains = function(acc,callback) {
     var self = this;
     self.acc = acc;
