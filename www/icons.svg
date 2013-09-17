@@ -23,10 +23,32 @@
         <g id="mannose">
 			<circle cx="50" cy="50" fill="#0f0" r="50" stroke-width="6" stroke="#990"/>
         </g>
+        <g id="trash">
+			<path style="fill:#fff;stroke:#010202;stroke-miterlimit:10;" stroke-width="2" d="M79.422,84.396c0,5.571-4.516,10.088-10.088,10.088H30.666
+				c-5.571,0-10.088-4.517-10.088-10.088V25.031h58.844V84.396z"/>
+			<path style="fill:#fff;stroke:#010202;stroke-miterlimit:10;" stroke-width="2" d="M16.375,20.51v-1.682c0-5.57,4.517-10.088,10.088-10.088h47.074
+				c5.572,0,10.088,4.518,10.088,10.088v1.682H16.375z"/>
+			<path style="fill:#fff;stroke:#010202;stroke-miterlimit:10;" stroke-width="2" d="M36.445,8.74V7.989c0-2.486,1.82-4.503,4.066-4.503h18.977
+				c2.246,0,4.066,2.017,4.066,4.503V8.74H36.445z"/>
+			<g style="opacity:0.8;">
+				<path style="fill:#010202;stroke:#010202;stroke-miterlimit:10;" d="M38.389,79.458c0,1.335-1.082,2.417-2.417,2.417l0,0
+					c-1.335,0-2.417-1.082-2.417-2.417V35.746c0-1.335,1.082-2.417,2.417-2.417l0,0c1.335,0,2.417,1.082,2.417,2.417V79.458z"/>
+				<path style="fill:#010202;stroke:#010202;stroke-miterlimit:10;" d="M52.416,79.248c0,1.335-1.082,2.417-2.417,2.417l0,0
+					c-1.335,0-2.417-1.082-2.417-2.417V35.535c0-1.334,1.082-2.416,2.417-2.416l0,0c1.334,0,2.417,1.082,2.417,2.416V79.248z"/>
+				<path style="fill:#010202;stroke:#010202;stroke-miterlimit:10;" d="M66.445,79.248c0,1.335-1.082,2.417-2.418,2.417l0,0
+					c-1.334,0-2.416-1.082-2.416-2.417V35.535c0-1.334,1.082-2.416,2.416-2.416l0,0c1.336,0,2.418,1.082,2.418,2.416V79.248z"/>
+			</g>
+        </g>
 	</defs>
-
+	<g>
+		<rect x="0" y="0" width="100" height="100" stroke-width="0.1" stroke="#000" fill="none"/>
+		<text x="20" y="50" font-family="helvetica">100 x 100</text>
+		<text x="0" y="15"  font-family="helvetica">0</text>
+		<text x="70" y="100"  font-family="helvetica">100</text>
+	</g>
 	<use xlink:href="#kidneys" x="100" y="100" width="100" height="100"/>
 	<use xlink:href="#heart" x="200" y="100" width="100" height="100"/>
 	<use xlink:href="#galnac" x="300" y="100" width="100" height="100"/>
 	<use xlink:href="#mannose" x="400" y="100" width="100" height="100"/>
+	<use xlink:href="#trash" x="500" y="100" width="100" height="100"/>
 </svg>
