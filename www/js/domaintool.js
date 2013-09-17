@@ -1869,7 +1869,7 @@
         runner.retrieve("dummy",readyfunc);
     };
 
-    var prepare_alignment = function(prots) {
+    var prepare_alignment = function(prots,renderer) {
       var sequences = [];
       var ready = false;
       (function() {
@@ -1886,7 +1886,7 @@
           bit.toString = function() { return this.sequence; };
           sequences.push(bit);
           if (prots.length <= 0) {
-            // renderer.acc = null;
+            renderer.acc = null;
             do_clustal(sequences,null,function() {
               document.getElementById('align').setAttribute('class','ready');
               ready = true;
@@ -1949,7 +1949,7 @@
           document.getElementById('align').addEventListener('click',function() {
             var my_prots = [].concat(prots);
             this.removeEventListener('click',arguments.callee);
-            callback_func = prepare_alignment(my_prots);
+            callback_func = prepare_alignment(my_prots,renderer);
             document.getElementById('align').setAttribute('class','running');
             this.addEventListener('click',function() {
               callback_func();
