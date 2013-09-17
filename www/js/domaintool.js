@@ -1886,7 +1886,7 @@
           bit.toString = function() { return this.sequence; };
           sequences.push(bit);
           if (prots.length <= 0) {
-            renderer.acc = null;
+            // renderer.acc = null;
             do_clustal(sequences,null,function() {
               document.getElementById('align').setAttribute('class','ready');
               ready = true;
