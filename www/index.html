@@ -59,6 +59,16 @@
         <% } %>
         </ul>
     </script>
+    <script type="text/html" id="tags_tmpl">
+        <h3>Tags</h3>
+        <ul class="drive_preferences">
+        <% for (var i = 0; i < tags.length; i++ ) { %>
+            <li data-tag="<%= tags[i].id %>" ><span contentEditable><%= tags[i].name %></span><div class="remove">Remove</div></li>
+        <% } %>
+        </ul>
+        <button class="new">New</button>
+        <button class="close">OK</button>
+    </script>
     <div id="page_canvas">
     <div id="protein_list"></div>?
     <button id="help" class="hint--bottom hint--bottom-left" data-hint="About">?</button>
