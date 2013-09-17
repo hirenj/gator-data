@@ -551,6 +551,9 @@
         background: -ms-linear-gradient(top, #999, #aaa);
         color: #000000;
     }
+    #protein_list div.selected:hover {
+        color: #999;
+    }
     #protein_list div.done:after {
         content: '\2713';
         color: #7f7;
