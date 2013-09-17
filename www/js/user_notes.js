@@ -109,7 +109,7 @@
       search_el.addEventListener('focus',search_el.onblur,false);
       search_el.addEventListener('keyup',search_el.onblur,false);
       this.search_field.appendChild(search_el);
-      renderer._container.appendChild(this.search_field);
+      self.renderer._container.appendChild(this.search_field);
       this.search_field.className = 'search_field hidden';
       search_el.setAttribute('value','');
     };
