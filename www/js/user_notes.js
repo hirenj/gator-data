@@ -348,13 +348,18 @@
       self.tags = {};
       model.getRoot().get('tags').items().forEach(function(item) {
         self.tags[item[0]] = item[1];
+        self.tags[item[0]].id = item[0];
       });
 
       model.getRoot().get('tags').addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED,function(ev) {
           self.tags = {};
           model.getRoot().get('tags').items().forEach(function(item) {
             self.tags[item[0]] = item[1];
+            self.tags[item[0]].id = item[0];
           });
+          if (! ev.isLocal ) {
+            self.redrawAnnotations();
+          }
       });
     };
     if ( ! prefs.realtime ) {
@@ -362,6 +367,76 @@
     } else {
       callback();
     }
+  };
+
+  MASCP.AnnotationManager.prototype.renameTag = function(id,name) {
+    var self = this;
+    var model = self.preferences.realtime.getModel();
+    if ( ! model.getRoot().get('tags').has(id)) {
+      return "Invalid";
+    }
+    if (name == "") {
+      name = "None";
+    }
+    var counter = 1;
+    self.getTags(function(err,tags) {
+      tags.forEach(function(tag) {
+        if (tag.name == name) {
+          counter++;
+        }
+      })
+    });
+    if (counter > 1) {
+      name = name + "(" + counter + ")";
+    }
+    var curr_tag = model.getRoot().get('tags').get(id);
+    var new_tag = {};
+    new_tag.color = curr_tag.color;
+    new_tag.id = curr_tag.id;
+    new_tag.name = name;
+    model.getRoot().get('tags').set(new_tag.id,new_tag);
+    self.redrawAnnotations();
+    return name;
+  };
+
+  MASCP.AnnotationManager.prototype.createTag = function(name) {
+    var self = this;
+    var model = self.preferences.realtime.getModel();
+    var id = "tag"+(new Date()).getTime();
+    var counter = 1;
+    self.getTags(function(err,tags) {
+      tags.forEach(function(tag) {
+        if (tag.name == name) {
+          counter++;
+        }
+        if (counter > 1 && tag.name == (name + " (" + counter + ")")) {
+          counter++;
+        }
+      })
+    });
+    if (counter > 1) {
+      name = name + " (" + counter + ")";
+    }
+    model.getRoot().get('tags').set(id,{"id" : id, "name" : (name || "New tag") });
+    return id;
+  };
+
+  MASCP.AnnotationManager.prototype.getTags = function(callback) {
+    var self = this;
+    var arr = [];
+    for (var tag in self.tags) {
+        arr.push(self.tags[tag]);
+    }
+    callback.call(null,null,arr);
+  };
+
+  MASCP.AnnotationManager.prototype.removeTag = function(tag) {
+    var self = this;
+    var model = self.preferences.realtime.getModel();
+    if (typeof tag == 'object') {
+      tag = tag.id;
+    }
+    model.getRoot().get('tags').delete(tag);
   };
 
   MASCP.AnnotationManager.prototype.promoteAnnotation = function(group,annotation,model) {
@@ -407,14 +482,19 @@
 
   MASCP.AnnotationManager.prototype.handleEvent = function(ev) {
     var self = this;
-
-    if ( ev.target.tag && ! self.preferences.realtime.getModel().getRoot().get('tags').has(ev.target.tag)) {
-      self.preferences.realtime.getModel().getRoot().get('tags').set(ev.target.tag,ev.target.color || "");
+    var model = self.preferences.realtime.getModel();
+    if ( ev.target.tag && ! model.getRoot().get('tags').has(ev.target.tag)) {
+      model.getRoot().get('tags').set(ev.target.tag,{ "id" : ev.target.tag, "color" : ev.target.color || "", "name" : "Recovered tag "+ev.target.tag });
     } else {
       if (ev.target.tag && ev.target.color) {
-        self.preferences.realtime.getModel().getRoot().get('tags').set(ev.target.tag,ev.target.color);
+        var curr_tag = model.getRoot().get('tags').get(ev.target.tag);
+        var new_tag = {};
+        new_tag.color = curr_tag.color;
+        new_tag.id = curr_tag.id;
+        new_tag.name = curr_tag.name;
+        new_tag.color = ev.target.color;
+        model.getRoot().get('tags').set(new_tag.id,new_tag);
       }
-
     }
     self.redrawAnnotations();
     self.sync();
@@ -429,7 +509,7 @@
   };
 
   var tag_content = function(self,annotation,tag) {
-    return { 'text' : tag, "hover_function" : function() { annotation.color = null; annotation.tag = tag; }  };
+    return { 'text' : tag.name, "hover_function" : function() { annotation.color = null; annotation.tag = tag.id; }  };
   };
 
   var trash_content = function(self,annotation) {
@@ -442,8 +522,8 @@
     vals.forEach(function(val) {
       contents.push(type.call(null,self,annotation,val));
     });
-    if (type == tag_content) {
-      contents.push({'text' : "New tag", "select_function" : function() { console.log("Want a new tag"); } });
+    if (type == tag_content || type == color_content) {
+        contents.push({'symbol' : "/icons.svg#prefs", "select_function" : function() { bean.fire(self,'editclick')} });
     }
     contents.push(trash_content(self,annotation));
     return contents;
@@ -496,8 +576,10 @@
             added.push(click_el);
 
             if (annotation.tag && self.renderer.zoom > 3.5) {
+              var tag_el = self.renderer._canvas.text_circle(0.5,0.5,1,(self.tags[annotation.tag] || {"name" : annotation.tag }).name,{"stretch" : "right", "fill" : "#000", "weight" : "normal"});
+              tag_el.setAttribute('opacity','0.8');
               added = added.concat(self.renderer.getAA(annotation.index+annotation.length).addToLayer("annotations"+annotation.acc,
-                { "content" : self.renderer._canvas.text_circle(0.5,0.5,1,annotation.tag,{"stretch" : "right", "fill" : "#000", "weight" : "normal"}),
+                { "content" : tag_el,
                   "bare_element" : true,
                   "no_tracer" : true,
                   "offset" : 18,
@@ -516,7 +598,7 @@
             added = [];
 
             if (annotation.tag && self.tags[annotation.tag]) {
-              click_el.setAttribute('fill',self.tags[annotation.tag]);
+              click_el.setAttribute('fill',self.tags[annotation.tag].color);
             }
 
             if (annotation.color) {
@@ -559,7 +641,7 @@
               } else {
                 var tags = [];
                 for (var tag in self.tags) {
-                  tags.push(tag);
+                  tags.push(self.tags[tag]);
                 }
                 pie_contents = self.generatePieContent(tag_content,annotation,tags);
               }

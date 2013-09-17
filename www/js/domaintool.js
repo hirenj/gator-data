@@ -541,6 +541,7 @@
         var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
         wire_find(annotation_manager);
         wire_dragging_disable(renderer,annotation_manager);
+        wire_tag_edit(annotation_manager);
         var selector_callback = function() {
           annotation_manager.addSelector(function(text) {
             if ( ! text ) {
@@ -1159,6 +1160,72 @@
         }
       });
 
+    };
+
+    var wire_tag_edit = function(annotation_manager) {
+      var flipped;
+      bean.add(annotation_manager,'editclick',function() {
+        if (flipped) {
+          if (flipped.close) {
+            flipped.close();
+          }
+          flipped = null;
+          return;
+        }
+        flipped = true;
+        annotation_manager.getTags(function(err,tags) {
+          if (err) {
+            return;
+          }
+          if (flipped != true) {
+            return;
+          }
+          annotation_manager.renderer.fillTemplate("tags_tmpl",{ "tags" : tags },function(error,html) {
+            flipped = flippant.flip(document.getElementById('sequence_frame'), html);
+            var matches = flipped.querySelectorAll('ul .remove');
+            for (var i = 0 ; i < matches.length; i++) {
+              matches[i].addEventListener('click',function() {
+                var self = this;
+                var wanted_tag = self.parentNode.getAttribute('data-tag');
+                annotation_manager.removeTag(wanted_tag);
+                self.parentNode.parentNode.removeChild(self.parentNode);
+              },false);
+            }
+            matches = flipped.querySelectorAll('ul *[contentEditable]');
+            for (var i = 0 ; i < matches.length; i++) {
+              matches[i].addEventListener('input',function() {
+                var self = this;
+                var wanted_tag = self.parentNode.getAttribute('data-tag');
+                if (self.timeout) {
+                  clearTimeout(self.timeout);
+                }
+                self.timeout = setTimeout(function() {
+                  var new_name = annotation_manager.renameTag(wanted_tag,self.textContent);
+                  var range = document.createRange();
+                  var sel = window.getSelection();
+                  var last_offset = sel.focusOffset;
+                  self.textContent = new_name;
+                  sel.removeAllRanges();
+                  range.setStart(self.childNodes[0], last_offset);
+                  range.collapse(true);
+                  sel.addRange(range);
+                  self.timeout = null;
+                },300);
+              },false);
+            }
+            var new_tag = flipped.querySelector('button.new');
+            new_tag.addEventListener('click',function() {
+              annotation_manager.createTag("New tag");
+              bean.fire(annotation_manager,'editclick');
+              bean.fire(annotation_manager,'editclick');
+            });
+            var close = flipped.querySelector('button.close');
+            close.addEventListener('click',function() {
+              bean.fire(annotation_manager,'editclick');
+            });
+          });
+        });
+      });
     };
 
     var wire_drive_button = function(renderer) {
