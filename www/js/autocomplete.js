@@ -425,7 +425,14 @@
 		
 		// Select value:
 		if (this.highlightIdx > -1) {
+			if (window.getSelection && this.element.setSelectionRange) {
+				var sel = window.getSelection();
+				var last_offset = sel.focusOffset;
+			}
 			this.element.value = this.shownValues[this.highlightIdx];
+			if (this.element.setSelectionRange) {
+				this.element.setSelectionRange(last_offset,last_offset);
+			}
 			this.element.rawValue = this.shownValues[this.highlightIdx];
 			this.clearValues();
 		}
