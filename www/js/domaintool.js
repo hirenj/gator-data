@@ -1005,7 +1005,7 @@
 
     var create_renderer = function(container) {
 
-        renderer = new MASCP.CondensedSequenceRenderer(container);
+        var renderer = new MASCP.CondensedSequenceRenderer(container);
         renderer.font_order = 'Helvetica, Arial, sans-serif';
         setup_renderer(renderer);
 

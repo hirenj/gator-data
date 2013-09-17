@@ -228,7 +228,7 @@
         return a.localeCompare(b);
       });
       domain_keys.forEach(function(dom) {
-        lay_name = "dom:"+dom;
+        var lay_name = "dom:"+dom;
         lay_name = lay_name.replace(/\s/g,'_');
         if (dom == "KDEL") {
           domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
