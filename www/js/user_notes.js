@@ -529,6 +529,138 @@
     return contents;
   };
 
+  MASCP.AnnotationManager.prototype.pieMaker = function(annotation) {
+    var self = this;
+    return function(set_col,ev) {
+      if ( ! ev ) {
+        ev = set_col;
+        set_col = null;
+      }
+      if (annotation.pie) {
+        return;
+      }
+      var canvas = self.renderer._canvas;
+      var pie_contents;
+      if ( ! set_col ) {
+        if (annotation.type == 'symbol') {
+          pie_contents = self.generatePieContent(icon_content,annotation,["small_galnac","man","xyl","fuc","small_glcnac","nlinked"]);
+        } else {
+          var tags = [];
+          for (var tag in self.tags) {
+            tags.push(self.tags[tag]);
+          }
+          pie_contents = self.generatePieContent(tag_content,annotation,tags);
+        }
+      } else {
+        pie_contents = self.generatePieContent(color_content,annotation,["#grad_green","#grad_blue","#grad_yellow","#grad_red","#grad_pink"]);
+      }
+      var click_point = svgPosition(ev,canvas);
+      var pie = PieMenu.create(canvas,click_point.x/canvas.RS,click_point.y/canvas.RS,pie_contents,{ "size" : 7, "ellipse" : true });
+      annotation.pie = pie;
+      var end_pie = function(ev) {
+        canvas.removeEventListener('mouseout',end_pie);
+        canvas.removeEventListener('mouseup',end_pie);
+        if (annotation.pie) {
+          annotation.pie.destroy();
+          delete annotation.pie;
+        }
+      };
+      annotation.pie.end = end_pie;
+      canvas.addEventListener('mouseup',end_pie,false);
+      ev.preventDefault();
+      ev.stopPropagation();
+    };
+  };
+
+
+  MASCP.AnnotationManager.prototype.renderAnnotation = function(annotation,top_offset) {
+    var self = this;
+    var rendered = [];
+    var click_el = null;
+    var tag_el = null;
+    top_offset = (top_offset || 0)*8;
+
+    var obj = { "gotResult" : function() {
+      if (annotation.type == "symbol") {
+        var added = self.renderer.getAA(annotation.index).addToLayer("annotations"+annotation.acc,{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 12 + top_offset, "height" : 24 });
+        rendered.push(added[0]);
+        rendered.push(added[2]);
+        rendered.push(added[1]);
+        click_el = added[1];
+      } else {
+
+        var added = [];
+        click_el = self.renderer.getAA(annotation.index).addShapeOverlay("annotations"+annotation.acc,annotation.length,{"shape" : "rectangle","height" : 4, "offset" : 0 + top_offset });
+        added.push(click_el);
+
+        if (annotation.tag && self.renderer.zoom > 3.5) {
+          tag_el = self.renderer._canvas.text_circle(0.5,0.5,1,(self.tags[annotation.tag] || {"name" : annotation.tag }).name,{"stretch" : "right", "fill" : "#000", "weight" : "normal"});
+          tag_el.setAttribute('opacity','0.8');
+          added = added.concat(self.renderer.getAA(annotation.index+Math.floor(0.5*annotation.length)).addToLayer("annotations"+annotation.acc,
+            { "content" : tag_el,
+              "bare_element" : true,
+              "no_tracer" : true,
+              "offset" : 7.5 + top_offset,
+              "height" : 15}
+              ));
+          rendered.push(added[2]);
+          added[2].container.removeAttribute('viewBox');
+          added[2].container.setAttribute('width','100%');
+          added[2].container.setAttribute('height','100%');
+          added[2].zoom_level = 'text';
+          label_el = added[2];
+          rendered.push(added[0]);
+        } else {
+          rendered.push(added[0]);
+        }
+        added = [];
+
+        if (annotation.tag && self.tags[annotation.tag]) {
+          click_el.setAttribute('fill',self.tags[annotation.tag].color);
+        }
+
+        if (annotation.color) {
+          click_el.setAttribute('fill',annotation.color);
+        }
+
+      }
+    }, "agi" : annotation.acc };
+    jQuery(self.renderer).trigger('readerRegistered',[obj]);
+    obj.gotResult();
+    return { "rendered" : rendered, "click_element" : click_el, "tag_element" : tag_el };
+  };
+
+  MASCP.AnnotationManager.prototype.intervalSortAnnotations = function(type) {
+    var self = this;
+    var annos = self.annotations[type];
+    var intervals = [];
+    annos.forEach(function(annotation) {
+      var start;
+      var end;
+      start = annotation.index;
+      end = annotation.index + annotation.length;
+      intervals.push({ "index" : start, "start" : true,  "annotation" : annotation });
+      intervals.push({ "index" : end, "start" : false , "annotation" : annotation });
+    });
+    intervals.sort(function(a,b) {
+      var sameAcc = a.annotation.acc.localeCompare(b.annotation.acc);
+      if (sameAcc !== 0) {
+        return sameAcc;
+      }
+
+      if (a.index < b.index ) {
+        return -1;
+      }
+      if (a.index > b.index ) {
+        return 1;
+      }
+      if (a.index == b.index) {
+        return a.start ? -1 : 1;
+      }
+    });
+    return intervals;
+  };
+
   var rendered = [];
   var wanted_accs = [];
 
@@ -547,9 +679,17 @@
       }
     });
     rendered = [];
+    wanted_accs.forEach(function(acc) {
+      if (self.renderer._layer_containers["annotations"+acc]) {
+        self.renderer._layer_containers["annotations"+acc].fixed_track_height = 24;
+      }
+    });
 
     for (var annotation_type in self.annotations) {
-      self.annotations[annotation_type].forEach(function(annotation) {
+      var current = [];
+      self.intervalSortAnnotations(annotation_type).forEach(function(interval) {
+        var annotation = interval.annotation;
+
         if (wanted_accs.indexOf(annotation.acc) < 0 ) {
           self.unWatchAnnotation(annotation);
           return;
@@ -560,65 +700,34 @@
         if (annotation.deleted) {
           return;
         }
+
+        if (! interval.start) {
+          current.splice(current.indexOf(annotation),1,null);
+          while (current.length > 0 && current[current.length - 1] == null) {
+            current.splice(current.length - 1,1);
+          }
+          return;
+        }
+
         var click_el = null;
         var label_el = null;
+        var drawn = self.renderAnnotation(annotation,(annotation.class == "potential") ? -1 : (current.length));
+        if (((current.length+3)*8) > self.renderer._layer_containers["annotations"+annotation.acc].fixed_track_height) {
+          self.renderer._layer_containers["annotations"+annotation.acc].fixed_track_height = ((current.length+3)*8);
+        }
 
-        var obj = { "gotResult" : function() {
-          if (annotation.type == "symbol") {
-            var added = self.renderer.getAA(annotation.index).addToLayer("annotations"+annotation.acc,{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 12, "height" : 24 });
-            rendered.push(added[0]);
-            rendered.push(added[2]);
-            rendered.push(added[1]);
-            click_el = added[1];
-          } else {
-
-            var added = [];
-            click_el = self.renderer.getAA(annotation.index).addShapeOverlay("annotations"+annotation.acc,annotation.length,{"shape" : "rectangle","height" : 4, "offset" : 0 });
-            added.push(click_el);
-
-            if (annotation.tag && self.renderer.zoom > 3.5) {
-              var tag_el = self.renderer._canvas.text_circle(0.5,0.5,1,(self.tags[annotation.tag] || {"name" : annotation.tag }).name,{"stretch" : "right", "fill" : "#000", "weight" : "normal"});
-              tag_el.setAttribute('opacity','0.8');
-              added = added.concat(self.renderer.getAA(annotation.index+Math.floor(0.5*annotation.length)).addToLayer("annotations"+annotation.acc,
-                { "content" : tag_el,
-                  "bare_element" : true,
-                  "no_tracer" : true,
-                  "offset" : 7.5,
-                  "height" : 15}
-                  ));
-              rendered.push(added[2]);
-              added[2].container.removeAttribute('viewBox');
-              added[2].container.setAttribute('width','100%');
-              added[2].container.setAttribute('height','100%');
-              added[2].zoom_level = 'text';
-              label_el = added[2];
-              rendered.push(added[0]);
-            } else {
-              rendered.push(added[0]);
-            }
-            added = [];
-
-            if (annotation.tag && self.tags[annotation.tag]) {
-              click_el.setAttribute('fill',self.tags[annotation.tag].color);
-            }
-
-            if (annotation.color) {
-              click_el.setAttribute('fill',annotation.color);
-            }
-
-          }
-        }, "agi" : annotation.acc };
-        jQuery(self.renderer).trigger('readerRegistered',[obj]);
-        obj.gotResult();
+        current.push(annotation);
+        click_el = drawn['click_element'];
+        label_el = drawn['tag_element'];
+        rendered = rendered.concat(drawn['rendered']);
 
         if (annotation.class == "potential") {
-          rendered[rendered.length - 1].style.opacity = '0.5';
+          click_el.style.opacity = '0.5';
           if (! self.readonly) {
             click_el.addEventListener('click',function() {
               delete annotation.class;
               self.promoteAnnotation('self',annotation);
-              self.dirty = true;
-              self.redrawAnnotations(annotation.acc);
+              // self.redrawAnnotations(annotation.acc);
               self.renderer.select();
             });
           }
@@ -626,54 +735,15 @@
 
           self.watchAnnotation(annotation);
 
-          var trigger_pie = function(set_col,ev) {
-            if ( ! ev ) {
-              ev = set_col;
-              set_col = null;
-            }
-            if (annotation.pie) {
-              return;
-            }
-            var canvas = this.parentNode;
-            var pie_contents;
-            if ( ! set_col ) {
-              if (annotation.type == 'symbol') {
-                pie_contents = self.generatePieContent(icon_content,annotation,["small_galnac","man","xyl","fuc","small_glcnac","nlinked"]);
-              } else {
-                var tags = [];
-                for (var tag in self.tags) {
-                  tags.push(self.tags[tag]);
-                }
-                pie_contents = self.generatePieContent(tag_content,annotation,tags);
-              }
-            } else {
-              pie_contents = self.generatePieContent(color_content,annotation,["#grad_green","#grad_blue","#grad_yellow","#grad_red","#grad_pink"]);
-            }
-            var click_point = svgPosition(ev,canvas);
-            var pie = PieMenu.create(canvas,click_point.x/canvas.RS,click_point.y/canvas.RS,pie_contents,{ "size" : 7, "ellipse" : true });
-            annotation.pie = pie;
-            var end_pie = function(ev) {
-              canvas.removeEventListener('mouseout',end_pie);
-              canvas.removeEventListener('mouseup',end_pie);
-              if (annotation.pie) {
-                annotation.pie.destroy();
-                delete annotation.pie;
-              }
-            };
-            annotation.pie.end = end_pie;
-            canvas.addEventListener('mouseup',end_pie,false);
-            ev.preventDefault();
-            ev.stopPropagation();
-          };
           if ( ! self.readonly ) {
             if (label_el) {
-              label_el.addEventListener('mousedown',function(ev) {  trigger_pie.call(label_el,true,ev); },false);
-              label_el.addEventListener('touchstart',function(ev) {  trigger_pie.call(label_el,true,ev); },false);
+              label_el.addEventListener('mousedown',function(ev) {  self.pieMaker(annotation).call(label_el,true,ev); },false);
+              label_el.addEventListener('touchstart',function(ev) {  self.pieMaker(annotation).call(label_el,true,ev); },false);
               label_el.addEventListener('touchend',function(ev) {  if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
 
             }
-            click_el.addEventListener('mousedown',trigger_pie,false);
-            click_el.addEventListener('touchstart',trigger_pie,false);
+            click_el.addEventListener('mousedown',self.pieMaker(annotation),false);
+            click_el.addEventListener('touchstart',self.pieMaker(annotation),false);
             click_el.addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
           }
         }
