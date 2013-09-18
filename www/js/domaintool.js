@@ -518,7 +518,6 @@
     var wire_history = function(renderer) {
       if (history) {
         window.onpopstate = function(event) {
-          console.log("Poppin");
           show_protein((event.state || {})['uniprot_id'],renderer);
         }
       }
