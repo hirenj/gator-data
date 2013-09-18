@@ -538,6 +538,7 @@
     if (acc) {
       layer_name = "annotations"+acc;
       MASCP.registerLayer(layer_name, { 'fullname' : acc+" annotations", 'color' : '#aaaaaa' },[self.renderer]);
+      self.renderer._layer_containers[layer_name].fixed_track_height = 30;
       wanted_accs.push(acc);
     }
     rendered.forEach(function(el) {
@@ -572,17 +573,17 @@
           } else {
 
             var added = [];
-            click_el = self.renderer.getAA(annotation.index).addShapeOverlay("annotations"+annotation.acc,annotation.length,{"shape" : "rectangle"});
+            click_el = self.renderer.getAA(annotation.index).addShapeOverlay("annotations"+annotation.acc,annotation.length,{"shape" : "rectangle","height" : 4, "offset" : 0 });
             added.push(click_el);
 
             if (annotation.tag && self.renderer.zoom > 3.5) {
               var tag_el = self.renderer._canvas.text_circle(0.5,0.5,1,(self.tags[annotation.tag] || {"name" : annotation.tag }).name,{"stretch" : "right", "fill" : "#000", "weight" : "normal"});
               tag_el.setAttribute('opacity','0.8');
-              added = added.concat(self.renderer.getAA(annotation.index+annotation.length).addToLayer("annotations"+annotation.acc,
+              added = added.concat(self.renderer.getAA(annotation.index+Math.floor(0.5*annotation.length)).addToLayer("annotations"+annotation.acc,
                 { "content" : tag_el,
                   "bare_element" : true,
                   "no_tracer" : true,
-                  "offset" : 18,
+                  "offset" : 7.5,
                   "height" : 15}
                   ));
               rendered.push(added[2]);
