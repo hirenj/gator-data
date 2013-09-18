@@ -11,20 +11,20 @@
 
     DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
       if ( ! file ) {
-        sessionStorage.removeItem("active_session");
+        localStorage.removeItem("active_session");
         this.useDefaultPreferences();
       } else {
-        sessionStorage.setItem("active_session",file);
-        sessionStorage.setItem("active_session_title",title);
+        localStorage.setItem("active_session",file);
+        localStorage.setItem("active_session_title",title);
       }
     }
 
     DomaintoolPreferences.prototype.getActiveSession = function() {
-      return sessionStorage.getItem("active_session");
+      return localStorage.getItem("active_session");
     }
 
     DomaintoolPreferences.prototype.getActiveSessionTitle = function() {
-      return sessionStorage.getItem("active_session_title");
+      return localStorage.getItem("active_session_title");
     }
 
     DomaintoolPreferences.prototype.addService = function(service,name) {
@@ -835,7 +835,7 @@
               return;
             }
             get_proteins(prots,function(list) {
-              if (typeof(list) !== "string") {  
+              if (typeof(list) !== "string") {
                 input.parentNode.removeChild(input);
                 update_protein_list(list,renderer);
               } else {
@@ -863,7 +863,7 @@
           list.appendChild(a_div);
           a_div.setAttribute('id','prot_'+prot.id.toLowerCase());
           a_div.setAttribute('class','hint--left hint--inline ');
-          a_div.addEventListener('click',function() {
+          a_div.addEventListener('click',function(ev) {
             var clazz;
             if (selected) {
               clazz = selected.getAttribute('class') || '';
@@ -883,7 +883,9 @@
             a_div.setAttribute('data-hint',"Loading..");
           },false);
           if (curr_acc == prot.id.toLowerCase()) {
-            bean.fire(a_div,'click');
+            a_div.classList.add('selected');
+            selected = a_div;
+            show_protein(prot.id,renderer,function() {},false);
           }
 
         });
