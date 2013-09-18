@@ -518,6 +518,7 @@
     var wire_history = function(renderer) {
       if (history) {
         window.onpopstate = function(event) {
+          console.log("Poppin");
           show_protein((event.state || {})['uniprot_id'],renderer);
         }
       }
@@ -854,6 +855,7 @@
           list.removeChild(list.firstChild);
         }
         var curr_acc = history ? (history.state || {})['uniprot_id'] : localStorage.getItem('selected');
+        curr_acc = curr_acc ? curr_acc.toLowerCase() : null;
         var selected = null;
         prots.forEach(function(prot) {
           var a_div = document.createElement('div');
@@ -881,7 +883,7 @@
             },true);
             a_div.setAttribute('data-hint',"Loading..");
           },false);
-          if (curr_acc == prot) {
+          if (curr_acc == prot.id.toLowerCase()) {
             bean.fire(a_div,'click');
           }
 
