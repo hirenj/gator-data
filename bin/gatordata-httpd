@@ -405,6 +405,8 @@ MASCP.events.once('all_ready',function() {
         return;
     }
 
+    express.static.mime.define({'image/svg+xml': ['svg']});
+
     app.get("/", function(req, res) {
       res.redirect("/index.html");
     });

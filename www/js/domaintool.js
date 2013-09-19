@@ -138,11 +138,19 @@
         }
         var callback = function(err) {
           if (err) {
+            if (err.cause == "Failed to return from auth") {
+              window.notify.info("Could not contact servers, please wait").hideLater(1000);
+              setTimeout(function() {
+                self.addRealtime(file);
+              },1000);
+              return;
+            }
             return;
           }
           self.usePreferenceFile(file);
           self.getPreferences(function(err,prefs,etag) {
             gapi.drive.realtime.load(file, function(doc) {
+              console.log("Realtime ready");
               self.realtime = doc;
               bean.fire(self,'realtimeready');
             }, function(model) {

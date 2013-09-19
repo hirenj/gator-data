@@ -180,6 +180,21 @@
     var end_func;
     var selected;
 
+    if (typeof canvas.supports_use == 'undefined') {
+      (function() {
+        var use = canvas.use('/icons.svg#trash',-1000,-1000,100,100);
+        setTimeout(function() {
+          if (use.instanceRoot) {
+            canvas.supports_use = true;
+          } else {
+            canvas.supports_use = false;
+          }
+          use.parentNode.removeChild(use);
+        },1000);
+      })();
+    }
+
+
     var moving_func = function(e) {
       var p = svgPosition(e,canvas);
       end = p.x;
@@ -513,7 +528,7 @@
   };
 
   var trash_content = function(self,annotation) {
-    return { 'symbol' :  '/icons.svg#trash', "select_function" : function() { self.demoteAnnotation('self',annotation); } };
+    return { 'symbol' :  '/icons.svg#trash', 'text_alt' : 'Delete', "select_function" : function() { self.demoteAnnotation('self',annotation); } };
   };
 
   MASCP.AnnotationManager.prototype.generatePieContent = function(type,annotation,vals) {
@@ -523,7 +538,7 @@
       contents.push(type.call(null,self,annotation,val));
     });
     if (type == tag_content || type == color_content) {
-        contents.push({'symbol' : "/icons.svg#prefs", "select_function" : function() { bean.fire(self,'editclick')} });
+        contents.push({'symbol' : "/icons.svg#prefs", 'text_alt' : 'Prefs', "select_function" : function() { bean.fire(self,'editclick')} });
     }
     contents.push(trash_content(self,annotation));
     return contents;
@@ -536,6 +551,8 @@
         ev = set_col;
         set_col = null;
       }
+      ev.preventDefault();
+      ev.stopPropagation();
       if (annotation.pie) {
         return;
       }
@@ -737,14 +754,16 @@
 
           if ( ! self.readonly ) {
             if (label_el) {
+              label_el.addEventListener('click',function(ev) { ev.preventDefault(); ev.stopPropagation(); });
               label_el.addEventListener('mousedown',function(ev) {  self.pieMaker(annotation).call(label_el,true,ev); },false);
               label_el.addEventListener('touchstart',function(ev) {  self.pieMaker(annotation).call(label_el,true,ev); },false);
-              label_el.addEventListener('touchend',function(ev) {  if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
+              label_el.addEventListener('touchend',function(ev) {  if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } ev.preventDefault(); },false);
 
             }
+            click_el.addEventListener('click',function(ev) { ev.preventDefault(); ev.stopPropagation(); });
             click_el.addEventListener('mousedown',self.pieMaker(annotation),false);
             click_el.addEventListener('touchstart',self.pieMaker(annotation),false);
-            click_el.addEventListener('touchend',function() { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } },false);
+            click_el.addEventListener('touchend',function(ev) { if (annotation && annotation.pie) { annotation.pie.end(); delete annotation.pie; } ev.preventDefault(); },false);
           }
         }
       });

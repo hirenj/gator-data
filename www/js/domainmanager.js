@@ -117,6 +117,13 @@
           callback.call();
           return;
         }
+        if (err.cause == "Failed to return from auth") {
+          window.notify.info("Could not contact servers, please wait").hideLater(1000);
+          setTimeout(function() {
+            with_user_preferences(callback);
+          },1000);
+          return;
+        }
         return;
       }
       callback.call(null,data);
