@@ -74,7 +74,9 @@
       clearTimeout(searchTimeout);
       searchTimeout = null;
     }
-    autocomplete.element.parentNode.setAttribute('data-hint',message);
+    setTimeout(function() {
+      autocomplete.element.parentNode.setAttribute('data-hint',message);
+    },0);
   };
 
   var flash_message = function(message,time) {
