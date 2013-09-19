@@ -1258,6 +1258,15 @@
             });
           },false);
         } else if (err) {
+          if (err.cause == "Failed to return from auth") {
+            document.getElementById('drive_install').style.display = 'none';
+            window.notify.info("Could not establish connection to Google, trying again later").hideLater(1000);
+            setTimeout(function() {
+              document.getElementById('drive_install').style.display = 'block';
+              wire_drive_button(renderer);
+            },1000);
+            return;
+          }
           document.getElementById('drive_install').style.display = 'none';
           return;
         } else {
@@ -1395,7 +1404,7 @@
           window.notify.info("Browser support for Google Drive not detected").hideLater(1000);
           callback.call(null,err);
         } else {
-          callback.call(null);
+          callback.call(null,err);
         }
       });
     };
