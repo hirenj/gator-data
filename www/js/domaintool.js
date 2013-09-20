@@ -284,7 +284,7 @@
         MASCP.Service.request('/doi/'+doc,callback);
     };
 
-    DomaintoolPreferences.prototype.useDisplayPreferences = function(doc,handle_proteins) {
+    DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
       this.setActiveSession();
       conf = { "datasets" : [] };
@@ -329,10 +329,11 @@
                 handle_proteins(accs);
               });
             })();
-          } else {
-            handle_proteins(accs);
           }
         });
+        if (accs) {
+          handle_proteins(accs);
+        }
       });
 
       this.prefs_object = {
@@ -2089,7 +2090,7 @@
         var match = /doi\/(.*)\//.exec(window.location);
         match.shift();
         var actual_handle_proteins = handle_proteins;
-        get_preferences().useDisplayPreferences(match[0],function(prots) { actual_handle_proteins(prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
+        get_preferences().useStaticPreferences(match[0],function(prots) { actual_handle_proteins(prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
       }
 
