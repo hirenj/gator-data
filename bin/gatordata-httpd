@@ -510,6 +510,43 @@ MASCP.events.once('all_ready',function() {
         });
     })();
 
+    var get_file = function(file,callback) {
+        fs.readFile(file, 'utf8', function (err, data) {
+          if (err) {
+            console.log('Error: ' + err);
+            return;
+          }
+          callback.call(null,JSON.parse(data));
+        });
+    };
+
+    (function() {
+        var middle = express.static(__dirname + '/../www');
+        app.get("/doi/*/", function(req, res, next) {
+            req.url = '/index.html';
+            middle(req,res,next);
+        });
+        var doi_map = {};
+        fs.readdir(__dirname + '/../pubs',function(err,files) {
+            files.forEach(function(file) {
+                if (! file.match(/json/)) {
+                    return;
+                };
+                get_file(__dirname + '/../pubs/'+file,function(dat) {
+                    if (dat.doi) {
+                        doi_map[dat.doi] = file;
+                    }
+                });
+            });
+        });
+
+        var middle_doi = express.static(__dirname + '/../pubs');
+        app.get("/doi/*", function(req, res, next) {
+            req.url = (doi_map[req.params[0] || ""] || "unknown.json");
+            middle_doi(req,res,next);
+        });
+
+    })();
 
     var data_headers = function(req,res,next) {
         res.header('Content-type', 'application/json');

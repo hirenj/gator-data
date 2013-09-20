@@ -276,6 +276,89 @@
       return;
     };
 
+    DomaintoolPreferences.prototype.getStaticConf = function(doc,callback) {
+        if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
+          window.notify.alert("Invalid DOI");
+          return;
+        }
+        MASCP.Service.request('/doi/'+doc,callback);
+    };
+
+    DomaintoolPreferences.prototype.useDisplayPreferences = function(doc,handle_proteins) {
+      var self = this;
+      this.setActiveSession();
+      conf = { "datasets" : [] };
+
+      self.getStaticConf(doc,function(err,json) {
+        if (err) {
+          if (err.status >= 500) {
+            window.notify.alert("Could not load page, please try again");
+          } else if (err.status >= 400) {
+            window.notify.alert("Invalid publication");
+          }
+        }
+        conf = json;
+        var accs = conf.accessions || [];
+        conf.datasets.forEach(function(dataset) {
+          if ( ! dataset.doc ) {
+            return;
+          }
+          (function() {
+            MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+            var datareader = new MASCP.UserdataReader();
+            datareader.datasetname = dataset.doc;
+            datareader.retrieve('config',function() {
+              dataset.sites = this.result._raw_data.data.sites;
+              dataset.title = this.result._raw_data.title;
+            });
+          })();
+          if ( ! conf.accessions ) {
+            var uprot_re1 = /([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
+            var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
+            (function() {
+              MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+              var datareader = new MASCP.UserdataReader();
+              datareader.datasetname = dataset.doc;
+              datareader.retrieve('accs',function() {
+                this.result._raw_data.data.forEach(function(acc) {
+                  acc = acc.replace(/\s+/g,'');
+                  if (acc.toUpperCase().match(uprot_re1) || acc.toUpperCase().match(uprot_re2)) {
+                    accs.push({"id" : acc});
+                  }
+                });
+                handle_proteins(accs);
+              });
+            })();
+          } else {
+            handle_proteins(accs);
+          }
+        });
+      });
+
+      this.prefs_object = {
+        addWatchedDocument : function() {
+        },
+        removeWatchedDocument : function() {
+        },
+        readWatchedDocuments : function(callback) {
+          MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+          conf.datasets.forEach(function(set) {
+            var target_reader = new MASCP.UserdataReader();
+            target_reader.datasetname = set.doc;
+            callback.call(null,null,{"render_options" : { "sites" : set.sites, "track" : set.title || "Data", "offset" : 0 }},target_reader);
+          });
+        },
+        listWatchedDocuments : function() {
+        },
+        getPreferences : function() {
+        },
+        writePreferences : function() {
+        }
+      };
+      delete self.realtime;
+      bean.fire(self,'prefschange');
+    };
+
     DomaintoolPreferences.prototype.useDefaultPreferences = function() {
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
@@ -2001,6 +2084,13 @@
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
+
+      if (window.location.toString().match(/doi/)) {
+        var match = /doi\/(.*)\//.exec(window.location);
+        match.shift();
+        get_preferences().useDisplayPreferences(match[0],handle_proteins);
+        handle_proteins =  function() {};
+      }
 
       if (state.addservice) {
         get_preferences().addService(state.addservice, state.name);
