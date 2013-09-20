@@ -648,9 +648,10 @@ MASCP.events.once('all_ready',function() {
 
     });
 
-    app.listen(port);//,'127.0.0.1');
-    console.log('Server running at http://127.0.0.1:'+app.address().port+'/');
-
+    if ( ! nconf.get("bootstrap") ) {
+        app.listen(port);//,'127.0.0.1');
+        console.log('Server running at http://127.0.0.1:'+app.address().port+'/');
+    }
 
     if (! require('tty').isatty(process.stdin)) {
         var vm = require('vm');

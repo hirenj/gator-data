@@ -544,7 +544,9 @@
         left: auto !important;
         /*left: -150% !important;*/
     }
-
+    #protein_list {
+        background: #000;
+    }
     #protein_list div {
         display: block;
         background: #000000;
