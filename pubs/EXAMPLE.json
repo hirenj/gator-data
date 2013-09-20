@@ -1,0 +1,10 @@
+{
+	"THIS IS the doi" : "10.1007/978-3-642-28108-2_19",
+	"title" : "O Mannose Glycoproteome",
+	"datasets" : [{ "doc"  : "Doc id to grab..."}],
+	"accessions" : [
+		{ "id" : "q14118", "name" : "Alpha dystroglycan"},
+		{ "id" : "q14118", "name" : "Alpha dystroglycan"},
+		{ "id" : "q14118", "name" : "Alpha dystroglycan"}
+	]
+}
