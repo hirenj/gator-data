@@ -158,6 +158,34 @@ var start_spreadsheet_watching = function() {
     setTimeout(arguments.callee,1000*60*60*24);
 };
 
+var watching_datadoc_block = nconf.get("watching:datadoc") || {};
+
+var start_datadoc_watching = function() {
+    console.log("Checking to see if any documents need to be updated");
+    for (var doc_conf in watching_datadoc_block) {
+        var check_interval = watching_datadoc_block[doc_conf].check_interval || 1000*60*60*24*7;
+        if ((new Date()).getTime() - watching_datadoc_block[doc_conf].last_check < check_interval ) {
+            continue;
+        }
+        console.log("Checking document "+doc_conf);
+        var inserter = refresh_document(doc_conf, datadoc_parser);
+        inserter.bind('ready',function() {
+            var time = (new Date()).getTime();
+            watching_datadoc_block[doc_conf].last_check = time;
+            nconf.set('watching:datadoc:'+doc_conf+':last_check', time);
+            nconf.save(function(err) {
+                if (err) {
+                    console.log("Could not write config");
+                } else {
+                    console.log("Saved configuration");
+                }
+            });
+        });
+    }
+    console.log("Checking next in a day");
+    setTimeout(arguments.callee,1000*60*60*24);
+};
+
 var watch_file_block = nconf.get("watching:file") || {};
 
 var start_document_watching = function() {
@@ -241,6 +269,53 @@ var watch_file = function(filename,map,title,callback) {
     inserter.bind('error',function() {
         if (callback) {
             callback.call("Some file error");
+        }
+    });
+}
+
+var datadoc_parser = function(datablock) {
+    datablock.data['config'] = datablock.defaults;
+    var all_accs = [];
+    for (var acc in datablock.data) {
+        datablock.data[acc] = { "data" : datablock.data[acc], "title" : datablock.title, "retrieved" : datablock.retrieved };
+        if (acc !== "config") {
+            all_accs.push(acc);
+        }
+    }
+    datablock.data['accs'] = { "data" : all_accs };
+    return datablock.data;
+};
+
+
+var watch_datadoc = function(doc,callback) {
+    if (nconf.get('watching:datadoc:'+doc)) {
+        var curr = nconf.get('watching:datadoc:'+doc);
+        if (curr && curr.toString()) {
+            console.log("Already watching document "+doc+" refreshing anyway");
+        }
+    }
+    var inserter = refresh_document(doc,datadoc_parser);
+
+    inserter.bind('ready',function() {
+        console.log("Got data back for datadoc:"+doc);
+        var status = { "last_check" : (new Date()).getTime() };
+        watching_datadoc_block[doc] = status;
+        nconf.set('watching:datadoc:'+doc, status);
+        nconf.save(function(err) {
+            if (err) {
+                console.log("Could not write config");
+            } else {
+                if (callback) {
+                    callback();
+                }
+                console.log("Data inserted - will automatically update for datadoc:"+doc);
+            }
+        });
+    });
+    inserter.bind('error',function(err) {
+        console.log("Error retrieving data document for datadoc:"+doc);
+        if (callback) {
+            callback(err);
         }
     });
 }
@@ -672,7 +747,7 @@ MASCP.events.once('all_ready',function() {
             };
         };
         try {
-            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: auto_exit(watch_spreadsheet), watch_file : auto_exit(watch_file), live_update : live_update }, "<stdin>");
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: auto_exit(watch_spreadsheet), watch_datadoc: auto_exit(watch_datadoc), watch_file : auto_exit(watch_file), live_update : live_update }, "<stdin>");
         } catch (e) {
             console.log("Error running script");
             console.log(e);
@@ -682,6 +757,7 @@ MASCP.events.once('all_ready',function() {
         if (nconf.get("watch")) {
             start_document_watching();
             start_spreadsheet_watching();
+            start_datadoc_watching();
         }
         if ( ! nconf.get("headless") ) {
             repl.start("Gator data server >");
