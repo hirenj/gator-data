@@ -762,7 +762,10 @@
     };
 
     var add_keyboard_navigation = function() {
-      return;
+      if (window.keyboard_enabled) {
+        return;
+      }
+      window.keyboard_enabled = true;
       window.addEventListener('keypress',function(e) {
         var to_select;
         if (e.keyCode == 110) {
@@ -872,13 +875,10 @@
           a_div.setAttribute('id','prot_'+prot.id.toLowerCase());
           a_div.setAttribute('class','hint--left hint--inline ');
           a_div.addEventListener('click',function(ev) {
-            var clazz;
             if (selected) {
-              clazz = selected.getAttribute('class') || '';
-              selected.setAttribute('class',clazz.replace(/selected\s/,''));
+              selected.classList.remove('selected');
             }
-            clazz = this.getAttribute('class') || '';
-            this.setAttribute('class',clazz+'selected ');
+            this.classList.add('selected');
             selected = this;
             if (! history) {
               localStorage.setItem('selected',this.uprot);
@@ -1650,11 +1650,15 @@
             return;
           }
           var obj = { "gotResult" : function() {
+            var offset = (pref.render_options || {})["offset"];
+            if ((typeof offset) === 'undefined') {
+              offset = 30;
+            }
             (datas.sites || []).forEach(function(site) {
-              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : 30, "height" : 8,  "bare_element" : true });
+              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : offset , "height" : 8,  "bare_element" : true });
             });
             (datas.peptides || []).forEach(function(peptide) {
-              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1,{ "offset" : 30, "height_scale" : 0.1, "fill" : "#999", "merge" : false  });
+              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1,{ "offset" : offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  });
               box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
             });
             var offsets = {};

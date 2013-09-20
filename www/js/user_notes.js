@@ -584,8 +584,7 @@
       };
       annotation.pie.end = end_pie;
       canvas.addEventListener('mouseup',end_pie,false);
-      ev.preventDefault();
-      ev.stopPropagation();
+
     };
   };
 
@@ -660,7 +659,7 @@
       intervals.push({ "index" : end, "start" : false , "annotation" : annotation });
     });
     intervals.sort(function(a,b) {
-      var sameAcc = a.annotation.acc.localeCompare(b.annotation.acc);
+      var sameAcc = (a.annotation.acc || "").localeCompare(b.annotation.acc);
       if (sameAcc !== 0) {
         return sameAcc;
       }

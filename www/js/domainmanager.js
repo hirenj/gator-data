@@ -293,7 +293,11 @@
               }
               return box;
             };
-            renderer.getAA(start).addToLayer(target_layer, {"height" : 16, "content" : element_func(), "offset" : 28, "angle": 0, "bare_element" : true });
+            var icon_size = 8;
+            if (shape_func == renderer.nlinked || shape_func == renderer.small_galnac || shape_func == renderer.xyl || shape_func == renderer.fuc) {
+              icon_size = 16;
+            }
+            renderer.getAA(start).addToLayer(target_layer, {"height" : icon_size, "content" : element_func(), "offset" : 28, "angle": 0, "bare_element" : true });
             renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : element_func(), "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
