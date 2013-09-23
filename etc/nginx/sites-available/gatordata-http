@@ -10,7 +10,7 @@ server {
     error_page  404 = @backend;
   }
   location ~ ^/doi/.*[^/]$ {
-    valid_referers *
+    valid_referers *;
     if ($invalid_referer) {
       rewrite  ^(.*)$ $1/ break;
     }
