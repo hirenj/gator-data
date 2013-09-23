@@ -9,13 +9,7 @@ server {
     index       index.html;
     error_page  404 = @backend;
   }
-  location ~ ^/doi/.*[^/]$ {
-    valid_referers *;
-    if ($invalid_referer) {
-      rewrite  ^(.*)$ $1/ break;
-    }
-  }
-  include     /var/gatordata/etc/nginx/redirects
+  include     /var/gatordata/etc/nginx/redirects;
 
   location @backend {
     proxy_pass          http://127.0.0.1:3000;
