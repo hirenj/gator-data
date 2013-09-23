@@ -278,8 +278,12 @@
 
     DomaintoolPreferences.prototype.getStaticConf = function(doc,callback) {
         if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
-          window.notify.alert("Invalid DOI");
-          return;
+          if (doc.match(/^[a-z\-]+$/)) {
+            window.notify.info("Pre-publication data").hideLater(2000);
+          } else {
+            window.notify.alert("Invalid DOI");
+            return;
+          }
         }
         MASCP.Service.request('/doi/'+doc,callback);
     };
@@ -1543,7 +1547,7 @@
           }
           window.notify.alert("Could not retrieve desired protein list, please try again");
           console.log("Error");
-          console.log(err);
+          console.log(err_obj);
         });
 
     };

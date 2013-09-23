@@ -527,6 +527,7 @@ MASCP.events.once('all_ready',function() {
             middle(req,res,next);
         });
         var doi_map = {};
+        var seen_redirect = false;
         fs.readdir(__dirname + '/../pubs',function(err,files) {
             files.forEach(function(file) {
                 if (! file.match(/json/)) {
@@ -535,6 +536,15 @@ MASCP.events.once('all_ready',function() {
                 get_file(__dirname + '/../pubs/'+file,function(dat) {
                     if (dat.doi) {
                         doi_map[dat.doi] = file;
+                        if (dat.shortcut) {
+                            var redirects = fs.createWriteStream(__dirname + '/../etc/nginx/redirects', {'flags': seen_redirect ? 'a' : 'w'});
+                            redirects.write("rewrite  ^/doi/"+dat.shortcut+"/$  /doi/"+dat.doi+"/ permanent;");
+                            seen_redirect = true;
+                        }
+                    } else {
+                        if (dat.shortcut) {
+                            doi_map[dat.shortcut] = file;
+                        }
                     }
                 });
             });
