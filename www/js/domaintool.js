@@ -1545,6 +1545,13 @@
             callback.call(null,protein_doc,err_obj.authorize);
             return;
           }
+          if (err_obj.cause == "Google session timed out") {
+            window.notify.alert("You are logged out of your Google Account, please log in again");
+            setTimeout(function() {
+              document.getElementById('drive_install').click();
+            },1000);
+            return;
+          }
           window.notify.alert("Could not retrieve desired protein list, please try again");
           console.log("Error");
           console.log(err_obj);
