@@ -866,9 +866,6 @@
           to_select.click();
           to_select.scrollIntoView(true);
         }
-        if (e.keyCode == 114) {
-          document.getElementById('reset').click();
-        }
       },false);
     };
 

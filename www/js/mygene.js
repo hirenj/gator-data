@@ -179,6 +179,15 @@
       useNativeInterface : false,
       onInput : autocomplete_with_mygene
     });
+
+    /* We want to stop the keypress event propagating out just in case
+       a parent is doing something with the keyboard
+     */
+
+    autocomplete.element.addEventListener('keypress',function(ev) {
+      ev.stopPropagation();
+    },false);
+
     autocomplete.element.addEventListener('change',function() {
       if (! this.rawValue ) {
         return;
