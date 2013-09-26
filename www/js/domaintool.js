@@ -86,45 +86,47 @@
         delete json[doc];
         sessionStorage.setItem("update_timestamps",JSON.stringify(json));
       }
-      MASCP.Service.ClearCache('MASCP.UserdataReader.'+doc,null,function(err) {
-        console.log("Cleared data");
-        preferences.addWatchedDocument(doc,parser,function(err,docname) {
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState({},"Loading of "+docname);
-            document.title = "Loading of "+docname;
-          }
-          if (err) {
-            if (err.status === "preferences") {
-              if (err.original_error.cause === "No user event") {
-                window.notify.alert("You have been logged out, please click the drive button to authorize again");
+      this.ifReady(function() {
+        MASCP.Service.ClearCache('MASCP.UserdataReader.'+doc,null,function(err) {
+          console.log("Cleared data");
+          preferences.addWatchedDocument(doc,parser,function(err,docname) {
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState({},"Loading of "+docname);
+              document.title = "Loading of "+docname;
+            }
+            if (err) {
+              if (err.status === "preferences") {
+                if (err.original_error.cause === "No user event") {
+                  window.notify.alert("You have been logged out, please click the drive button to authorize again");
+                  return;
+                }
+                window.notify.alert("Error setting preferences - try opening document again");
                 return;
               }
-              window.notify.alert("Error setting preferences - try opening document again");
+              window.notify.alert("Problem reading document, please try again");
               return;
             }
-            window.notify.alert("Problem reading document, please try again");
-            return;
-          }
-          var not = window.notify.info("Saving preferences - please wait");
-          preferences.getPreferences(function(err,prefs) {
-            if ( ! err ) {
-              if (run_parser && prefs.user_datasets[doc]) {
-                prefs.user_datasets[doc].render_options = defaults;
-              }
-              preferences.sync(function(err,prefs) {
-                if (not) {
-                  not.hide();
+            var not = window.notify.info("Saving preferences - please wait");
+            preferences.getPreferences(function(err,prefs) {
+              if ( ! err ) {
+                if (run_parser && prefs.user_datasets[doc]) {
+                  prefs.user_datasets[doc].render_options = defaults;
                 }
+                preferences.sync(function(err,prefs) {
+                  if (not) {
+                    not.hide();
+                  }
 
-                if (err) {
-                  window.notify.alert("Could not write preferences");
-                } else {
-                  window.notify.info("Successfully loaded "+(docname || ""));
-                }
-              });
-            } else {
-              window.notify.alert("Could not write preferences");
-            }
+                  if (err) {
+                    window.notify.alert("Could not write preferences");
+                  } else {
+                    window.notify.info("Successfully loaded "+(docname || ""));
+                  }
+                });
+              } else {
+                window.notify.alert("Could not write preferences");
+              }
+            });
           });
         });
       });
@@ -403,6 +405,16 @@
       };
       delete self.realtime;
       bean.fire(self,'prefschange');
+    };
+
+    DomaintoolPreferences.prototype.ifReady = function(callback) {
+      if ( ! this.prefs_object ) {
+        this.waiting.push( { "method" : "ifReady", "args" : Array.prototype.slice.call(arguments) });
+        return;
+      }
+      setTimeout(function() {
+        callback.call(this);
+      },0);
     };
 
     DomaintoolPreferences.prototype.addWatchedDocument = function() {
