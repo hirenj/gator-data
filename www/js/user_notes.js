@@ -165,6 +165,37 @@
       }
       return p;
   };
+
+  MASCP.AnnotationManager.prototype.bindClick = function(element,handler) {
+    if ("ontouchstart" in window) {
+      element.addEventListener('touchstart',function(ev) {
+        var startX = ev.touches[0].clientX;
+        var startY = ev.touches[0].clientY;
+        var reset = function() {
+          document.body.removeEventListener('touchmove',move);
+          element.removeEventListener('touchend',end);
+        };
+        var end = function(ev) {
+          reset();
+          ev.stopPropagation();
+          ev.preventDefault();
+          if (handler) {
+            handler.call(null,ev);
+          }
+        };
+        var move = function(ev) {
+          if (Math.abs(ev.touches[0].clientX - startX) > 10 || Math.abs(ev.touches[0].clientY - startY) > 10) {
+            reset();
+          }
+        };
+        document.body.addEventListener('touchmove', move , false);
+        element.addEventListener('touchend',end,false);
+      },false);
+    } else {
+      element.addEventListener('click',handler,false);
+    }
+  };
+
   MASCP.AnnotationManager.prototype.addSelector = function(callback) {
     var self = this;
     if ( ! self.renderer._canvas) {
@@ -218,16 +249,25 @@
             self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
         }
       }
-      self.redrawAnnotations();
+      if (self.redrawTimeout) {
+        clearTimeout(self.redrawTimeout);
+      }
+
+      self.redrawTimeout = setTimeout(function() {
+        delete self.redrawTimeout;
+        self.redrawAnnotations();
+      },100);
       e.preventDefault();
     }
-    canvas.addEventListener('click',function(e) {
+
+
+    self.bindClick(canvas,function(e) {
       if (! self.selecting && self.annotations && self.annotations['hover_targets']) {
         self.annotations['hover_targets'] = [];
         self.renderer.select();
         self.redrawAnnotations();
       }
-    },true);
+    });
 
     canvas.addEventListener('mousedown',function(e) {
       if (! self.selecting ) {
@@ -740,7 +780,7 @@
         if (annotation.class == "potential") {
           click_el.style.opacity = '0.5';
           if (! self.readonly) {
-            click_el.addEventListener('click',function() {
+            self.bindClick(click_el,function() {
               delete annotation.class;
               self.promoteAnnotation('self',annotation);
               // self.redrawAnnotations(annotation.acc);
