@@ -60,6 +60,9 @@ PieMenu.create = function(canvas,x,y,contents,opts) {
     }
     var radius = ("ontouchstart" in window) ? (3 * (opts.size || 10) / canvas.zoom) : (2 * (opts.size || 10) / canvas.zoom);
     var icon_size = (opts.size || 10) / canvas.zoom;
+    if ("ontouchstart" in window) {
+        icon_size *= 1.4;
+    }
     var phase = contents ? (2 * Math.PI / contents.length) : 0;
     var menu = new PieMenu();
     var els = [];
