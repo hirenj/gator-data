@@ -113,7 +113,7 @@
     }
     (new MASCP.GoogledataReader()).getPreferences("Editing prefs",function(err,data) {
       if (err) {
-        if (err.cause == "No user event" || err.cause == "Browser not supported") {
+        if (err.cause == "No user event" || err.cause == "Browser not supported" || err.cause == "No google auth library") {
           callback.call();
           return;
         }
@@ -170,7 +170,7 @@
 
   var get_accepted_domains = function(acc,next) {
     // acc = acc.toUpperCase();
-    MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+    // MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
     var datareader = new MASCP.UserdataReader();
     datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc";
     datareader.retrieve(acc,function(err) {
@@ -332,7 +332,7 @@
   };
 
   var get_domains = function(acc,next) {
-    MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+    // MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
     var datareader = new MASCP.UserdataReader();
     datareader.datasetname = edit_toggler.enabled ? "fulldomains" : "domains";
           
