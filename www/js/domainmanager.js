@@ -192,6 +192,7 @@
       callback.call(null,all_domains);
       return all_domains;
     }
+    all_domains = all_domains || {};
     for (var dom in all_domains) {
       if (! all_domains.hasOwnProperty(dom)) {
         continue;
