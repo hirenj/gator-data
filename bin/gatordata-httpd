@@ -469,6 +469,13 @@ MASCP.events.once('all_ready',function() {
 
     app.configure(function() {
         app.use(express.bodyParser());
+        app.use(function(req, res, next) {
+            var matchUrl = '/js';
+            if(req.url.replace(/\/+/,'/').substring(0, matchUrl.length) === matchUrl) {
+              res.setHeader("Access-Control-Allow-Origin", "*");
+            }
+            return next();
+        });
         app.use(express.static(htmldir));
         app.use(express.static(__dirname + '/../node_modules/mascp-jstools/dist'));
         app.use(app.router);
