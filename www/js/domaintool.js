@@ -2062,6 +2062,8 @@
       var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
 
+      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator'
+
       document.getElementById('help').addEventListener('click',function() {
         show_help();
       },false);
