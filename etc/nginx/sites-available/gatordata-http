@@ -9,8 +9,11 @@ server {
     index       index.html;
     error_page  404 = @backend;
   }
-  location /js/ {
+
+  location /js {
     add_header Access-Control-Allow-Origin *;
+    root        /var/gatordata/www;
+    error_page  404 = @backend;
   }
   include     /var/gatordata/etc/nginx/redirects;
 
