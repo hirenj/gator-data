@@ -579,6 +579,41 @@ MASCP.events.once('all_ready',function() {
     
     app.post('/tools/*', data_headers);
 
+    app.get('/data/history/:resource',function(req,res,next) {
+        var service = service_object(req);
+        if ( ! service)  {
+            res.send({"error" : "No service"}, 404);
+            return;
+        }
+
+        // If-Match we check against the date in the header as maximum
+        // var date = new Date(Date.parse(req.param('date')+' UTC'));
+
+        // If-None-Match we check against the date in the header against
+        // all the timestamps
+        if (req.header('If-None-Match')) {
+            var needs_update = false;
+            var max = new Date(parseInt(req.header('If-None-Match')));
+            MASCP.Service.HistoryForService(service,function(stamps) {
+                stamps.forEach(function(stamp) {
+                    if (stamp > max) {
+                        needs_update = true;
+                    }
+                });
+                if ( ! needs_update ) {
+                    res.send({'error' : 'Matching E-tag'},304);
+                    return;
+                } else {
+                    setTimeout(function() {
+                        get_snapshot(service,res);
+                    },0);
+                }
+            });
+        } else {
+            get_snapshot(service,res);
+        }
+    });
+
     app.get('/data/history/:resource/:date/:agi',function(req,res,next) {
         var service = service_object(req);
         var date = new Date(Date.parse(req.param('date')+' UTC'));
@@ -736,7 +771,44 @@ MASCP.events.once('all_ready',function() {
             }
         });        
     }
-    
+
+    var get_snapshot = function(service,res) {
+        if ( ! service)  {
+            res.send({"error" : "No service"}, 404);
+            return;
+        }
+        MASCP.Service.Snapshot(service,null,function(err,snapshot) {
+            if ( ! err ) {
+                var acc;
+                var results = {};
+                var a_timestamp = null;
+                for (acc in snapshot) {
+                    if (acc !== 'accs' && acc !== 'config') {
+                        var temp_data = JSON.parse(snapshot[acc].data);
+                        if ( temp_data.data ) {
+                            temp_data = temp_data.data;
+                        }
+                        results[acc] = temp_data;
+                        a_timestamp = new Date(results[acc]['retrieved'] || snapshot[acc].retrieved);
+                        delete results[acc]['etag'];
+                        delete results[acc]['retrieved'];
+                    }
+                }
+                var stamp = (new Date()).getTime();
+                var block  = { 'data' : results };
+                if (a_timestamp !== null) {
+                    res.header('etag', a_timestamp.getTime());
+                    block['etag'] = a_timestamp.getTime();
+                }
+                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
+                block.title = service.resource_name;
+                res.send(block,200);
+            } else {
+                res.send(null,500);
+            }
+        });
+    }
+
     app.get('/data/latest/:resource',function(req,res,next) {
         get_latest(req.query.agi || req.query.acc, service_object(req),res);
     });
