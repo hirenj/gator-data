@@ -1366,10 +1366,14 @@
           if (err.cause == "Failed to return from auth") {
             document.getElementById('drive_install').style.display = 'none';
             window.notify.info("Could not establish connection to Google, trying again later").hideLater(1000);
-            setTimeout(function() {
-              document.getElementById('drive_install').style.display = 'block';
-              wire_drive_button(renderer);
-            },1000);
+            gapi.auth.checkSessionState({'client_id' : MASCP.GOOGLE_CLIENT_ID, 'session_state' : null},function(loggedOut) {
+              if (loggedOut == false) {
+                setTimeout(function() {
+                  document.getElementById('drive_install').style.display = 'block';
+                  wire_drive_button(renderer);
+                },1000);
+              }
+            });
             return;
           }
           document.getElementById('drive_install').style.display = 'none';
