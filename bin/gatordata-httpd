@@ -610,7 +610,7 @@ MASCP.events.once('all_ready',function() {
                 }
             });
         } else {
-            get_snapshot(service,res);
+            get_snapshot(service,res,(req.param('accs')||"").split(','));
         }
     });
 
@@ -772,12 +772,12 @@ MASCP.events.once('all_ready',function() {
         });        
     }
 
-    var get_snapshot = function(service,res) {
+    var get_snapshot = function(service,res,wanted) {
         if ( ! service)  {
             res.send({"error" : "No service"}, 404);
             return;
         }
-        MASCP.Service.Snapshot(service,null,function(err,snapshot) {
+        MASCP.Service.Snapshot(service,null,(wanted && wanted.length > 0) ? wanted : null,function(err,snapshot) {
             if ( ! err ) {
                 var acc;
                 var results = {};
