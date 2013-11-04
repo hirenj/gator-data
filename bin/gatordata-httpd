@@ -788,7 +788,7 @@ MASCP.events.once('all_ready',function() {
             res.send({"error" : "No service"}, 404);
             return;
         }
-        var max_value;
+        var max_value = null;
 
         if (!allowed_snapshots[service.resource_name]) {
             res.send({"error" : "Snapshot not supported"},404);
@@ -798,13 +798,15 @@ MASCP.events.once('all_ready',function() {
         if (allowed_snapshots[service.resource_name] !== true ) {
             max_value = allowed_snapshots[service.resource_name];
         }
-        var spliced = false;
         if (wanted && max_value && wanted.length > max_value ) {
-            wanted = wanted.splice(0,max_value);
-            spliced = true;
+            res.send({"error" : "Too many accessions", "max" : max_value },413);
+            return;
         }
-
-        MASCP.Service.Snapshot(service,null,(wanted && wanted.length > 0) ? wanted : null,function(err,snapshot) {
+        if (! wanted && max_value) {
+            res.send({"error" : "Must specify accessions", "max" : max_value },413);
+            return;
+        }
+        MASCP.Service.Snapshot(service,max_value,(wanted && wanted.length > 0) ? wanted : null,function(err,snapshot) {
             if ( ! err ) {
                 var acc;
                 var results = {};
@@ -829,7 +831,7 @@ MASCP.events.once('all_ready',function() {
                 }
                 block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
                 block.title = service.resource_name;
-                res.send(block,spliced ? 413 : 200);
+                res.send(block,200);
             } else {
                 res.send(null,500);
             }
