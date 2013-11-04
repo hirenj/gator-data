@@ -78,6 +78,8 @@ process.addListener("uncaughtException", function (err) {
 
 var id_mapper;
 
+var allowed_snapshots = nconf.get('snapshotlimits') || {};
+
 var refresh_document = function(doc,map) {
     var reader = new MASCP.GoogledataReader();
     var inserter;
@@ -456,6 +458,15 @@ if (port == 3702) {
     enable_id_translation(MASCP.SnpReader);
 }
 
+var allow_snapshot = function(resource,limit) {
+    allowed_snapshots[resource] = limit;
+    nconf.set('snapshotlimits',allowed_snapshots);
+    nconf.save(function(err) {
+        if (err) {
+            console.log("Could not write config when allowing snapshot");
+        }
+    });
+};
 
 repl = require('repl');
 
@@ -578,6 +589,41 @@ MASCP.events.once('all_ready',function() {
     app.get('/data/*',data_headers);
     
     app.post('/tools/*', data_headers);
+
+    app.get('/data/history/:resource',function(req,res,next) {
+        var service = service_object(req);
+        if ( ! service)  {
+            res.send({"error" : "No service"}, 404);
+            return;
+        }
+
+        // If-Match we check against the date in the header as maximum
+        // var date = new Date(Date.parse(req.param('date')+' UTC'));
+
+        // If-None-Match we check against the date in the header against
+        // all the timestamps
+        if (req.header('If-None-Match')) {
+            var needs_update = false;
+            var max = new Date(parseInt(req.header('If-None-Match')));
+            MASCP.Service.HistoryForService(service,function(stamps) {
+                stamps.forEach(function(stamp) {
+                    if (stamp > max) {
+                        needs_update = true;
+                    }
+                });
+                if ( ! needs_update ) {
+                    res.send({'error' : 'Matching E-tag'},304);
+                    return;
+                } else {
+                    setTimeout(function() {
+                        get_snapshot(service,res);
+                    },0);
+                }
+            });
+        } else {
+            get_snapshot(service,res,req.param('accs') ? (req.param('accs')||"").split(',') : null);
+        }
+    });
 
     app.get('/data/history/:resource/:date/:agi',function(req,res,next) {
         var service = service_object(req);
@@ -736,7 +782,62 @@ MASCP.events.once('all_ready',function() {
             }
         });        
     }
-    
+
+    var get_snapshot = function(service,res,wanted) {
+        if ( ! service)  {
+            res.send({"error" : "No service"}, 404);
+            return;
+        }
+        var max_value = null;
+
+        if (!allowed_snapshots[service.resource_name]) {
+            res.send({"error" : "Snapshot not supported"},404);
+            return;
+        }
+
+        if (allowed_snapshots[service.resource_name] !== true ) {
+            max_value = allowed_snapshots[service.resource_name];
+        }
+        if (wanted && max_value && wanted.length > max_value ) {
+            res.send({"error" : "Too many accessions", "max" : max_value },413);
+            return;
+        }
+        if (! wanted && max_value) {
+            res.send({"error" : "Must specify accessions", "max" : max_value },413);
+            return;
+        }
+        MASCP.Service.Snapshot(service,max_value,(wanted && wanted.length > 0) ? wanted : null,function(err,snapshot) {
+            if ( ! err ) {
+                var acc;
+                var results = {};
+                var a_timestamp = null;
+                for (acc in snapshot) {
+                    if (acc !== 'accs' && acc !== 'config') {
+                        var temp_data = JSON.parse(snapshot[acc].data);
+                        if ( temp_data.data ) {
+                            temp_data = temp_data.data;
+                        }
+                        results[acc] = temp_data;
+                        a_timestamp = new Date(results[acc]['retrieved'] || snapshot[acc].retrieved);
+                        delete results[acc]['etag'];
+                        delete results[acc]['retrieved'];
+                    }
+                }
+                var stamp = (new Date()).getTime();
+                var block  = { 'data' : results };
+                if (a_timestamp !== null) {
+                    res.header('etag', a_timestamp.getTime());
+                    block['etag'] = a_timestamp.getTime();
+                }
+                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
+                block.title = service.resource_name;
+                res.send(block,200);
+            } else {
+                res.send(null,500);
+            }
+        });
+    }
+
     app.get('/data/latest/:resource',function(req,res,next) {
         get_latest(req.query.agi || req.query.acc, service_object(req),res);
     });
@@ -818,6 +919,8 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.resource_map = resource_map;
             repl.repl.context.watch_spreadsheet = watch_spreadsheet;
             repl.repl.context.watch_file = watch_file;
+            repl.repl.context.allowed_snapshots = function() { return(JSON.parse(JSON.stringify(allowed_snapshots))); };
+            repl.repl.context.allow_snapshot = allow_snapshot;
         }
     }
 
