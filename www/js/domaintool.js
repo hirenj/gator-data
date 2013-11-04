@@ -2065,6 +2065,17 @@
       window.svgns = 'http://www.w3.org/2000/svg';
       var renderer = create_renderer(document.getElementById('condensed_container'));
       setup_visual_renderer(renderer);
+      var wheel_fn = function(e) {
+        if(e.preventDefault) {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+        e.returnValue = false;
+        return false;
+      };
+      document.getElementById('sequence_frame').addEventListener('DOMMouseScroll',wheel_fn,false);
+      document.getElementById('sequence_frame').addEventListener('wheel',wheel_fn,false);
+      document.getElementById('sequence_frame').onmousewheel = wheel_fn;
 
       MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator'
 
