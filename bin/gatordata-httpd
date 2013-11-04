@@ -78,6 +78,8 @@ process.addListener("uncaughtException", function (err) {
 
 var id_mapper;
 
+var allowed_snapshots = nconf.get('snapshotlimits') || {};
+
 var refresh_document = function(doc,map) {
     var reader = new MASCP.GoogledataReader();
     var inserter;
@@ -456,6 +458,15 @@ if (port == 3702) {
     enable_id_translation(MASCP.SnpReader);
 }
 
+var allow_snapshot = function(resource,limit) {
+    allowed_snapshots[resource] = limit;
+    nconf.set('snapshotlimits',allowed_snapshots);
+    nconf.save(function(err) {
+        if (err) {
+            console.log("Could not write config when allowing snapshot");
+        }
+    });
+};
 
 repl = require('repl');
 
@@ -610,7 +621,7 @@ MASCP.events.once('all_ready',function() {
                 }
             });
         } else {
-            get_snapshot(service,res,(req.param('accs')||"").split(','));
+            get_snapshot(service,res,req.param('accs') ? (req.param('accs')||"").split(',') : null);
         }
     });
 
@@ -777,6 +788,22 @@ MASCP.events.once('all_ready',function() {
             res.send({"error" : "No service"}, 404);
             return;
         }
+        var max_value;
+
+        if (!allowed_snapshots[service.resource_name]) {
+            res.send({"error" : "Snapshot not supported"},404);
+            return;
+        }
+
+        if (allowed_snapshots[service.resource_name] !== true ) {
+            max_value = allowed_snapshots[service.resource_name];
+        }
+        var spliced = false;
+        if (wanted && max_value && wanted.length > max_value ) {
+            wanted = wanted.splice(0,max_value);
+            spliced = true;
+        }
+
         MASCP.Service.Snapshot(service,null,(wanted && wanted.length > 0) ? wanted : null,function(err,snapshot) {
             if ( ! err ) {
                 var acc;
@@ -802,7 +829,7 @@ MASCP.events.once('all_ready',function() {
                 }
                 block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
                 block.title = service.resource_name;
-                res.send(block,200);
+                res.send(block,spliced ? 413 : 200);
             } else {
                 res.send(null,500);
             }
@@ -890,6 +917,8 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.resource_map = resource_map;
             repl.repl.context.watch_spreadsheet = watch_spreadsheet;
             repl.repl.context.watch_file = watch_file;
+            repl.repl.context.allowed_snapshots = function() { return(JSON.parse(JSON.stringify(allowed_snapshots))); };
+            repl.repl.context.allow_snapshot = allow_snapshot;
         }
     }
 
