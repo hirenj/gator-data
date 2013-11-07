@@ -87,6 +87,88 @@ var refresh_document = function(doc,map) {
     return inserter;
 };
 
+upload_set_s3 = function(bucket,dataset) {
+
+    var service_object = function(resource) {
+        var clazz = resource_map[resource];
+        if ( ! clazz ) {
+            return;
+        }
+        var obj = new clazz(null,null);
+        if (clazz == MASCP.ArbitraryDataReader) {
+            obj = obj._extend(req.query.dataset || req.body.dataset);
+        }
+        if (clazz == MASCP.UserdataReader) {
+            obj.datasetname = resource;
+        }
+        obj.resource_name = resource;
+        return obj;
+    };
+
+    var AWS = require('aws-sdk');
+    AWS.config.loadFromPath('aws-config.json');
+    var s3 = new AWS.S3();
+
+    var service = service_object(dataset);
+    if (! service) {
+        console.log("No service");
+        return;
+    }
+
+    progress_func = function(count) {
+        console.log("\u001b[1F\u001b[1K"+service.resource_name+" s3 upload (\u001b[36;1m"+count.toFixed(0)+"\u001b[0m)");
+    };
+    var total = 0;
+    MASCP.Service.Snapshot(service,null,null,function(err,snapshot) {
+        var zlib = require('zlib');
+
+        if ( ! err ) {
+            var acc;
+            var results = {};
+            var a_timestamp = null;
+            for (acc in snapshot) {
+                if (acc !== 'accs' && acc !== 'config') {
+                    var temp_data = JSON.parse(snapshot[acc].data);
+                    // S3 adds its own etag
+                    delete temp_data['etag'];
+
+                    (function(accession,data_string) {
+                        zlib.gzip(data_string, function (_, result) {
+                            var params = {Bucket: bucket, Key: 'data/latest/'+dataset+'/'+accession, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
+                            s3.putObject(params,function(err,data) {
+                                total += 1;
+                                progress_func(total);
+                                if (err) {
+                                    console.log(err);
+                                }
+                            });
+                        });
+                    })(acc,JSON.stringify(temp_data));
+                    if ( temp_data.data ) {
+                        temp_data = temp_data.data;
+                    }
+                    delete temp_data['etag'];
+                    delete temp_data['retrieved'];
+                    results[acc] = temp_data;
+                }
+            }
+            var block  = { 'data' : results };
+            block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
+            block.title = service.resource_name;
+            zlib.gzip(JSON.stringify(block), function (_, result) {
+                var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
+                s3.putObject(params,function(err,data) {
+                    if (err)
+                        console.log(err)
+                    else
+                        console.log("Successfully uploaded snapshot to data/history/"+dataset );
+                });
+            });
+        }
+
+    });
+};
+
 var refresh_file = function(file,map,title) {
     var csv = require('csv');
     var data_array = [];
@@ -921,6 +1003,7 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.watch_file = watch_file;
             repl.repl.context.allowed_snapshots = function() { return(JSON.parse(JSON.stringify(allowed_snapshots))); };
             repl.repl.context.allow_snapshot = allow_snapshot;
+            repl.repl.upload_set_s3 = upload_set_s3;
         }
     }
 
