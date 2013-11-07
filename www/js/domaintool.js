@@ -53,34 +53,6 @@
 
     DomaintoolPreferences.prototype.watchFile = function(doc) {
       var preferences = this;
-      var defaults = {};
-      var run_parser = false;
-      var parser = function(datablock){
-        if (typeof run_parser !== 'undefined') {
-          run_parser = true;
-        }
-        for (var key in datablock.data) {
-          if (key == "" || key.match(/\s/)) {
-            delete datablock.data[key];
-          } else {
-            var dat = datablock.data[key];
-            delete datablock.data[key];
-            datablock.data[key.toLowerCase()] = {
-              "data" : dat,
-              "retrieved" : datablock.retrieved,
-              "etag" : datablock.etag,
-              "title" : datablock.title
-            };
-          }
-        }
-        if (typeof defaults !== 'undefined') {
-          defaults = datablock.defaults || defaults;
-        }
-        delete datablock.retrieved;
-        delete datablock.etag;
-        delete datablock.title;
-        return datablock.data;
-      };
       if (sessionStorage.getItem("update_timestamps")) {
         var json = JSON.parse(sessionStorage.getItem("update_timestamps"))
         delete json[doc];
@@ -89,7 +61,7 @@
       this.ifReady(function() {
         MASCP.Service.ClearCache('MASCP.UserdataReader.'+doc,null,function(err) {
           console.log("Cleared data");
-          preferences.addWatchedDocument(doc,parser,function(err,docname) {
+          preferences.addWatchedDocument(doc,null,function(err,docname) {
             if (window.history && window.history.replaceState) {
               window.history.replaceState({},"Loading of "+docname);
               document.title = "Loading of "+docname;
@@ -106,27 +78,7 @@
               window.notify.alert("Problem reading document, please try again");
               return;
             }
-            var not = window.notify.info("Saving preferences - please wait");
-            preferences.getPreferences(function(err,prefs) {
-              if ( ! err ) {
-                if (run_parser && prefs.user_datasets[doc]) {
-                  prefs.user_datasets[doc].render_options = defaults;
-                }
-                preferences.sync(function(err,prefs) {
-                  if (not) {
-                    not.hide();
-                  }
-
-                  if (err) {
-                    window.notify.alert("Could not write preferences");
-                  } else {
-                    window.notify.info("Successfully loaded "+(docname || ""));
-                  }
-                });
-              } else {
-                window.notify.alert("Could not write preferences");
-              }
-            });
+            window.notify.info("Successfully loaded "+(docname || ""));
           });
         });
       });
@@ -1621,7 +1573,7 @@
         if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
           renderer.trackOrder.push('extra_data_controller');
         }
-        MASCP.registerLayer(datareader.toString(),{"fullname" : options.name || datareader.toString(), "group" : "extra_data"});
+        MASCP.registerLayer(datareader.toString(),{"fullname" : options.title || datareader.toString(), "group" : "extra_data"});
         track = datareader.toString();
         if (renderer.trackOrder.indexOf(datareader.toString()) < 0) {
           renderer.trackOrder.push(datareader.toString());
@@ -1704,6 +1656,17 @@
           console.log("Getting prefs");
           console.log(err);
         }
+
+        if (pref.type == "liveClass") {
+          get_generic_data(acc,renderer,reader,pref,function() {
+            if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
+              renderer.showGroup('extra_data');
+            }
+            renderer.refresh();
+          });
+          return;
+        }
+
         var method = pref["sites"] || pref.render_options["sites"];
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
         reader.retrieve(acc,function() {
