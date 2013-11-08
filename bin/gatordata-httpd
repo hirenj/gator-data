@@ -87,7 +87,7 @@ var refresh_document = function(doc,map) {
     return inserter;
 };
 
-upload_set_s3 = function(bucket,dataset) {
+var upload_set_s3 = function(bucket,dataset) {
 
     var service_object = function(resource) {
         var clazz = resource_map[resource];
@@ -370,6 +370,56 @@ var datadoc_parser = function(datablock) {
     return datablock.data;
 };
 
+var add_local_datadoc = function(doc,title,callback) {
+    var stream = fs.createReadStream(doc);
+    if (doc.match(/gz$/)) {
+        var zlib = require('zlib');
+        var zipped_stream = stream;
+        stream = zipped_stream.pipe(zlib.createGunzip());
+    }
+
+    var buf = '';
+
+    stream.on('data', function(d) {
+        buf += d.toString(); // when data is read, stash it in a string buffer
+        pump(); // then process the buffer
+    });
+
+    function pump() {
+        var pos;
+
+        while ((pos = buf.indexOf('\n')) >= 0) { // keep going while there's a newline somewhere in the buffer
+            if (pos == 0) { // if there's more than one newline in a row, the buffer will now start with a newline
+                buf = buf.slice(1); // discard it
+                continue; // so that the next iteration will start with data
+            }
+            process(buf.slice(0,pos)); // hand off the line
+            buf = buf.slice(pos+1); // and slice the processed data off the buffer
+        }
+    };
+
+    function process(line) { // here's where we do something with a line
+
+        if (line[line.length-1] == '\r') line=line.substr(0,line.length-1); // discard CR (0x0D)
+
+        if (line.length > 0) { // ignore empty lines
+            try {
+                var obj = JSON.parse("{"+line.slice(0,-1)+"}"); // parse the JSON
+            } catch(e) {
+                return;
+            }
+            var inserter = new MASCP.UserdataReader();
+            inserter.datasetname = title;
+            inserter.map = datadoc_parser;
+            inserter.setData(title,{"data" : obj });
+            resource_map[title] = MASCP.UserdataReader;
+            if (callback) {
+                callback({"data" : obj });
+            }
+        }
+    };
+
+};
 
 var watch_datadoc = function(doc,callback) {
     if (nconf.get('watching:datadoc:'+doc)) {
@@ -1003,7 +1053,8 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.watch_file = watch_file;
             repl.repl.context.allowed_snapshots = function() { return(JSON.parse(JSON.stringify(allowed_snapshots))); };
             repl.repl.context.allow_snapshot = allow_snapshot;
-            repl.repl.upload_set_s3 = upload_set_s3;
+            repl.repl.context.upload_set_s3 = upload_set_s3;
+            repl.repl.context.add_local_datadoc = add_local_datadoc;
         }
     }
 
