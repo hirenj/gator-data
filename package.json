@@ -32,6 +32,7 @@
        "nconf"   : "0.6.x",
        "optimist": "0.2.x",
        "carrier" : "0.1.x",
+       "aws-sdk" : "2.0.x",
        "csv"     : "0.0.x",
        "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/develop"
    },
