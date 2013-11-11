@@ -59,6 +59,10 @@ var JSandbox = (function (self) {
 			if (typeof data !== "object") {
 				return;
 			}
+			if (data.id == "log") {
+				console.log(data.message);
+				return;
+			}
 			request = sandbox[$requests][data.id];
 			if (request) {
 				if (data.error) {

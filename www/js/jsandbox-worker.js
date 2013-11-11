@@ -50,7 +50,10 @@
 			
 			}
 		} catch (e) {
-			response.error = e;
+			response.code = e.message;
+			response.error = e.stack;
+			response.line = e.lineNumber;
+			response.fileName = e.fileName;
 		}
 		
 		delete self.input;
@@ -69,6 +72,7 @@
 	}
 	
 	self.window = self; // provide a window object for scripts
+	self.console = { log : function(message) { postMessage({ "id" : "log", "message" : message  }); } };
 	
 	// dereference unsafe functions
 	// some might not be dereferenced: https://bugzilla.mozilla.org/show_bug.cgi?id=512464
