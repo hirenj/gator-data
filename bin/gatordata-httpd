@@ -87,6 +87,15 @@ var refresh_document = function(doc,map) {
     return inserter;
 };
 
+var set_rkeys = function(set,keys) {
+    nconf.set("rKeys:"+set,keys);
+    nconf.save(function(err) {
+        if (err) {
+            console.log("Could not write config");
+        }
+    });
+}
+
 var upload_set_s3 = function(bucket,dataset) {
 
     var service_object = function(resource) {
@@ -106,7 +115,6 @@ var upload_set_s3 = function(bucket,dataset) {
     };
 
     var AWS = require('aws-sdk');
-    AWS.config.loadFromPath('aws-config.json');
     var s3 = new AWS.S3();
 
     var service = service_object(dataset);
@@ -385,6 +393,22 @@ var add_local_datadoc = function(doc,title,callback) {
         pump(); // then process the buffer
     });
 
+    var dataset = {};
+
+    stream.on('end',function() {
+        var inserter = new MASCP.UserdataReader();
+        inserter.datasetname = title;
+        inserter.map = local_parser;
+        inserter.bind('ready',function() {
+            console.log("Inserted");
+            resource_map[title] = MASCP.UserdataReader;
+            if (callback) {
+                callback.call();
+            }
+        });
+        inserter.setData(title,{"data" : dataset});
+    });
+
     function pump() {
         var pos;
 
@@ -398,24 +422,31 @@ var add_local_datadoc = function(doc,title,callback) {
         }
     };
 
+    var local_parser = function(datablock) {
+        var all_accs = [];
+        for (var acc in datablock.data) {
+            datablock.data[acc] = { "data" : datablock.data[acc], "title" : datablock.title, "retrieved" : datablock.retrieved };
+        }
+        return datablock.data;
+    };
+
+    var running = 0;
+
     function process(line) { // here's where we do something with a line
 
         if (line[line.length-1] == '\r') line=line.substr(0,line.length-1); // discard CR (0x0D)
 
         if (line.length > 0) { // ignore empty lines
             try {
-                var obj = JSON.parse("{"+line.slice(0,-1)+"}"); // parse the JSON
+                var obj = JSON.parse("{"+((line.slice(-1) == ',') ? line.slice(0,-1) : line)+"}"); // parse the JSON
             } catch(e) {
+                console.log(line);
+                console.log(e);
                 return;
             }
-            var inserter = new MASCP.UserdataReader();
-            inserter.datasetname = title;
-            inserter.map = datadoc_parser;
-            inserter.setData(title,{"data" : obj });
-            resource_map[title] = MASCP.UserdataReader;
-            if (callback) {
-                callback({"data" : obj });
-            }
+        }
+        for (var key in obj) {
+            dataset[key] = obj[key];
         }
     };
 
@@ -1026,6 +1057,7 @@ MASCP.events.once('all_ready',function() {
                     running--;
                     setTimeout(function() {
                         if (running == 0) {
+                            console.log("Exiting process");
                             process.exit();
                         }
                     },100);
@@ -1034,7 +1066,19 @@ MASCP.events.once('all_ready',function() {
             };
         };
         try {
-            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), { resource_map: resource_map, require: require, console: console, MASCP: MASCP, module: module, watch_spreadsheet: auto_exit(watch_spreadsheet), watch_datadoc: auto_exit(watch_datadoc), watch_file : auto_exit(watch_file), live_update : live_update }, "<stdin>");
+            vm.runInNewContext(require('fs').readFileSync('/dev/stdin').toString(), {
+                resource_map: resource_map,
+                require: require,
+                console: console,
+                MASCP: MASCP,
+                module: module,
+                watch_spreadsheet: auto_exit(watch_spreadsheet),
+                watch_datadoc: auto_exit(watch_datadoc),
+                watch_file : auto_exit(watch_file),
+                add_local_datadoc : auto_exit(add_local_datadoc),
+                set_rkeys : set_rkeys,
+                live_update : live_update
+            }, "<stdin>");
         } catch (e) {
             console.log("Error running script");
             console.log(e);
