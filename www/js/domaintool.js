@@ -1621,25 +1621,7 @@
         window.event = { "which" : null };
       }
 
-      var allowed = { "PrideRunner" : 1, "HydropathyRunner" : 1, "UniprotSecondaryStructureReader" : 1 };
-
-      get_preferences().getPreferences(function(err,prefs) {
-        if ( ! err ) {
-          for (var set in prefs.user_datasets) {
-            if (allowed[set]) {
-              var reader_class = MASCP[set];
-              var reader = new reader_class();
-              get_generic_data(acc,renderer,reader,JSON.parse(JSON.stringify(prefs.user_datasets[set])),function() {
-                if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
-                  renderer.showGroup('extra_data');
-                }
-                renderer.refresh();
-              });
-            }
-          }
-        }
-      });
-
+      var allowed = { "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
 
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
@@ -1658,6 +1640,9 @@
         }
 
         if (pref.type == "liveClass") {
+          if (! allowed[reader.toString()]) {
+            return;
+          }
           get_generic_data(acc,renderer,reader,pref,function() {
             if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
               renderer.showGroup('extra_data');
@@ -1681,109 +1666,24 @@
           var datas = this.result._raw_data.data;
           if (pref.render_options["renderer"]) {
             (new MASCP.GoogledataReader()).getDocument(pref.render_options["renderer"],null,function(err,doc) {
-              var valid_md5 = false;
-              if (window.md5(doc) === pref.render_options["renderer_md5"] ) {
-                console.log("Matching MD5");
-                valid_md5 = true;
-              } else {
-                valid_md5 = false;
-                console.log("Bad MD5");
-              }
-              var render_func;
-
-              if (pref.render_options['sandbox']) {
-                var sandbox = new JSandbox();
-                sandbox.exec(doc,function() {
-                  this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
-                              "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
-                              "callback" : function(r) {
-                                var obj = ({ "gotResult" : function() {
-                                  renderer.renderObjects(track_name,r);
-                                  renderer.trigger('resultsRendered',[this]);
-                                  renderer.refresh();
-                                }, "agi" : acc });
-                                jQuery(renderer).trigger('readerRegistered',[obj]);
-                                obj.gotResult();
-                              }
-                            });
-                });
-              } else if (valid_md5) {
-                render_func = new Function("renderer","datas","track","acc",doc);
-                var obj = ({ "gotResult" : function() {
-                  render_func(renderer,datas,track_name,acc);
-                  renderer.trigger('resultsRendered',[this]);
-                  renderer.refresh();
-                }, "agi" : acc });
-                jQuery(renderer).trigger('readerRegistered',[obj]);
-                obj.gotResult();
-              }
+              var sandbox = new JSandbox();
+              sandbox.exec(doc,function() {
+                this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
+                            "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
+                            "callback" : function(r) {
+                              var obj = ({ "gotResult" : function() {
+                                renderer.renderObjects(track_name,r);
+                                renderer.trigger('resultsRendered',[this]);
+                                renderer.refresh();
+                              }, "agi" : acc });
+                              jQuery(renderer).trigger('readerRegistered',[obj]);
+                              obj.gotResult();
+                            }
+                          });
+              });
             });
             return;
           }
-          var obj = { "gotResult" : function() {
-            var offset = (pref.render_options || {})["offset"];
-            if ((typeof offset) === 'undefined') {
-              offset = 30;
-            }
-            (datas.sites || []).forEach(function(site) {
-              renderer.getAA(parseInt(site)).addToLayer(track_name,{"content" : renderer[method] ? renderer[method].call(renderer) : method , "offset" : offset , "height" : 8,  "bare_element" : true });
-            });
-            (datas.peptides || []).forEach(function(peptide) {
-              var box = renderer.getAminoAcidsByPeptide(peptide)[0].addBoxOverlay(track_name,peptide.length,1,{ "offset" : offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  });
-              box.parentNode.insertBefore(box,box.parentNode.firstChild.nextSibling);
-            });
-            var offsets = {};
-            for (var symbol in datas) {
-              if (symbol == "peptides" || symbol == "sites") {
-                continue;
-              }
-              var icons = (pref.render_options || {})["icons"];
-              if ( ! icons ) {
-                icons = {};
-              }
-              datas[symbol].forEach(function(site) {
-                var offset = -4.1;
-                var size = 12;
-                if (offsets[site]) {
-                  offset = offsets[site];
-                }
-                offsets[site] = offset + 4;
-
-                if (symbol == "HEART") {
-                  icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#heart";
-                  size = 24;
-                }
-                if (symbol == "KIDNEY") {
-                  icons[symbol] = "/icons.svg?"+(new Date()).getTime()+"#kidneys";
-                  size = 24;
-                }
-                var el = renderer.getAA(parseInt(site)).addToLayer(track_name,
-                  { "content" : icons[symbol] || symbol,
-                     "fill": "none",
-                     "text_fill" : "#f00", "border" : "none", "offset" : offset, "height" : size, "bare_element" : true
-                  });
-                var url = icons[symbol];
-                var symbol_name = symbol;
-                if (el[1].container && el[1].container.contentElement) {
-                  setTimeout(function() {
-                    var href = el[1].container.contentElement.getAttribute('href');
-                    if ( ! href ) {
-                      return;
-                    }
-                    href = href.replace(/\?\d+/,'');
-                    el[1].container.contentElement.setAttribute('href',href);
-                    if (symbol_name == "HEART") {
-                      el[1].container.contentElement.setAttribute('class','symbol_beat');
-                    }
-                  },1000);
-                }
-              });
-            }
-            renderer.trigger('resultsRendered',[this]);
-            renderer.refresh();
-          }, "agi" : acc };
-          jQuery(renderer).trigger('readerRegistered',[obj]);
-          obj.gotResult();
         });
       });
     };
