@@ -1676,6 +1676,18 @@
                             "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
                             "callback" : function(r) {
                               var obj = ({ "gotResult" : function() {
+                                r.forEach(function(obj) {
+                                  var offset = parseInt((pref.render_options || {}).offset || 0);
+                                  if (obj.options) {
+                                    if (obj.options.offset) {
+                                      obj.options.offset += offset;
+                                      return;
+                                    }
+                                    obj.options.offset = offset;
+                                  } else {
+                                    obj.options = { "offset" : offset };
+                                  }
+                                });
                                 renderer.renderObjects(track_name,r);
                                 renderer.trigger('resultsRendered',[this]);
                                 renderer.refresh();
