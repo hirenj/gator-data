@@ -44,7 +44,7 @@
         result.setAttribute('fill','#ffffB3');
         result.setAttribute('stroke','#a6a635');
         return result;
-      }
+      };
       renderer.nlinked = function() {
         var n_glc = renderer._canvas.group();
         var glcnac = renderer._canvas.rect(-0.45,-1,0.9,0.9);
