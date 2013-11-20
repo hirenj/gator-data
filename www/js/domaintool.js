@@ -2,59 +2,50 @@
 
     var DomaintoolPreferences = function() {
       this.waiting = [];
-      if (this.getActiveSession()) {
-        this.addRealtime(this.getActiveSession());
-      } else {
-        this.useDefaultPreferences();
-      }
+    };
+
+    DomaintoolPreferences.prototype.guessPreferenceSource = function() {
+      var self = this;
+      MASCP.GoogledataReader.isLoggedOut(function(err,loggedOut) {
+        if (! loggedOut) {
+          if (self.getActiveSession()) {
+            self.addRealtime(self.getActiveSession());
+          } else {
+            self.useStaticPreferences('10.1038/emboj.2013.79',function() {});
+            // self.useDefaultPreferences();
+          }
+        } else {
+          self.useStaticPreferences('10.1038/emboj.2013.79',function() {});
+        }
+      });
+    };
+
+    DomaintoolPreferences.prototype.clearActiveSession = function(file,title) {
+      localStorage.removeItem("active_session");
     };
 
     DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
       if ( ! file ) {
         localStorage.removeItem("active_session");
-        this.useDefaultPreferences();
+        this.guessPreferenceSource();
       } else {
         localStorage.setItem("active_session",file);
         localStorage.setItem("active_session_title",title);
       }
-    }
+    };
 
     DomaintoolPreferences.prototype.getActiveSession = function() {
       return localStorage.getItem("active_session");
-    }
+    };
 
     DomaintoolPreferences.prototype.getActiveSessionTitle = function() {
       return localStorage.getItem("active_session_title");
-    }
-
-    DomaintoolPreferences.prototype.addService = function(service,name) {
-      var preferences = this;
-      preferences.getPreferences(function(err,prefs) {
-        if ( ! err ) {
-          if ( ! prefs.user_datasets[service]) {
-            prefs.user_datasets[service] = {};
-          }
-          prefs.user_datasets[service].render_options = {};
-          prefs.user_datasets[service].name = name || service;
-          preferences.sync(function(err,prefs) {
-            if (err) {
-              window.notify.alert("Could not write preferences");
-            } else {
-              window.notify.info("Successfully loaded "+(name || service || ""));
-            }
-          });
-        } else {
-          console.log("Reading prefs");
-          console.log(err);
-          window.notify.alert("Could not read preferences");
-        }
-      });
     };
 
     DomaintoolPreferences.prototype.watchFile = function(doc) {
       var preferences = this;
       if (sessionStorage.getItem("update_timestamps")) {
-        var json = JSON.parse(sessionStorage.getItem("update_timestamps"))
+        var json = JSON.parse(sessionStorage.getItem("update_timestamps"));
         delete json[doc];
         sessionStorage.setItem("update_timestamps",JSON.stringify(json));
       }
@@ -82,7 +73,7 @@
           });
         });
       });
-    }
+    };
 
     DomaintoolPreferences.prototype.addRealtime = function(file) {
       var self = this;
@@ -113,7 +104,7 @@
               model.getRoot().set('doc-etag',model.createString('none'));
             });
           });
-        }
+        };
         if ( ! self.prefs_object ) {
           (new MASCP.GoogledataReader()).getDocument(null,null,callback);
         } else {
@@ -135,7 +126,7 @@
           delete file_obj.etag;
         }
         if ( file_obj.etag && file_obj.content ) {
-          callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified)
+          callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified);
           return;
         }
         old_get_preferences.call(google_obj,dom,function(err,prefs) {
@@ -244,8 +235,8 @@
 
     DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
-      this.setActiveSession();
-      conf = { "datasets" : [] };
+      this.clearActiveSession();
+      conf = { "user_datasets" : {} };
 
       self.getStaticConf(doc,function(err,json) {
         if (err) {
@@ -257,6 +248,7 @@
         }
         conf = json;
         var accs = conf.accessions || [];
+        /*
         conf.datasets.forEach(function(dataset) {
           if ( ! dataset.doc ) {
             return;
@@ -289,33 +281,36 @@
             })();
           }
         });
+        */
         if (accs) {
           handle_proteins(accs);
         }
+        self.prefs_object = {
+          addWatchedDocument : function() {
+          },
+          removeWatchedDocument : function() {
+          },
+          readWatchedDocuments : function(callback) {
+            MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+            MASCP.IterateServicesFromConfig(conf.user_datasets,callback);
+          },
+          listWatchedDocuments : function() {
+          },
+          getPreferences : function() {
+          },
+          writePreferences : function() {
+          }
+        };
+        delete self.realtime;
+        if (self.waiting) {
+          self.waiting.forEach(function(waiting) {
+            self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
+          });
+          self.waiting = [];
+        }
+        bean.fire(self,'prefschange');
       });
 
-      this.prefs_object = {
-        addWatchedDocument : function() {
-        },
-        removeWatchedDocument : function() {
-        },
-        readWatchedDocuments : function(callback) {
-          MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-          conf.datasets.forEach(function(set) {
-            var target_reader = new MASCP.UserdataReader();
-            target_reader.datasetname = set.doc;
-            callback.call(null,null,{"render_options" : { "sites" : set.sites, "track" : set.title || "Data", "offset" : 0 }},target_reader);
-          });
-        },
-        listWatchedDocuments : function() {
-        },
-        getPreferences : function() {
-        },
-        writePreferences : function() {
-        }
-      };
-      delete self.realtime;
-      bean.fire(self,'prefschange');
     };
 
     DomaintoolPreferences.prototype.useDefaultPreferences = function() {
@@ -390,7 +385,6 @@
         this.waiting.push({ "method" : "readWatchedDocuments", "args" : Array.prototype.slice.call(arguments)});
         return;
       }
-
       this.prefs_object.readWatchedDocuments.apply(this.prefs_object,Array.prototype.slice.call(arguments));
     };
     DomaintoolPreferences.prototype.listWatchedDocuments = function() {
@@ -420,9 +414,10 @@
     var get_preferences = function() {
       if ( ! window.prefs ) {
         window.prefs = (new DomaintoolPreferences());
+        window.prefs.guessPreferenceSource();
       }
       return window.prefs;
-    }
+    };
 
     var render_peptides = function(layer) {
       return function(renderer) {
@@ -501,7 +496,7 @@
           // }
           renderer.showLayer(layer);
           jQuery(renderer).trigger('resultsRendered',[self]);
-        });        
+        });
       };
     };
 
@@ -521,7 +516,9 @@
             var obj = {};
             obj.element = prots[i];
             obj.name = prots[i].textContent;
-            obj.toString = function() { return this.name };
+            obj.toString = function() {
+              return this.name;
+            };
             prot_list.push(obj);
           }
           auto.addValues(prot_list);
@@ -572,14 +569,14 @@
           document.getElementById('searchGeneLabel').textContent = 'Search by protein name';
           wire_plainsearch();
         }
-      })
+      });
     };
 
     var wire_history = function(renderer) {
       if (history) {
         window.onpopstate = function(event) {
           show_protein((event.state || {})['uniprot_id'],renderer);
-        }
+        };
       }
     };
 
@@ -633,7 +630,7 @@
       document.getElementById('find').addEventListener('click',function() {
         manager.toggleSearchField();
       });
-    }
+    };
 
     var wire_renderer_sequence_change = function(renderer) {
       var dragger = new GOMap.Diagram.Dragger();
@@ -726,15 +723,16 @@
         if (evt.target != toggler) {
           return;
         }
+        var curr_classname;
         if ( ! is_toggle_action ) {
           manager.selecting = ! manager.selecting;
-          var curr_classname = toggler.className.replace('selecting','');
+          curr_classname = toggler.className.replace('selecting','');
           toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
           bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
         } else {
           if ( ! toggler.firstChild.getAttribute('value') ) {
             manager.selecting = false;
-            var curr_classname = toggler.className.replace('selecting','');
+            curr_classname = toggler.className.replace('selecting','');
             toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
           }
         }
@@ -873,11 +871,11 @@
                 fit = true;
                 continue;
               }
-              var char_length = parseInt(text.length * 0.75 * (all_box.getBBox().width / a_text.getBBox().width));
+              var char_length = parseInt( text.length * 0.75 * (all_box.getBBox().width / a_text.getBBox().width) );
               a_text.firstChild.textContent = text.substr(0,char_length);
             }
           });
-        });      
+        });
     };
 
     var update_protein_list = function(prots,renderer,auth_func) {
@@ -909,7 +907,7 @@
           list.appendChild(input);
           return;
         }
-        var list = document.getElementById("protein_list");
+        list = document.getElementById("protein_list");
         while (list.childNodes.length > 0) {
           list.removeChild(list.firstChild);
         }
@@ -946,7 +944,7 @@
           }
 
         });
-        if (window.document.getElementsByClassName('selected').length > 0) { 
+        if (window.document.getElementsByClassName('selected').length > 0) {
           window.document.getElementsByClassName('selected')[0].scrollIntoView(true);
         }
     };
@@ -954,7 +952,7 @@
     var show_help = function() {
       document.getElementById('information').scrollIntoView();
       return;
-    }
+    };
 
     var do_printing = function(proteins) {
         var win = window.open();
@@ -983,10 +981,10 @@
         var print_single = function (prot,cback) {
           var whole_div = a_doc.createElement('div');
           var clazz = 'print_group';
-          if (((count % 3) == 0) && count > 0 ) {
+          if (((count % 3) === 0) && count > 0 ) {
             clazz = 'print_group print_group_3';
           }
-          if ((((count+1) % 3) == 0) && count > 0) {
+          if ((((count+1) % 3) === 0) && count > 0) {
             clazz = 'print_group print_group_1';
           }
           whole_div.setAttribute('class',clazz);
@@ -1237,7 +1235,7 @@
           if (err) {
             return;
           }
-          if (flipped != true) {
+          if (flipped !== true) {
             return;
           }
           annotation_manager.renderer.fillTemplate("tags_tmpl",{ "tags" : tags },function(error,html) {
@@ -1319,7 +1317,7 @@
             document.getElementById('drive_install').style.display = 'none';
             window.notify.info("Could not establish connection to Google, trying again later").hideLater(1000);
             gapi.auth.checkSessionState({'client_id' : MASCP.GOOGLE_CLIENT_ID, 'session_state' : null},function(loggedOut) {
-              if (loggedOut == false) {
+              if (loggedOut === false) {
                 setTimeout(function() {
                   document.getElementById('drive_install').style.display = 'block';
                   wire_drive_button(renderer);
@@ -1348,26 +1346,27 @@
               if (err) {
                 return;
               }
-              if (flipped != true) {
+              if (flipped !== true) {
                 return;
               }
               var sets_array = [];
               for (var set in sets) {
                 sets_array.push( { "name" : sets[set].title || sets[set].name || set, "id" : set } );
               }
+              var remover_func = function() {
+                var self = this;
+                var par_doc = self.parentNode.getAttribute('data-docid');
+                get_preferences().removeWatchedDocument(par_doc,function(err) {
+                  if ( ! err ) {
+                    self.parentNode.parentNode.removeChild(self.parentNode);
+                  }
+                });
+              };
               renderer.fillTemplate("userset_tmpl",{ "sets" : sets_array },function(error,html) {
                 flipped = flippant.flip(document.getElementById('sequence_frame'), html);
                 var matches = flipped.querySelectorAll('ul .remove');
                 for (var i = 0 ; i < matches.length; i++) {
-                  matches[i].addEventListener('click',function() {
-                    var self = this;
-                    var par_doc = self.parentNode.getAttribute('data-docid');
-                    get_preferences().removeWatchedDocument(par_doc,function(err) {
-                      if ( ! err ) {
-                        self.parentNode.parentNode.removeChild(self.parentNode);
-                      }
-                    });
-                  },false);
+                  matches[i].addEventListener('click',remover_func,false);
                 }
               });
             });
@@ -1427,9 +1426,9 @@
         other_win.document.body.appendChild(parent);
         var i = 0;
         bits.forEach(function(aa) {
-          if ( i > 0 && (i % 10) == 0) {
+          if ( i > 0 && (i % 10) === 0) {
             parent.appendChild(other_win.document.createTextNode(' '));
-            if ( (i % 50) == 0) {
+            if ( (i % 50) === 0) {
               parent.appendChild(other_win.document.createElement('br'));
             }
           }
@@ -1443,7 +1442,7 @@
           i++;
         });
       },false);
-    }
+    };
 
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
@@ -1622,7 +1621,7 @@
       }
 
       var allowed = { "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
-
+      console.log("About to get watched docs");
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
           // Errs if : No user event / getting preferences
@@ -1632,6 +1631,11 @@
             window.notify.alert("Problem getting user preferences");
             return;
           }
+          if (err.error && err.error.cause == "No user event") {
+            window.notify.info("Need login to get data for "+pref.title);
+            return;
+          }
+
           if (err) {
             window.notify.alert("Problem reading user data set");
           }
@@ -1837,7 +1841,7 @@
         var regexS = "[\\?&]" + name + "=([^&#]*)";
         var regex = new RegExp(regexS);
         var results = regex.exec(window.location.search);
-        if(results == null)
+        if(results === null)
           return "{}";
         else
           return decodeURIComponent(results[1].replace(/\+/g, " "));
@@ -1914,7 +1918,7 @@
     var has_ready = MASCP.ready;
 
     init = function() {
-      if (MASCP.ready == true) {
+      if (MASCP.ready === true) {
         ready_func();
       } else {
         MASCP.ready = ready_func;
@@ -1940,7 +1944,7 @@
       document.getElementById('sequence_frame').addEventListener('wheel',wheel_fn,false);
       document.getElementById('sequence_frame').onmousewheel = wheel_fn;
 
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator'
+      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
 
       document.getElementById('help').addEventListener('click',function() {
         show_help();
@@ -1992,10 +1996,6 @@
         var actual_handle_proteins = handle_proteins;
         get_preferences().useStaticPreferences(match[0],function(prots) { actual_handle_proteins(prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
-      }
-
-      if (state.addservice) {
-        get_preferences().addService(state.addservice, state.name);
       }
 
       if (state.action && state.action == 'create') {
