@@ -1613,6 +1613,42 @@
     };
 
 
+    var get_renderer = function(renderer_url,callback) {
+
+      if (renderer_url.match(/^http/)) {
+          MASCP.Service.request(renderer_url,callback,true);
+      }
+      // Respond to google: urls and default to using a google doc for the renderer url
+      if (renderer_url.match(/^google/) || renderer_url.match(/^\w+$/)) {
+          (new MASCP.GoogledataReader()).getDocument(renderer_url,null,callback);
+      }
+
+    };
+
+    var get_cached_renderer = function(renderer_url,callback) {
+      if ( ! sessionStorage.renderer_caches ) {
+        sessionStorage.renderer_caches = JSON.stringify({});
+      }
+      var renderer_caches = JSON.parse(sessionStorage.renderer_caches);
+      if (renderer_caches[renderer_url]) {
+        console.log("Going to cache for renderer at "+renderer_url);
+        callback.call(null,null,renderer_caches[renderer_url]);
+        return;
+      }
+      get_renderer(renderer_url,function(err,data) {
+
+        if ( err ) {
+          callback.call(null,err);
+          return;
+        }
+        var renderer_caches = JSON.parse(sessionStorage.renderer_caches);
+        renderer_caches[renderer_url] = data;
+        sessionStorage.renderer_caches = JSON.stringify(renderer_caches);
+        callback.call(null,null,data);
+      });
+    };
+
+
     var get_usersets = function(acc,renderer) {
 
       // Don't trigger any popups
@@ -1669,7 +1705,7 @@
           }
           var datas = this.result._raw_data.data;
           if (pref.render_options["renderer"]) {
-            (new MASCP.GoogledataReader()).getDocument(pref.render_options["renderer"],null,function(err,doc) {
+            get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               var sandbox = new JSandbox();
               sandbox.exec(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
