@@ -296,7 +296,8 @@
           },
           listWatchedDocuments : function() {
           },
-          getPreferences : function() {
+          getPreferences : function(callback) {
+            callback.call(null,null,conf);
           },
           writePreferences : function() {
           }
@@ -1070,14 +1071,14 @@
 
         scale_text_elements(renderer);
         MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
-        domain_retriever = new MASCP.DomainRenderer(renderer,function(editing,acc) {
-          get_orthologs = _get_orthologs;
-          get_orthologs(acc,renderer);
-          show_protein(acc,renderer);
-          if (editing && renderer.navigation) {
-            renderer.navigation.show();
-          }
-        });
+        // domain_retriever = new MASCP.DomainRetriever(get_preferences(),renderer,function(editing,acc) {
+        //   get_orthologs = _get_orthologs;
+        //   get_orthologs(acc,renderer);
+        //   show_protein(acc,renderer);
+        //   if (editing && renderer.navigation) {
+        //     renderer.navigation.show();
+        //   }
+        // });
         return renderer;
     };
 
@@ -1090,45 +1091,54 @@
 
     var retrieve_data = function(acc,renderer,end_func) {
         acc = (acc || "").toUpperCase();
-        var count = 0;
-        var refresher = function() {
-          count++;
-          if (count == 3) {
-            if (renderer.trackOrder.indexOf(acc) < 0) {
-              renderer.trackOrder.push(acc);
-            }
-            renderer.showLayer(acc);
-            renderer.refresh();
+        // var count = 0;
+        // var refresher = function() {
+        //   count++;
+        //   if (count == 3) {
+        //     if (renderer.trackOrder.indexOf(acc) < 0) {
+        //       renderer.trackOrder.push(acc);
+        //     }
+        //     renderer.showLayer(acc);
+        //     renderer.refresh();
 
-            if (end_func) {
-              end_func.call();
-            }
-          }
-        };
-        domain_retriever.renderDomains(acc,function(){
-          if (! /comparison\//.exec(window.location)) {
-            get_sites(acc,renderer,refresher);
-            get_peptides(acc,renderer,refresher);
-            get_predictions(acc,renderer,refresher);
-            get_usersets(acc,renderer);
-            if (renderer.showAnnotation) {
-              renderer.showAnnotation(acc);
-            }
-          } else {
-            MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
-            if (renderer.trackOrder.indexOf(track_name) < 0 ) {
-              renderer.trackOrder.push(track_name);
-            }
-            renderer.showLayer(track_name);
-            get_predictions(acc,renderer,refresher);
-            get_predictions_31(acc,renderer,function() {
-              count += 1;
-              refresher();
-            });
-            renderer.navigation.show();
-          }
+        //     if (end_func) {
+        //       end_func.call();
+        //     }
+        //   }
+        // };
 
-        });
+        // get_peptides(acc,renderer,function() {
+          get_usersets(acc,renderer);
+        // });
+
+        if (renderer.showAnnotation) {
+          renderer.showAnnotation(acc);
+        }
+
+        // domain_retriever.renderDomains(acc,renderer,function(){
+        //   if (! /comparison\//.exec(window.location)) {
+        //     get_sites(acc,renderer,refresher);
+        //     get_peptides(acc,renderer,refresher);
+        //     get_predictions(acc,renderer,refresher);
+        //     get_usersets(acc,renderer);
+        //     if (renderer.showAnnotation) {
+        //       renderer.showAnnotation(acc);
+        //     }
+        //   } else {
+        //     MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
+        //     if (renderer.trackOrder.indexOf(track_name) < 0 ) {
+        //       renderer.trackOrder.push(track_name);
+        //     }
+        //     renderer.showLayer(track_name);
+        //     get_predictions(acc,renderer,refresher);
+        //     get_predictions_31(acc,renderer,function() {
+        //       count += 1;
+        //       refresher();
+        //     });
+        //     renderer.navigation.show();
+        //   }
+
+        // });
     };
 
     var set_description = function(description) {
@@ -1583,7 +1593,6 @@
           renderer.showLayer(track);
         }
       }
-      options.track = track;
       datareader.registerSequenceRenderer(renderer,options);
 
       renderer.bind('resultsRendered',function(e,reader) {
@@ -1656,7 +1665,7 @@
         window.event = { "which" : null };
       }
 
-      var allowed = { "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
+      var allowed = { "MASCP.DomainRetriever" : 1, "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
       console.log("About to get watched docs");
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
@@ -1683,6 +1692,7 @@
           if (! allowed[reader.toString()]) {
             return;
           }
+          reader.preferences = get_preferences();
           get_generic_data(acc,renderer,reader,pref,function() {
             if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
               renderer.showGroup('extra_data');
