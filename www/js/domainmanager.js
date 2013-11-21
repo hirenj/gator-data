@@ -6,6 +6,26 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 }
 
 
+/*
+
+  "accepted_domains" : {
+    "type" : "gatorURL",
+    "url"  : "http://localhost:3000/data/latest/spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc" 
+    },
+
+*/
+
+/*
+
+  "accepted_domains" : {
+    "type" : "googleFile",
+    "file"  : "User specified domains"
+    },
+
+
+*/
+
+
 (function() {
 
   var editing_enabled = false;
@@ -53,9 +73,16 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         }
         var user_wanted = file.getData();
         if (acc in user_wanted) {
-          callback(null,null,user_wanted[acc]);
+          var wanted = [];
+          var data_hash = JSON.parse(user_wanted[acc]);
+          for (var key in data_hash) {
+            if (data_hash.hasOwnProperty(key)) {
+              wanted.push(key.replace("dom:",""));
+            }
+          }
+          callback.call(null,null,data_hash ? wanted : null);
         } else {
-          callback(null,null,[]);
+          callback.call(null,null,null);
         }
       });
     }
@@ -95,6 +122,23 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
     callback.call(null,null,false);
   };
+
+  var update_accepted_domains = function(config,callback) {
+    if (config.type === "googleFile") {
+      var file = (new MASCP.GoogledataReader()).getSyncableFile(config.file,function(err,file) {
+        if (err) {
+          callback.call(null,err);
+          return;
+        }
+        callback.call(null,null,file.getData());
+        file.sync();
+      });
+      return;
+    }
+
+    callback.call();
+  };
+
 
   var get_accepted_domains = function(acc,next) {
     var self = this;
@@ -271,54 +315,6 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
   };
 
-  // var get_domains = function(acc,next) {
-  //   // MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-  //   var datareader = new MASCP.UserdataReader();
-  //   datareader.datasetname = edit_toggler.enabled ? "fulldomains" : "domains";
-
-  //   datareader.retrieve(acc,function(err) {
-  //     if (! this.result ) {
-  //       next();
-  //       return;
-  //     }
-  //     next(this.result._raw_data.data);
-  //   });
-  // };
-
-  // MASCP.DomainRetriever.prototype.getDomains = function(acc,callback) {
-  //   get_accepted_domains.call(this,acc,function(acc,domains) {
-  //     callback.call(null,domains);
-  //   });
-  // };
-
-  // MASCP.DomainRetriever.prototype.renderDomains = function(acc,renderer,callback) {
-  //   var self = this;
-  //   self.acc = acc;
-  //   get_accepted_domains.call(this,acc,function(acc,domains) {
-  //     var temp_result = {
-  //       'gotResult' : function() {
-  //         render_domains(renderer,domains,acc);
-  //         renderer.trigger('resultsRendered');
-
-  //         jQuery(renderer.navigation).bind('toggleEdit',function() {
-  //           if (edit_toggler.enabled) {
-  //             edit_toggler(renderer);
-  //           };
-  //         });
-
-  //         // Not sure why we need this call here
-  //         edit_toggler(renderer,true);
-
-  //         renderer.trigger('domainsRendered');
-  //       },
-  //       'acc'       : acc
-  //     };
-  //     renderer.trigger('readerRegistered',[temp_result]);
-  //     temp_result.gotResult();
-  //     callback.call(null);
-  //   });
-  // };
-
   var write_sync_timeout = null;
 
   var edit_toggler = function(renderer,read_only) {
@@ -340,22 +336,24 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
   };
 
   var reset_protein = function(acc) {
-    with_user_preferences(function(prefs) {
+    var self = this;
+    self.preferences.getPreferences(function(err,prefs) {
       if ( ! prefs || ! prefs.accepted_domains ) {
         return;
       }
-      (new MASCP.GoogledataReader()).getSyncableFile(prefs.accepted_domains,function(err,file) {
-        file.getData()[acc] = null;
-        file.sync();
+      update_accepted_domains(prefs.accepted_domains,function(err,datablock) {
+        datablock[acc] = null;
       });
     });
   };
+
 
 
   MASCP.DomainRetriever.prototype.setupSequenceRenderer = function(renderer,options) {
     var self = this;
     setup_editing.call(self,renderer);
     self.bind('resultReceived',function() {
+      self.acc = self.agi;
       get_accepted_domains.call(self,self.agi,function(acc,domains) {
           var temp_result = {
             'gotResult' : function() {
@@ -380,6 +378,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     });
   };
 
+
   var setup_editing = function(renderer) {
     var self = this;
 
@@ -393,14 +392,14 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
       check_accepted_domains_writable(prefs.accepted_domains,function(err,writable) {
         if (writable) {
-
           renderer.clearDataFor = function(acc) {
-            reset_protein(acc);
+            reset_protein.call(self,acc);
           };
 
           edit_toggler.enabled = true;
           jQuery(renderer).bind('orderChanged',function(e,order) {
-            if ((order.indexOf((self.acc || "").toUpperCase()) !== 0 && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
+            if ((order.indexOf((self.acc || "").toUpperCase()) == (order.length - 1) && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
+              console.log(self.acc);
               renderer.clearDataFor(self.acc);
               return;
             }
@@ -427,9 +426,8 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       if ( ! prefs || ! prefs.accepted_domains ) {
         return;
       }
-      (new MASCP.GoogledataReader()).getSyncableFile(prefs.accepted_domains,function(err,file) {
-        file.getData()[acc] = wanted_domains;
-        file.sync();
+      update_accepted_domains(prefs.accepted_domains,function(err,datablock) {
+        datablock[acc] = wanted_domains;
       });
     });
   };
