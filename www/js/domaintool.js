@@ -1713,6 +1713,9 @@
             renderer.trackOrder.push(track_name);
             renderer.showLayer(track_name);
           }
+          if ( ! MASCP.getLayer(track_name) ) {
+            MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
+          }
           var datas = this.result._raw_data.data;
           if (pref.render_options["renderer"]) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
