@@ -170,7 +170,7 @@
         }
 
         ul.drive_preferences {
-            position: absolute;
+            position: relative;
             width: 400px;
         }
         ul.drive_preferences li {

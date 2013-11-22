@@ -113,7 +113,9 @@
               if (! err) {
                 callback.call();
               } else {
-                callback.call(null,err);
+                self.getPreferences(function(err) {
+                  callback.call(null,err);
+                },true);
               }
             });
           });
