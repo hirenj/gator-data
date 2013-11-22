@@ -6,29 +6,35 @@
 
     DomaintoolPreferences.prototype.guessPreferenceSource = function(default_method) {
       var self = this;
+      if ( ! default_method ) {
+        default_method = function(done) {
+          done();
+        };
+      }
       MASCP.GoogledataReader.isLoggedOut(function(err,loggedOut) {
         if (! loggedOut) {
           if (self.getActiveSession()) {
             // We don't want to do an auto upgrade when using
             // session files
-            self.addRealtime(self.getActiveSession());
+            default_method(function() {
+              self.addRealtime(self.getActiveSession());
+            });
           } else {
-            if (default_method) {
-              default_method();
-            }
-            self.getPreferences(function(err,orig_prefs) {
-                self.useDefaultPreferences(function(err,prots) {
-                  self.getPreferences(function(err,new_prefs) {
-                    if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
-                      if (DomaintoolPreferences.upgradePreferences) {
-                        DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
-                        self.sync(function() {
-                          //Hopefully this worked.
-                        });
+            default_method(function() {
+              self.getPreferences(function(err,orig_prefs) {
+                  self.useDefaultPreferences(function(err,prots) {
+                    self.getPreferences(function(err,new_prefs) {
+                      if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
+                        if (DomaintoolPreferences.upgradePreferences) {
+                          DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
+                          self.sync(function() {
+                            //Hopefully this worked.
+                          });
+                        }
                       }
-                    }
+                    });
                   });
-                });
+              });
             });
           }
         }
@@ -42,7 +48,6 @@
     DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
       if ( ! file ) {
         localStorage.removeItem("active_session");
-        this.guessPreferenceSource();
       } else {
         localStorage.setItem("active_session",file);
         localStorage.setItem("active_session_title",title);
@@ -268,7 +273,6 @@
 
     DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
-      this.clearActiveSession();
       conf = { "user_datasets" : {} };
       self.getStaticConf(doc,function(err,json) {
         if (err) {
@@ -282,9 +286,6 @@
         }
         conf = json;
         var accs = conf.accessions || [];
-        if (accs) {
-          handle_proteins(null,accs);
-        }
         self.prefs_object = {
           addWatchedDocument : function() {
           },
@@ -309,6 +310,10 @@
           });
           self.waiting = [];
         }
+        if (accs) {
+          handle_proteins(null,accs);
+        }
+
         bean.fire(self,'prefschange');
       });
 
@@ -318,7 +323,6 @@
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
-
       this.prefs_object = {
         addWatchedDocument : function() {
           var args = Array.prototype.slice.call(arguments);
@@ -438,12 +442,11 @@
       if ( ! window.prefs ) {
         window.prefs = (new DomaintoolPreferences());
         // Guess prefs source with a default
-        window.prefs.guessPreferenceSource(function(){
-          window.prefs.useStaticPreferences('/doi/10.1038/emboj.2013.79',function(err,prots) {
-            if (handle_proteins) {
-              handle_proteins(prots);
-            }
-          });
+        window.prefs.guessPreferenceSource(function(done){
+          if ( ! handle_proteins) {
+            handle_proteins = function() {};
+          }
+          window.prefs.useStaticPreferences('/doi/10.1038/emboj.2013.79',function(err,prots) { done(); handle_proteins(err,prots); });
         });
       }
       return window.prefs;
@@ -615,7 +618,12 @@
       document.getElementById('clearsession').style.display = 'block';
       document.getElementById('clearsession').onclick = function() {
         console.log("Clearing session");
-        get_preferences().setActiveSession(null);
+        get_preferences().clearActiveSession();
+        get_preferences().guessPreferenceSource(function(done) {
+          get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {
+            done();
+          });
+        });
         this.style.display = 'none';
         show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
       };
@@ -1077,6 +1085,7 @@
           return;
         }
       }
+      get_preferences().clearActiveSession();
       get_preferences().useStaticPreferences('/doi/'+doc,callback);
     };
 
@@ -2096,6 +2105,7 @@
         // Use a particular static conf, or something
         // as the template configuration for loading up
         // of session data
+        get_preferences().clearActiveSession();
         get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {});
         var not = window.notify.info("Creating new user session");
         get_preferences().copyToRealtime(state.folderId,function(err) {
@@ -2142,10 +2152,6 @@
         document.getElementById('drive_install').style.display = 'none';
       }
 
-      window.showFullProteinList = function() {
-        get_proteins(protein_doc_id,handle_proteins);
-      };
-
       if (window.location.toString().match(/uniprot/)) {
         var results = /uniprot\/(.*)/.exec(window.location);
         if (results && results[1]) {
@@ -2171,9 +2177,13 @@
         }
       }
 
-      get_proteins(protein_doc_id,handle_proteins);
+      window.showFullProteinList = function() {
+        get_proteins(protein_doc_id,handle_proteins);
+      };
+
 
       if (state.exportIds) {
+        get_proteins(protein_doc_id,handle_proteins);
         setInterval(function() {
           get_proteins(protein_doc_id,handle_proteins);
         },10*60*1000);
