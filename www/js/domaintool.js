@@ -4,18 +4,33 @@
       this.waiting = [];
     };
 
-    DomaintoolPreferences.prototype.guessPreferenceSource = function() {
+    DomaintoolPreferences.prototype.guessPreferenceSource = function(default_method) {
       var self = this;
       MASCP.GoogledataReader.isLoggedOut(function(err,loggedOut) {
         if (! loggedOut) {
           if (self.getActiveSession()) {
+            // We don't want to do an auto upgrade when using
+            // session files
             self.addRealtime(self.getActiveSession());
           } else {
-            self.useStaticPreferences('10.1038/emboj.2013.79',function() {});
-            // self.useDefaultPreferences();
+            if (default_method) {
+              default_method();
+            }
+            self.getPreferences(function(err,orig_prefs) {
+                self.useDefaultPreferences(function(err,prots) {
+                  self.getPreferences(function(err,new_prefs) {
+                    if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
+                      if (DomaintoolPreferences.upgradePreferences) {
+                        DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
+                        self.sync(function() {
+                          //Hopefully this worked.
+                        });
+                      }
+                    }
+                  });
+                });
+            });
           }
-        } else {
-          self.useStaticPreferences('10.1038/emboj.2013.79',function() {});
         }
       });
     };
@@ -42,7 +57,7 @@
       return localStorage.getItem("active_session_title");
     };
 
-    DomaintoolPreferences.prototype.watchFile = function(doc) {
+    DomaintoolPreferences.prototype.watchFile = function(doc,callback) {
       var preferences = this;
       if (sessionStorage.getItem("update_timestamps")) {
         var json = JSON.parse(sessionStorage.getItem("update_timestamps"));
@@ -60,16 +75,42 @@
             if (err) {
               if (err.status === "preferences") {
                 if (err.original_error.cause === "No user event") {
-                  window.notify.alert("You have been logged out, please click the drive button to authorize again");
+                  err.message = "You have been logged out, please click the drive button to authorize again";
+                  callback.call(null,err);
                   return;
                 }
-                window.notify.alert("Error setting preferences - try opening document again");
+                err.message = "Error setting preferences - try opening document again";
+                callback.call(null,err);
                 return;
               }
-              window.notify.alert("Problem reading document, please try again");
+              err.message = "Problem reading document, please try again";
+              callback.call(null,err);
               return;
             }
-            window.notify.info("Successfully loaded "+(docname || ""));
+            callback.call(null,null,docname);
+          });
+        });
+      });
+    };
+
+    DomaintoolPreferences.prototype.copyToRealtime = function(folder,callback) {
+      var self = this;
+      self.getPreferences(function(err,orig_prefs) {
+        (new MASCP.GoogledataReader()).createPreferences(folder,function(err,content,doc_id,title) {
+          delete self.prefs_object;
+          self.setActiveSession(doc_id,title);
+          self.addRealtime(doc_id);
+          self.getPreferences(function(err,new_prefs) {
+            if (DomaintoolPreferences.upgradePreferences) {
+              DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
+            }
+            self.sync(function(err) {
+              if (! err) {
+                callback.call();
+              } else {
+                callback.call(null,err);
+              }
+            });
           });
         });
       });
@@ -148,7 +189,7 @@
         });
       };
 
-      send_etag = function() {};
+      var send_etag = function() {};
 
       google_obj.writePreferences = function(dom,callback) {
         old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
@@ -221,69 +262,28 @@
       return;
     };
 
-    DomaintoolPreferences.prototype.getStaticConf = function(doc,callback) {
-        if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
-          if (doc.match(/^[a-z\-]+$/)) {
-            window.notify.info("Pre-publication data").hideLater(2000);
-          } else {
-            window.notify.alert("Invalid DOI");
-            return;
-          }
-        }
-        MASCP.Service.request('/doi/'+doc,callback);
+    DomaintoolPreferences.prototype.getStaticConf = function(url,callback) {
+        MASCP.Service.request(url,callback);
     };
 
     DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
       this.clearActiveSession();
       conf = { "user_datasets" : {} };
-
       self.getStaticConf(doc,function(err,json) {
         if (err) {
           if (err.status >= 500) {
-            window.notify.alert("Could not load page, please try again");
+            err.message = "Could not load page, please reload page";
           } else if (err.status >= 400) {
-            window.notify.alert("Invalid publication");
+            err.message = "Could not find configuration";
           }
+          handle_proteins(err);
+          return;
         }
         conf = json;
         var accs = conf.accessions || [];
-        /*
-        conf.datasets.forEach(function(dataset) {
-          if ( ! dataset.doc ) {
-            return;
-          }
-          (function() {
-            MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-            var datareader = new MASCP.UserdataReader();
-            datareader.datasetname = dataset.doc;
-            datareader.retrieve('config',function() {
-              dataset.sites = this.result._raw_data.data.sites;
-              dataset.title = this.result._raw_data.title;
-            });
-          })();
-          if ( ! conf.accessions ) {
-            var uprot_re1 = /([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
-            var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
-            (function() {
-              MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-              var datareader = new MASCP.UserdataReader();
-              datareader.datasetname = dataset.doc;
-              datareader.retrieve('accs',function() {
-                this.result._raw_data.data.forEach(function(acc) {
-                  acc = acc.replace(/\s+/g,'');
-                  if (acc.toUpperCase().match(uprot_re1) || acc.toUpperCase().match(uprot_re2)) {
-                    accs.push({"id" : acc});
-                  }
-                });
-                handle_proteins(accs);
-              });
-            })();
-          }
-        });
-        */
         if (accs) {
-          handle_proteins(accs);
+          handle_proteins(null,accs);
         }
         self.prefs_object = {
           addWatchedDocument : function() {
@@ -314,7 +314,7 @@
 
     };
 
-    DomaintoolPreferences.prototype.useDefaultPreferences = function() {
+    DomaintoolPreferences.prototype.useDefaultPreferences = function(callback) {
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
@@ -352,6 +352,7 @@
         }
       };
       delete self.realtime;
+      callback.call(null,null,[]);
       bean.fire(self,'prefschange');
     };
 
@@ -412,10 +413,38 @@
       this.prefs_object.writePreferences.apply(this.prefs_object,Array.prototype.slice.call(arguments));
     };
 
-    var get_preferences = function() {
+    DomaintoolPreferences.upgradePreferences = function(new_prefs,old) {
+      if ( ! new_prefs.user_datasets ) {
+        new_prefs.user_datasets = {};
+      }
+      for (var set in (old.user_datasets || {})) {
+        new_prefs.user_datasets[set] = old.user_datasets[set];
+      }
+      var ref_domains = old.accepted_domains;
+      if (Array.isArray(ref_domains)) {
+        ref_domains = ref_domains[ref_domains.length - 1];
+      }
+      if (new_prefs.accepted_domains) {
+        if (Array.isArray(new_prefs.accepted_domains)) {
+          new_prefs.accepted_domains[new_prefs.accepted_domains.length - 1] = ref_domains;
+        }
+      } else {
+        new_prefs.accepted_domains = [ { "type" : "googleFile", "file"  : "User specified domains"}, ref_domains ];
+      }
+      new_prefs.version = old.version;
+    };
+
+    var get_preferences = function(handle_proteins) {
       if ( ! window.prefs ) {
         window.prefs = (new DomaintoolPreferences());
-        window.prefs.guessPreferenceSource();
+        // Guess prefs source with a default
+        window.prefs.guessPreferenceSource(function(){
+          window.prefs.useStaticPreferences('/doi/10.1038/emboj.2013.79',function(err,prots) {
+            if (handle_proteins) {
+              handle_proteins(prots);
+            }
+          });
+        });
       }
       return window.prefs;
     };
@@ -884,30 +913,6 @@
         while (list.childNodes.length > 0) {
           list.removeChild(list.firstChild);
         }
-        if (typeof(prots) == "string") {
-          var input = document.createElement('button');
-          window.notify.alert("Cannot load, please log in to Google Drive again");
-          input.textContent = "Click to log in again";
-          input.addEventListener('click',function() {
-            auth_func(function(err) {
-            if (err) {
-              return;
-            }
-            get_proteins(prots,function(list) {
-              if (typeof(list) !== "string") {
-                input.parentNode.removeChild(input);
-                update_protein_list(list,renderer);
-              } else {
-                console.log("mo problems");
-                console.log(list);
-              }
-            });
-
-            });
-          },false);
-          list.appendChild(input);
-          return;
-        }
         list = document.getElementById("protein_list");
         while (list.childNodes.length > 0) {
           list.removeChild(list.firstChild);
@@ -1061,6 +1066,18 @@
             }
           }
         })();
+    };
+
+    var use_doi_conf = function(doc,callback) {
+      if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
+        if (doc.match(/^[a-z\-]+$/)) {
+          window.notify.info("Pre-publication data").hideLater(2000);
+        } else {
+          window.notify.alert("Invalid DOI");
+          return;
+        }
+      }
+      get_preferences().useStaticPreferences('/doi/'+doc,callback);
     };
 
     var create_renderer = function(container) {
@@ -1403,7 +1420,7 @@
           }
         });
         if (all_ids.length > 1) {
-          handle_proteins(all_ids);
+          handle_proteins(null,all_ids);
         }
         var text_content = (all_ids[0] || "").toString().replace(/\s+/g,'');
         if (text_content.toUpperCase().match(uprot_re1) || text_content.toUpperCase().match(uprot_re2)) {
@@ -1484,7 +1501,7 @@
         if ( ! self.protein_cache ) {
           self.protein_cache = {};
         } else if (self.protein_cache[protein_doc]) {
-          callback( [].concat(self.protein_cache[protein_doc]) );
+          callback( null, [].concat(self.protein_cache[protein_doc]) );
           return;
         }
         var doc_id = "spreadsheet:"+protein_doc;
@@ -1507,7 +1524,7 @@
             results.push(prot);
           });
           self.protein_cache[protein_doc] = [].concat(results);
-          callback(results);
+          callback(null,results);
         });
         datareader.bind('ready',function() {
           notification.hide();
@@ -1516,7 +1533,7 @@
           notification.hide();
           var err_obj = err || e;
           if (err_obj.cause && (err_obj.cause == "No user event" || err_obj.cause == "Access is denied.")) {
-            callback.call(null,protein_doc,err_obj.authorize);
+            callback.call(null,null,protein_doc,err_obj.authorize);
             return;
           }
           if (err_obj.cause == "Google session timed out") {
@@ -1565,7 +1582,10 @@
     };
 
     var get_generic_data = function(acc,renderer,datareader,options,done) {
-      datareader._endpointURL = '/data/latest/gator';
+      // Not sure we need to set the endpointURL
+      if ( ! options.url ) {
+        datareader._endpointURL = '/data/latest/gator';
+      }
       var track = acc;
       if (! options.inline) {
         if ( ! MASCP.getGroup('extra_data')) {
@@ -1593,7 +1613,7 @@
           renderer.showLayer(track);
         }
       }
-      datareader.registerSequenceRenderer(renderer,options);
+      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track });
 
       renderer.bind('resultsRendered',function(e,reader) {
         if (reader == datareader) {
@@ -1986,36 +2006,23 @@
       }
     };
 
+
+
     var ready_func = function() {
       if ( typeof gapi === 'undefined' || ! gapi.auth ) {
         return;
       }
       window.svgns = 'http://www.w3.org/2000/svg';
+
       var renderer = create_renderer(document.getElementById('condensed_container'));
-      setup_visual_renderer(renderer);
-      var wheel_fn = function(e) {
-        if(e.preventDefault) {
-          e.preventDefault();
+
+
+      var handle_proteins = function(err,prots,auth_func) {
+        if (err) {
+          console.log(arguments);
+          window.notify.alert(err.message || "Error loading proteins");
+          return;
         }
-        e.stopPropagation();
-        e.returnValue = false;
-        return false;
-      };
-      document.getElementById('sequence_frame').addEventListener('DOMMouseScroll',wheel_fn,false);
-      document.getElementById('sequence_frame').addEventListener('wheel',wheel_fn,false);
-      document.getElementById('sequence_frame').onmousewheel = wheel_fn;
-
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-
-      document.getElementById('help').addEventListener('click',function() {
-        show_help();
-      },false);
-      document.getElementById('top').addEventListener('click',function() {
-        document.getElementById('page_canvas').scrollIntoView();
-      },false);
-
-
-      var handle_proteins = function(prots,auth_func) {
         if (prots.length < 25) {
           document.getElementById('drive_install').style.display = 'none';
           document.getElementById('align').style.display = 'block';
@@ -2042,6 +2049,32 @@
         add_keyboard_navigation();
       };
 
+
+
+      get_preferences(handle_proteins);
+
+      setup_visual_renderer(renderer);
+      var wheel_fn = function(e) {
+        if(e.preventDefault) {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+        e.returnValue = false;
+        return false;
+      };
+      document.getElementById('sequence_frame').addEventListener('DOMMouseScroll',wheel_fn,false);
+      document.getElementById('sequence_frame').addEventListener('wheel',wheel_fn,false);
+      document.getElementById('sequence_frame').onmousewheel = wheel_fn;
+
+      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
+
+      document.getElementById('help').addEventListener('click',function() {
+        show_help();
+      },false);
+      document.getElementById('top').addEventListener('click',function() {
+        document.getElementById('page_canvas').scrollIntoView();
+      },false);
+
       wire_drive_button(renderer);
       wire_uniprot_id_changer(renderer,handle_proteins);
       wire_clipboarder();
@@ -2055,14 +2088,24 @@
         var match = /doi\/(.*)\//.exec(window.location);
         match.shift();
         var actual_handle_proteins = handle_proteins;
-        get_preferences().useStaticPreferences(match[0],function(prots) { actual_handle_proteins(prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
+        use_doi_conf(match[0],function(prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
       }
 
       if (state.action && state.action == 'create') {
-        (new MASCP.GoogledataReader()).createPreferences(state.folderId,function(err,prefs,doc_id,title) {
-          get_preferences().addRealtime(doc_id);
-          get_preferences().setActiveSession(doc_id,title);
+        // Use a particular static conf, or something
+        // as the template configuration for loading up
+        // of session data
+        get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {});
+        var not = window.notify.info("Creating new user session");
+        get_preferences().copyToRealtime(state.folderId,function(err) {
+          not.hide();
+          if (err) {
+            window.notify.alert("Could not create new user session");
+            console.log(err);
+            return;
+          }
+          window.notify.info("Created new session").hideLater(1000);
           wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
       }
@@ -2072,7 +2115,13 @@
           (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title) {
             if ( ! err ) {
               if (type === 'application/json; data-type=msdata') {
-                get_preferences().watchFile(doc_id);
+                get_preferences().watchFile(doc_id,function(err,loaded) {
+                  if (err) {
+                    window.notify.alert(err.message);
+                    return;
+                  }
+                  window.notify.info("Successfully loaded "+(loaded || "")).hideLater(500);
+                });
               }
               if (type === 'application/json; data-type=domaintool-session') {
                 get_preferences().addRealtime(doc_id);
@@ -2115,7 +2164,7 @@
             }
           }
           // show_protein(prots[0],renderer);
-          handle_proteins(prots,renderer);
+          handle_proteins(null,prots,renderer);
           if (prots.length > 1) {
             return;
           }
