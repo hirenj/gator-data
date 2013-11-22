@@ -43,18 +43,38 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         type: "GET",
         dataType: "json",
         url : gatorURL,
-        data: { 'agi'       : agi,
-                'service'   : 'domains'
+        data: { 'agi'       : agi
         }
     };
   };
 
   var retrieve_accepted_domains = function(config,acc,callback) {
+    if (config && Array.isArray(config)) {
+      var configs_array = [].concat(config);
+      var current = configs_array.shift();
+      retrieve_accepted_domains(current,acc,function(err,accepted) {
+        if (! err ) {
+          callback.call(null,err,accepted);
+        } else {
+          current = configs_array.shift();
+          if (current) {
+            retrieve_accepted_domains(current,acc,arguments.callee);
+            return;
+          }
+          callback.call(null,err,accepted);
+        }
+      });
+      return;
+    }
     if (config.type === "gatorURL") {
       var datareader = new MASCP.UserdataReader(null, config.url);
+      datareader.datasetname = "domains";
     // datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc";
       datareader.retrieve(acc,function(err) {
         if (err) {
+          if (typeof err == "string") {
+            err = { "error" : err };
+          }
           callback.call(null,err);
           return;
         }
@@ -66,7 +86,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       });
     }
     if (config.type === "googleFile") {
-      var file = (new MASCP.GoogledataReader()).getSyncableFile(config.file,function(err,file) {
+      get_syncable_file(config,function(err,file) {
         if (err) {
           callback.call(null,err);
           return;
@@ -82,7 +102,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           }
           callback.call(null,null,data_hash ? wanted : null);
         } else {
-          callback.call(null,null,null);
+          callback.call(null,{"error" : "No data" },null);
         }
       });
     }
@@ -94,7 +114,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       if (cached_files[config.url]) {
         callback.call(null, null, JSON.parse(cached_files[config.url])[acc]);
         return;
-      };
+      }
       MASCP.Service.request(config.url,function(err,data) {
         if (err) {
           callback.call(null,err);
@@ -107,10 +127,15 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
   var check_accepted_domains_writable = function(config,callback) {
 
+    // Only select the first file for writing domains to
+    if (config && Array.isArray(config)) {
+      config = config[0];
+    }
+
     // We can only write to a googleFile
 
     if (config.type === "googleFile") {
-      var file = (new MASCP.GoogledataReader()).getSyncableFile(config.file,function(err,file) {
+      get_syncable_file(config,function(err,file) {
         if (err) {
           callback.call(null,err);
           return;
@@ -123,9 +148,38 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     callback.call(null,null,false);
   };
 
+  var cached_file_blocks = {};
+
+  var get_syncable_file = function(config,callback) {
+    var id_string = "";
+    if (typeof config.file == "string") {
+      id_string = config.file;
+    } else {
+      id_string = config.file.file_id;
+    }
+    var file = cached_file_blocks[id_string];
+    if (file) {
+      if (! file.ready) {
+        bean.add(file,'ready',function() {
+          bean.remove(file,'ready',arguments.callee);
+          callback.call(null,null,file);
+        });
+        return;
+      }
+      callback.call(null,null,file);
+      return;
+    }
+    cached_file_blocks[id_string] = (new MASCP.GoogledataReader()).getSyncableFile(config.file,callback);
+  };
+
   var update_accepted_domains = function(config,callback) {
+    // Only select the first file for writing domains to
+    if (config && Array.isArray(config)) {
+      config = config[0];
+    }
+
     if (config.type === "googleFile") {
-      var file = (new MASCP.GoogledataReader()).getSyncableFile(config.file,function(err,file) {
+      get_syncable_file(config,function(err,file) {
         if (err) {
           callback.call(null,err);
           return;
@@ -158,8 +212,11 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       if (prefs && prefs.accepted_domains) {
         retrieve_accepted_domains(prefs.accepted_domains,acc,function(err,wanted_domains) {
           if (err) {
-            console.log("Some problem");
-            return;
+            if (err.error !== "No data") {
+              console.log("Some problem");
+              return;
+            }
+            wanted_domains = null;
           }
           next_call(wanted_domains)();
         });
@@ -362,7 +419,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               jQuery(renderer.navigation).bind('toggleEdit',function() {
                 if (edit_toggler.enabled) {
                   edit_toggler(renderer);
-                };
+                }
               });
 
               // Not sure why we need this call here
@@ -383,9 +440,6 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     var self = this;
 
     self.preferences.getPreferences(function(err,prefs) {
-      // if ( ! prefs.accepted_domains ) {
-      //   prefs.accepted_domains = "User specified domains";
-      // }
 
       renderer.clearDataFor = function(acc) {
       };
