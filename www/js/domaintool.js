@@ -1788,6 +1788,7 @@
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
                             "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
                             "callback" : function(r) {
+                              sandbox.terminate();
                               var obj = ({ "gotResult" : function() {
                                 r.forEach(function(obj) {
                                   var offset = parseInt((pref.render_options || {}).offset || 0);
