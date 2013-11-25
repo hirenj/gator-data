@@ -1406,8 +1406,10 @@
               var remove_customdoc = function() {
                 get_preferences().getPreferences(function(err,prefs) {
                   prefs.accepted_domains[0] = { "file" : "User specified domains", "type" : "googleFile" };
-                  get_preferences().sync();
-                  flipped.close();
+                  get_preferences().sync(function() {
+                    flipped.close();
+                    flipped = false;
+                  });
                 });
               };
               var copy_to_customdoc =  function() {
@@ -1415,7 +1417,10 @@
                   MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat) {
                     (new MASCP.GoogledataReader()).createFile("root",dat,"Copied domains","application/json; data-type=domaintool-domains",function(err,content,id){
                       prefs.accepted_domains[0] = {"file" : { "file_id" : id }, "type" : "googleFile", "owner" : "Self", "title" : "Copied domains"};
-                      get_preferences().sync(function() { console.log("Synced"); });
+                      get_preferences().sync(function() {
+                        flipped.close();
+                        flipped = false;
+                      });
                     });
                   });
                 });
@@ -1426,7 +1431,7 @@
               }
               renderer.fillTemplate("userset_tmpl",template_config,function(error,html) {
                 flipped = flippant.flip(document.getElementById('sequence_frame'), html);
-                var matches = flipped.querySelectorAll('ul .remove');
+                var matches = flipped.querySelectorAll('ul.drive_preferences .remove');
                 for (var i = 0 ; i < matches.length; i++) {
                   matches[i].addEventListener('click',remover_func,false);
                 }

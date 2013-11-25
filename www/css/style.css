@@ -169,11 +169,11 @@
             background: #779977;
         }
 
-        ul.drive_preferences {
+        ul.drive_preferences, ul.domains_preferences {
             position: relative;
             width: 400px;
         }
-        ul.drive_preferences li {
+        ul.drive_preferences li, ul.domains_preferences li {
             position: relative;
             list-style-type: none;
             width: 100%;
@@ -192,6 +192,30 @@
             border-radius: 4px;
         }
 
+        ul.domains_preferences li .copy_accepted {
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            cursor: pointer;
+            background: #9f9;
+            border: solid black 1px;
+            color: #fff;
+            font-weight: bolder;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        ul.domains_preferences li .remove {
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            cursor: pointer;
+            background: #f99;
+            border: solid black 1px;
+            color: #fff;
+            font-weight: bolder;
+            padding: 4px;
+            border-radius: 4px;
+        }
 
         #search_container {
             font-size: 10px;
