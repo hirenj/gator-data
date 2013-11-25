@@ -62,10 +62,10 @@
         </ul>
         <ul class="domains_preferences">
         <% if (custom_accepted) { %>
-            <label>Using document owned by <%= custom_accepted.owner %> for accepted domains</label><div class="remove remove_accepted">Use default</div>
+            <li>Using <%= custom_accepted.owner %>s accepted domains</label><div class="remove remove_accepted">Use personal</div></li>
+        <% } else { %>
+        <li>Create duplicate of domains <div class="copy_accepted">Duplicate</div></li>
         <% } %>
-        <div class="copy_accepted">Copy me
-        </div>
         </ul>
     </script>
     <script type="text/html" id="tags_tmpl">
