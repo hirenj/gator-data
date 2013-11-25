@@ -48,6 +48,41 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     };
   };
 
+  MASCP.DomainRetriever.getRawData = function(config,callback) {
+    if (config.type === "gatorURL") {
+      callback.call({"error" : "Can't get raw data from GATOR URL, missing accession"});
+      // Unless this is an S3 url?
+      return;
+    }
+    if (config.type === "googleFile") {
+      get_syncable_file(config,function(err,file) {
+        if (err) {
+          callback.call(null,err);
+          return;
+        }
+        callback.call(null,null,file.getData());
+      });
+      return;
+    }
+    if (config.type === "url") {
+      if ( ! sessionStorage.wanted_domains ) {
+        sessionStorage.wanted_domains = "{}";
+      }
+      var cached_files = JSON.parse(sessionStorage.wanted_domains);
+      if (cached_files[config.url]) {
+        callback.call(null, null, JSON.parse(cached_files[config.url]));
+        return;
+      }
+      MASCP.Service.request(config.url,function(err,data) {
+        if (err) {
+          callback.call(null,err);
+          return;
+        }
+        callback.call(null,null,data);
+      });
+    }
+  };
+
   var retrieve_accepted_domains = function(config,acc,callback) {
     if (config && Array.isArray(config)) {
       var configs_array = [].concat(config);
@@ -152,10 +187,15 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
   var get_syncable_file = function(config,callback) {
     var id_string = "";
+    var mime = "application/json";
+    var file_block = {};
     if (typeof config.file == "string") {
       id_string = config.file;
+      file_block = config.file;
     } else {
       id_string = config.file.file_id;
+      file_block = { "id" : config.file.file_id };
+      mime = "application/json; data-type=domaintool-domains";
     }
     var file = cached_file_blocks[id_string];
     if (file) {
@@ -169,7 +209,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       callback.call(null,null,file);
       return;
     }
-    cached_file_blocks[id_string] = (new MASCP.GoogledataReader()).getSyncableFile(config.file,callback);
+    cached_file_blocks[id_string] = (new MASCP.GoogledataReader()).getSyncableFile(file_block,callback,mime);
   };
 
   var update_accepted_domains = function(config,callback) {
@@ -451,7 +491,8 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           };
 
           edit_toggler.enabled = true;
-          jQuery(renderer).bind('orderChanged',function(e,order) {
+          var order_changed_func = function(e,order) {
+            console.log("Order changed");
             if ((order.indexOf((self.acc || "").toUpperCase()) == (order.length - 1) && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
               console.log(self.acc);
               renderer.clearDataFor(self.acc);
@@ -461,7 +502,11 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               console.log("Removed layer");
               update_domains.call(self,renderer,self.acc);
             }
+          };
+          jQuery(renderer).bind('sequenceChange',function() {
+            jQuery(renderer).unbind('orderChanged',order_changed_func);
           });
+          jQuery(renderer).bind('orderChanged',order_changed_func);
         }
       });
     });
