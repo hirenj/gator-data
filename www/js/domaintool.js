@@ -22,18 +22,19 @@
           } else {
             default_method(function() {
               self.getPreferences(function(err,orig_prefs) {
-                  self.useDefaultPreferences(function(err,prots) {
-                    self.getPreferences(function(err,new_prefs) {
-                      if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
-                        if (DomaintoolPreferences.upgradePreferences) {
-                          DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
-                          self.sync(function() {
-                            //Hopefully this worked.
-                          });
-                        }
+                self.prefs_object = null;
+                self.useDefaultPreferences(function(err,prots) {
+                  self.getPreferences(function(err,new_prefs) {
+                    if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
+                      if (DomaintoolPreferences.upgradePreferences) {
+                        DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
+                        self.sync(function() {
+                          //Hopefully this worked.
+                        });
                       }
-                    });
+                    }
                   });
+                });
               });
             });
           }
@@ -111,8 +112,7 @@
             }
             self.sync(function(err) {
               if (! err) {
-                callback.call();
-              } else {
+                console.log("Forcing a refresh of preferences");
                 self.getPreferences(function(err) {
                   callback.call(null,err);
                 },true);
@@ -202,7 +202,7 @@
         old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
           old_get_preferences.call(google_obj,file_obj,function(err,pr) {
             send_etag(file_obj);
-            callback.call(null,err,prefs,file_obj.etag,file_obj.modified);
+            callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
           });
         });
       };
@@ -306,14 +306,15 @@
           }
         };
         delete self.realtime;
-        if (self.waiting) {
+        if (accs) {
+          handle_proteins(null,accs);
+        }
+
+        if (self.waiting && self.prefs_object) {
           self.waiting.forEach(function(waiting) {
             self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
           });
           self.waiting = [];
-        }
-        if (accs) {
-          handle_proteins(null,accs);
         }
 
         bean.fire(self,'prefschange');
@@ -624,10 +625,10 @@
         get_preferences().guessPreferenceSource(function(done) {
           get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {
             done();
+            show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
           });
         });
         this.style.display = 'none';
-        show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
       };
     };
 
@@ -1380,10 +1381,12 @@
               return;
             }
             flipped = true;
-            get_preferences().listWatchedDocuments(function(err,sets) {
+            get_preferences().getPreferences(function(err,prefs) {
               if (err) {
                 return;
               }
+              var sets = prefs.user_datasets;
+
               if (flipped !== true) {
                 return;
               }
@@ -1400,12 +1403,42 @@
                   }
                 });
               };
-              renderer.fillTemplate("userset_tmpl",{ "sets" : sets_array },function(error,html) {
+              var remove_customdoc = function() {
+                get_preferences().getPreferences(function(err,prefs) {
+                  prefs.accepted_domains[0] = { "file" : "User specified domains", "type" : "googleFile" };
+                  get_preferences().sync();
+                  flipped.close();
+                });
+              };
+              var copy_to_customdoc =  function() {
+                get_preferences().getPreferences(function(err,prefs) {
+                  MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat) {
+                    (new MASCP.GoogledataReader()).createFile("root",dat,"Copied domains","application/json; data-type=domaintool-domains",function(err,content,id){
+                      prefs.accepted_domains[0] = {"file" : { "file_id" : id }, "type" : "googleFile", "owner" : "Self", "title" : "Copied domains"};
+                      get_preferences().sync(function() { console.log("Synced"); });
+                    });
+                  });
+                });
+              };
+              var template_config = { "sets" : sets_array, "custom_accepted" : null };
+              if (prefs.accepted_domains[0].file !== "User specified domains") {
+                 template_config["custom_accepted"] = { "owner" : prefs.accepted_domains[0].owner, "title" : prefs.accepted_domains[0].title };
+              }
+              renderer.fillTemplate("userset_tmpl",template_config,function(error,html) {
                 flipped = flippant.flip(document.getElementById('sequence_frame'), html);
                 var matches = flipped.querySelectorAll('ul .remove');
                 for (var i = 0 ; i < matches.length; i++) {
                   matches[i].addEventListener('click',remover_func,false);
                 }
+                matches = flipped.querySelectorAll('.remove_accepted');
+                for (i = 0 ; i < matches.length; i++) {
+                  matches[i].addEventListener('click',remove_customdoc,false);
+                }
+                matches = flipped.querySelectorAll('.copy_accepted');
+                for (i = 0 ; i < matches.length; i++) {
+                  matches[i].addEventListener('click',copy_to_customdoc,false);
+                }
+
               });
             });
           },false);
