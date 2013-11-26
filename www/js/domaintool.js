@@ -2179,6 +2179,23 @@
                 get_preferences().setActiveSession(doc_id,title);
                 wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
               }
+              if (type == 'application/json; data-type=domaintool-domains') {
+                get_preferences().ifReady(function() {
+                  get_preferences().getPreferences(function(err,prefs) {
+                  prefs.accepted_domains[0] = {"type" : "googleFile" , "file" : { "file_id" : doc_id }, "title" : title };
+                  MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat,permissions,owner) {
+                    prefs.accepted_domains[0].owner = owner;
+                    get_preferences().sync(function(err) {
+                      if (err) {
+                        window.notify.alert("Error loading domain file");
+                        return;
+                      }
+                      window.notify.info("Successfully switched to using "+title+" as domains").hideLater(500);
+                    });
+                  });
+                });
+                });
+              }
             }
           });
         });

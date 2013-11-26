@@ -60,7 +60,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           callback.call(null,err);
           return;
         }
-        callback.call(null,null,file.getData());
+        callback.call(null,null,file.getData(),file.permissions,file.owner);
       });
       return;
     }

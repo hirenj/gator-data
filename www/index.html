@@ -62,7 +62,7 @@
         </ul>
         <ul class="domains_preferences">
         <% if (custom_accepted) { %>
-            <li>Using <%= custom_accepted.owner %>s accepted domains</label><div class="remove remove_accepted">Use personal</div></li>
+            <li><%= custom_accepted.owner %> domain curation</label><div class="remove remove_accepted">Use personal</div></li>
         <% } else { %>
         <li>Create duplicate of domains <div class="copy_accepted">Duplicate</div></li>
         <% } %>
