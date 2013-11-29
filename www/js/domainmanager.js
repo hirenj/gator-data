@@ -290,7 +290,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     return results;
   };
 
-  var render_domains = function(renderer,domains,acc,track,offset) {
+  var render_domains = function(renderer,domains,acc,track,offset,namespace) {
       var target_layer = track || acc.toString();
       renderer.text_els = [];
       MASCP.registerLayer(target_layer, { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
@@ -366,8 +366,8 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               shape_func += ".potential";
             }
 
-            var els = renderer.getAA(start).addToLayer(target_layer, {"height" : icon_height, "content" : "/sugars.svg#"+shape_func, "offset" : offset+12, "angle": 0, "bare_element" : true });
-            renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : "/sugars.svg#"+shape_func, "offset" : 12, "bare_element" : true });
+            var els = renderer.getAA(start).addToLayer(target_layer, {"height" : icon_height, "content" : '#'+namespace+'_'+shape_func, "offset" : offset+12, "angle": 0, "bare_element" : true });
+            renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : '#'+namespace+'_'+shape_func, "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
             var box;
@@ -444,7 +444,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       get_accepted_domains.call(self,self.agi,function(acc,domains) {
           var temp_result = {
             'gotResult' : function() {
-              render_domains(renderer,domains,acc,options.track,options.offset);
+              render_domains(renderer,domains,acc,options.track,options.offset,options.icons ? options.icons.namespace : null);
 
               jQuery(renderer.navigation).bind('toggleEdit',function() {
                 if (edit_toggler.enabled) {

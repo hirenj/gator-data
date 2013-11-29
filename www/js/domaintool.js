@@ -1636,6 +1636,15 @@
         datareader._endpointURL = '/data/latest/gator';
       }
       var track = acc;
+
+      if ((options || {})["icons"]) {
+        MASCP.Service.request(options["icons"].url,function(err,doc) {
+          if (doc) {
+            renderer.importIcons(options["icons"].namespace,doc.documentElement);
+          }
+        },"xml");
+      };
+
       if (! options.inline) {
         if ( ! MASCP.getGroup('extra_data')) {
           MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
@@ -1662,7 +1671,7 @@
           renderer.showLayer(track);
         }
       }
-      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0) });
+      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0), "icons" : options.icons });
 
       renderer.bind('resultsRendered',function(e,reader) {
         if (reader == datareader) {
@@ -1773,6 +1782,15 @@
 
         var method = pref["sites"] || pref.render_options["sites"];
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
+        if ((pref || {})["icons"]) {
+          MASCP.Service.request(pref["icons"].url,function(err,doc) {
+            if (doc) {
+              renderer.importIcons(pref["icons"].namespace,doc.documentElement);
+              console.log("Imported icons");
+            }
+          },"xml");
+        };
+
         reader.retrieve(acc,function() {
           if ( ! this.result ) {
             return;
@@ -1789,9 +1807,10 @@
           if (pref.render_options["renderer"]) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               var sandbox = new JSandbox();
-              sandbox.exec(doc,function() {
+              sandbox.eval(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
                             "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
+                            "onerror" : function(message) { console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();
                               var obj = ({ "gotResult" : function() {
