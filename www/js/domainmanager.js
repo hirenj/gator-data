@@ -362,8 +362,11 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             if (shape_func == "glcnac(b1-4)glcnac" || shape_func == renderer.small_galnac || shape_func == "xyl" || shape_func == renderer.fuc) {
               icon_height += 8;
             }
+            if (/Potential/.test(dom) && (shape_func == "glcnac(b1-4)glcnac")) {
+              shape_func += ".potential";
+            }
 
-            renderer.getAA(start).addToLayer(target_layer, {"height" : icon_height, "content" : "/sugars.svg#"+shape_func, "offset" : offset+12, "angle": 0, "bare_element" : true });
+            var els = renderer.getAA(start).addToLayer(target_layer, {"height" : icon_height, "content" : "/sugars.svg#"+shape_func, "offset" : offset+12, "angle": 0, "bare_element" : true });
             renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : "/sugars.svg#"+shape_func, "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
