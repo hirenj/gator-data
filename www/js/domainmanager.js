@@ -290,7 +290,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     return results;
   };
 
-  var render_domains = function(renderer,domains,acc,track) {
+  var render_domains = function(renderer,domains,acc,track,offset) {
       var target_layer = track || acc.toString();
       renderer.text_els = [];
       MASCP.registerLayer(target_layer, { 'fullname' : "All domains", 'color' : '#aaaaaa' },[renderer]);
@@ -348,36 +348,23 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           }
           seen[start] = true;
           if (start == end) {
-            // var shape_func   =  /N\-linked.*GlcNAc/.test(dom)    ? renderer.nlinked :
-            //                     /GlcNAc/.test(dom)    ? renderer.glcnac :
-            //                     /GalNAc/.test(dom)    ? renderer.small_galnac  :
-            //                     /Fuc/.test(dom)       ? renderer.fuc :
-            //                     /Man/.test(dom)       ? renderer.man :
-            //                     /Glc\)/.test(dom)     ? renderer.glc :
-            //                     /Gal[\.\)]/.test(dom) ? renderer.gal :
-            //                     /Hex[\.\)]/.test(dom) ? renderer.hex :
-            //                     /HexNAc/.test(dom)    ? renderer.hexnac :
-            //                     /Xyl/.test(dom)       ? renderer.xyl :
-            //                     function() {
-            //                       return null;
-            //                     };
-            // var is_potential = /Potential/.test(dom);
-            // var element_func = function() {
-            //   var box = shape_func.call(renderer);
-            //   if (is_potential) {
-            //     var kids = box.childNodes;
-            //     for (var i = 0; i < kids.length; i++) {
-            //       kids[i].setAttribute('fill','#67a2fc');
-            //     };
-            //   }
-            //   return box;
-            // };
-            // var icon_size = 8;
-            // if (shape_func == renderer.nlinked || shape_func == renderer.small_galnac || shape_func == renderer.xyl || shape_func == renderer.fuc) {
-            //   icon_size = 16;
-            // }
-            // renderer.getAA(start).addToLayer(target_layer, {"height" : icon_size, "content" : element_func(), "offset" : 28, "angle": 0, "bare_element" : true });
-            // renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : element_func(), "offset" : 12, "bare_element" : true });
+            var shape_func   =  /N\-linked.*GlcNAc/.test(dom)    ? "glcnac(b1-4)glcnac" :
+                                /GlcNAc/.test(dom)    ? "glcnac" :
+                                /GalNAc/.test(dom)    ? "galnac"  :
+                                /Fuc/.test(dom)       ? "fuc" :
+                                /Man/.test(dom)       ? "man" :
+                                /Glc\)/.test(dom)     ? "glc" :
+                                /Gal[\.\)]/.test(dom) ? "gal" :
+                                /Hex[\.\)]/.test(dom) ? "hex" :
+                                /HexNAc/.test(dom)    ? "hexnac" :
+                                /Xyl/.test(dom)       ? "xyl" : "?";
+            var icon_height = 8;
+            if (shape_func == "glcnac(b1-4)glcnac" || shape_func == renderer.small_galnac || shape_func == "xyl" || shape_func == renderer.fuc) {
+              icon_height += 8;
+            }
+
+            renderer.getAA(start).addToLayer(target_layer, {"height" : icon_height, "content" : "/sugars.svg#"+shape_func, "offset" : offset+12, "angle": 0, "bare_element" : true });
+            renderer.getAA(start).addToLayer(lay_name, {"height" : 8, "content" : "/sugars.svg#"+shape_func, "offset" : 12, "bare_element" : true });
           } else {
             var all_box;
             var box;
@@ -388,16 +375,16 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             if (window.DOMAIN_DEFINITIONS[dom_key]) {
                 var dats = window.DOMAIN_DEFINITIONS[dom_key];
                 var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
-                all_box = renderer.getAA(start).addShapeOverlay(target_layer,end-start+1,{ "shape" : dats[0], "height" : 8, "fill" : fill, "rotate" : dats[2] || 0 });
+                all_box = renderer.getAA(start).addShapeOverlay(target_layer,end-start+1,{ "offset" : offset, "shape" : dats[0], "height" : 12, "fill" : fill, "rotate" : dats[2] || 0 });
                 all_box.setAttribute('stroke','#999999');
                 all_box.style.strokeWidth = '10px';
                 box = renderer.getAA(start).addShapeOverlay(lay_name,end-start+1,{ "shape" : dats[0], "fill" : 'url("#grad_'+dats[1]+'")' });
             } else {
-                all_box = renderer.getAA(start).addBoxOverlay(target_layer,end-start+1,1);
+                all_box = renderer.getAA(start).addBoxOverlay(target_layer,end-start+1,1,{"offset" : offset });
                 box = renderer.getAA(start).addBoxOverlay(lay_name,end-start+1,1);
             }
 
-            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ 'txt' : domains[dom].name });
+            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ "offset" : offset, 'txt' : domains[dom].name });
             a_text.setAttribute('fill','#111111');
             a_text.setAttribute('stroke','#999999');
             renderer.text_els.push([a_text,all_box]);
@@ -454,7 +441,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       get_accepted_domains.call(self,self.agi,function(acc,domains) {
           var temp_result = {
             'gotResult' : function() {
-              render_domains(renderer,domains,acc,options.track);
+              render_domains(renderer,domains,acc,options.track,options.offset);
 
               jQuery(renderer.navigation).bind('toggleEdit',function() {
                 if (edit_toggler.enabled) {

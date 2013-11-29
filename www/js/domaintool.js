@@ -1662,7 +1662,7 @@
           renderer.showLayer(track);
         }
       }
-      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track });
+      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0) });
 
       renderer.bind('resultsRendered',function(e,reader) {
         if (reader == datareader) {
