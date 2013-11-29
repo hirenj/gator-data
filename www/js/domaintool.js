@@ -25,6 +25,11 @@
                 self.prefs_object = null;
                 self.useDefaultPreferences(function(err,prots) {
                   self.getPreferences(function(err,new_prefs) {
+                    if ( ! new_prefs ) {
+                      console.log("Didn't get prefs");
+                      default_method(function(){});
+                      return;
+                    }
                     if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
                       if (DomaintoolPreferences.upgradePreferences) {
                         DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
@@ -38,6 +43,8 @@
               });
             });
           }
+        } else {
+          default_method(function() {});
         }
       });
     };
@@ -449,7 +456,7 @@
           if ( ! handle_proteins) {
             handle_proteins = function() {};
           }
-          window.prefs.useStaticPreferences('/doi/10.1038/emboj.2013.79',function(err,prots) { done(); handle_proteins(err,prots); });
+          window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
         });
       }
       return window.prefs;
@@ -623,7 +630,7 @@
         console.log("Clearing session");
         get_preferences().clearActiveSession();
         get_preferences().guessPreferenceSource(function(done) {
-          get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {
+          get_preferences().useStaticPreferences('/default.preferences',function() {
             done();
             show_protein(document.getElementById('uniprot_id').textContent,renderer,null,true);
           });
@@ -1806,11 +1813,15 @@
           var datas = this.result._raw_data.data;
           if (pref.render_options["renderer"]) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
+              if (err) {
+                window.notify.alert("Could not render "+pref.title);
+                return;
+              }
               var sandbox = new JSandbox();
               sandbox.eval(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
                             "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
-                            "onerror" : function(message) { console.log("Errored out"); console.log(message); },
+                            "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();
                               var obj = ({ "gotResult" : function() {
@@ -2157,7 +2168,7 @@
         var match = /doi\/(.*)\//.exec(window.location);
         match.shift();
         var actual_handle_proteins = handle_proteins;
-        use_doi_conf(match[0],function(prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
+        use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
       }
 
@@ -2166,7 +2177,7 @@
         // as the template configuration for loading up
         // of session data
         get_preferences().clearActiveSession();
-        get_preferences().useStaticPreferences('/doi/10.1038/emboj.2013.79',function() {});
+        get_preferences().useStaticPreferences('/template.preferences',function() {});
         var not = window.notify.info("Creating new user session");
         get_preferences().copyToRealtime(state.folderId,function(err) {
           not.hide();
