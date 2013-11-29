@@ -24,12 +24,16 @@
               self.getPreferences(function(err,orig_prefs) {
                 self.prefs_object = null;
                 self.useDefaultPreferences(function(err,prots) {
+                  var temp_prefs_obj = self.prefs_object;
                   self.getPreferences(function(err,new_prefs) {
                     if ( ! new_prefs ) {
+                      self.prefs_object = null;
+                      temp_prefs_obj = null;
                       console.log("Didn't get prefs");
                       default_method(function(){});
                       return;
                     }
+                    self.prefs_object = temp_prefs_obj;
                     if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
                       if (DomaintoolPreferences.upgradePreferences) {
                         DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
@@ -39,6 +43,7 @@
                       }
                     }
                   });
+                  self.prefs_object = null;
                 });
               });
             });
