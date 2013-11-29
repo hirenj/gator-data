@@ -42,6 +42,10 @@
 <polyline fill="#FBEAD6" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
 	67.802,60.462 78.803,94.32 50.001,69.823 21.196,94.322 32.199,60.462 3.386,39.531 38.999,39.534 50,5.678 61.002,39.536 96.615,39.539 67.804,60.462 "/>
         </g>
+        <g id="glcnac(b1-4)glcnac.potential">
+			<rect x="27" y="0" fill="#67a2fc" width="46" height="46" stroke-width="0" stroke="#000"/>
+			<rect x="27" y="54" fill="#67a2fc" width="46" height="46" stroke-width="0" stroke="#000"/>
+        </g>
 	</defs>
 	<g>
 		<rect x="0" y="0" width="100" height="100" stroke-width="0.1" stroke="#000" fill="none"/>
@@ -61,5 +65,5 @@
 	<use xlink:href="#hex" x="900" y="100" width="100" height="100"/>
 	<use xlink:href="#hexnac" x="1000" y="100" width="100" height="100"/>
 	<use xlink:href="#xyl" x="1100" y="100" width="100" height="100"/>
-
+	<use xlink:href="#glcnac(b1-4)glcnac.potential" x="1200" y="100" width="100" height="100"/>
 </svg>
