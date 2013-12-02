@@ -1714,7 +1714,7 @@
 
     var get_renderer = function(renderer_url,callback) {
 
-      if (renderer_url.match(/^http/)) {
+      if (renderer_url.match(/^(https?:\/)?\//)) {
           MASCP.Service.request(renderer_url,callback,true);
       }
       // Respond to google: urls and default to using a google doc for the renderer url
@@ -2271,7 +2271,7 @@
       }
 
       window.showFullProteinList = function() {
-        get_proteins(protein_doc_id,handle_proteins);
+        // get_proteins(protein_doc_id,handle_proteins);
       };
 
 
