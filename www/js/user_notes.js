@@ -418,6 +418,7 @@
       });
     };
     if ( ! prefs.realtime ) {
+      bean.remove(prefs,'realtimeready');
       bean.add(prefs,'realtimeready', callback);
     } else {
       callback();
