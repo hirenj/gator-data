@@ -94,7 +94,47 @@ var set_rkeys = function(set,keys) {
             console.log("Could not write config");
         }
     });
-}
+};
+
+var upload_batch = function(s3,bucket,dataset,datas,max_count,total,progress,finished) {
+
+    var zlib = require('zlib');
+
+    if (datas.length === 0) {
+        finished();
+        return;
+    }
+
+    var wanted_datas = datas.splice(0,max_count);
+
+    var local_count = 0;
+    var to_send = wanted_datas.length;
+
+    var do_next = function() {
+        upload_batch(s3,bucket,dataset,datas,max_count,total,progress,finished);
+        return;
+    };
+
+    wanted_datas.forEach(function(block) {
+        var accession = block.acc;
+        var data_string = block.data;
+        zlib.gzip(data_string, function (_, result) {
+            var params = {Bucket: bucket, Key: 'data/latest/'+dataset+'/'+accession, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
+            s3.putObject(params,function(err,data) {
+                total += 1;
+                local_count += 1;
+                if (local_count >= to_send) {
+                    console.log("Preparing next batch");
+                    do_next();
+                }
+                progress(total);
+                if (err) {
+                    console.log(err);
+                }
+            });
+        });
+    });
+};
 
 var upload_set_s3 = function(bucket,dataset) {
 
@@ -123,13 +163,14 @@ var upload_set_s3 = function(bucket,dataset) {
         return;
     }
 
-    progress_func = function(count) {
+    var progress_func = function(count) {
         console.log("\u001b[1F\u001b[1K"+service.resource_name+" s3 upload (\u001b[36;1m"+count.toFixed(0)+"\u001b[0m)");
     };
+
     var total = 0;
     MASCP.Service.Snapshot(service,null,null,function(err,snapshot) {
         var zlib = require('zlib');
-
+        var to_upload = [];
         if ( ! err ) {
             var acc;
             var results = {};
@@ -137,21 +178,11 @@ var upload_set_s3 = function(bucket,dataset) {
             for (acc in snapshot) {
                 if (acc !== 'accs' && acc !== 'config') {
                     var temp_data = JSON.parse(snapshot[acc].data);
+
                     // S3 adds its own etag
                     delete temp_data['etag'];
+                    to_upload.push({"acc" : acc, "data" : JSON.stringify(temp_data) });
 
-                    (function(accession,data_string) {
-                        zlib.gzip(data_string, function (_, result) {
-                            var params = {Bucket: bucket, Key: 'data/latest/'+dataset+'/'+accession, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
-                            s3.putObject(params,function(err,data) {
-                                total += 1;
-                                progress_func(total);
-                                if (err) {
-                                    console.log(err);
-                                }
-                            });
-                        });
-                    })(acc,JSON.stringify(temp_data));
                     if ( temp_data.data ) {
                         temp_data = temp_data.data;
                     }
@@ -160,16 +191,18 @@ var upload_set_s3 = function(bucket,dataset) {
                     results[acc] = temp_data;
                 }
             }
-            var block  = { 'data' : results };
-            block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
-            block.title = service.resource_name;
-            zlib.gzip(JSON.stringify(block), function (_, result) {
-                var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
-                s3.putObject(params,function(err,data) {
-                    if (err)
-                        console.log(err)
-                    else
-                        console.log("Successfully uploaded snapshot to data/history/"+dataset );
+            upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
+                var block  = { 'data' : results };
+                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
+                block.title = service.resource_name;
+                zlib.gzip(JSON.stringify(block), function (_, result) {
+                    var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
+                    s3.putObject(params,function(err,data) {
+                        if (err)
+                            console.log(err)
+                        else
+                            console.log("\n\nSuccessfully uploaded snapshot to data/history/"+dataset+"\n\n" );
+                    });
                 });
             });
         }
