@@ -37,6 +37,9 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
 
   MASCP.DomainRetriever.prototype.requestData = function() {
     var url = this._endpointURL;
+    if (Array.isArray(url)) {
+      return this.requestDataWithUniprot();
+    }
     var agi = this.agi.toLowerCase();
     var gatorURL = url.slice(-1) == '/' ? url+agi : url+'/'+agi;
     return {
@@ -46,6 +49,55 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         data: { 'agi'       : agi
         }
     };
+  };
+
+  MASCP.DomainRetriever.prototype.requestDataWithUniprot = function() {
+      var self = this;
+      var urls = this._endpointURL;
+      var results = {};
+
+      var merge_hash = function(h1,h2) {
+          var key;
+          for (key in h2.data) {
+              h1.data[key] = h2.data[key];
+          }
+          return h1;
+      };
+
+      var check_result = function(err) {
+          if (err) {
+              bean.fire(self,"error",[err]);
+              bean.fire(MASCP.Service,'requestComplete');
+              self.requestComplete();
+              check_result = function() {};
+              return;
+          }
+          if (results['uniprot'] && results['full']) {
+              self._dataReceived(merge_hash(results['uniprot'],results['full']));
+              self.gotResult();
+              self.requestComplete();
+          }
+      };
+
+      urls.forEach(function(url) {
+        var self_runner;
+        var type = 'uniprot';
+        if (url.indexOf('uniprot') >= 0) {
+          self_runner = new MASCP.UniprotDomainReader();
+        } else {
+          type = 'full';
+          self_runner = new MASCP.DomainRetriever(null,url);
+        }
+        self_runner.retrieve(self.agi,function(err) {
+          if ( ! err ) {
+            results[type] = this.result._raw_data;
+          }
+          check_result(err);
+        });
+        return;
+      });
+
+      return false;
   };
 
   MASCP.DomainRetriever.getRawData = function(config,callback) {
@@ -103,7 +155,9 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
     }
     if (config.type === "gatorURL") {
       var datareader = new MASCP.UserdataReader(null, config.url);
-      datareader.datasetname = "domains";
+      datareader.requestData = MASCP.DomainRetriever.prototype.requestData;
+
+     // datareader.datasetname = "domains";
     // datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHM5ZXRjdUdFWnQ4M2xYcjM3S0Izdmc";
       datareader.retrieve(acc,function(err) {
         if (err) {
@@ -252,6 +306,10 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       if (prefs && prefs.accepted_domains) {
         retrieve_accepted_domains(prefs.accepted_domains,acc,function(err,wanted_domains) {
           if (err) {
+            if (err.status == 403) {
+              next_call([])();
+              return;
+            }
             if (err.error !== "No data") {
               console.log("Some problem");
               return;
