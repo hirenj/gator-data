@@ -1812,7 +1812,7 @@
             renderer.trackOrder.push(track_name);
             renderer.showLayer(track_name);
           }
-          if ( ! MASCP.getLayer(track_name) ) {
+          if ( ! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).disabled ) {
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
           var datas = this.result._raw_data.data;
@@ -2134,6 +2134,19 @@
         add_keyboard_navigation();
       };
 
+      if (window.location.toString().match(/doi/)) {
+        var match = /doi\/(.*)\//.exec(window.location);
+        match.shift();
+        var actual_handle_proteins = handle_proteins;
+        get_preferences = function() {
+          if ( ! window.prefs ) {
+            window.prefs = (new DomaintoolPreferences());
+          }
+          return window.prefs;
+        };
+        use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
+        handle_proteins =  function() {};
+      }
 
 
       get_preferences(handle_proteins);
@@ -2168,14 +2181,6 @@
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
-
-      if (window.location.toString().match(/doi/)) {
-        var match = /doi\/(.*)\//.exec(window.location);
-        match.shift();
-        var actual_handle_proteins = handle_proteins;
-        use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
-        handle_proteins =  function() {};
-      }
 
       if (state.action && state.action == 'create') {
         // Use a particular static conf, or something
