@@ -34,6 +34,13 @@
                       return;
                     }
                     self.prefs_object = temp_prefs_obj;
+                    if (self.waiting) {
+                      self.waiting.forEach(function(waiting) {
+                        self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
+                      });
+                      self.waiting = [];
+                    }
+
                     if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
                       if (DomaintoolPreferences.upgradePreferences) {
                         DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
