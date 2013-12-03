@@ -276,6 +276,9 @@
           var args = Array.prototype.slice.call(arguments);
           args.unshift(file_obj);
           google_obj.writePreferences.apply(google_obj,args);
+        },
+        ifReady : function(callback) {
+          callback.call();
         }
       };
       if (self.waiting) {
@@ -322,6 +325,9 @@
             callback.call(null,null,conf);
           },
           writePreferences : function() {
+          },
+          ifReady : function(callback) {
+            callback.call();
           }
         };
         delete self.realtime;
@@ -375,6 +381,9 @@
           var args = Array.prototype.slice.call(arguments);
           args.unshift(domain);
           google_obj.writePreferences.apply(google_obj,args);
+        },
+        ifReady : function(callback) {
+          callback.call();
         }
       };
       delete self.realtime;
