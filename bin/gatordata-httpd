@@ -136,7 +136,7 @@ var upload_batch = function(s3,bucket,dataset,datas,max_count,total,progress,fin
     });
 };
 
-var upload_set_s3 = function(bucket,dataset) {
+var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
 
     var service_object = function(resource) {
         var clazz = resource_map[resource];
@@ -192,6 +192,10 @@ var upload_set_s3 = function(bucket,dataset) {
                 }
             }
             upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
+                if (skip_snapshot) {
+                    console.log("\n\nFinished uploading data, skipping snapshot");
+                    return;
+                }
                 var block  = { 'data' : results };
                 block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
                 block.title = service.resource_name;
@@ -230,7 +234,7 @@ var refresh_file = function(file,map,title) {
     inserter.bind('progress',function(percent) {
         console.log("\u001b[1F\u001b[1K"+title+" insertion (\u001b[36;1m"+percent.toFixed(0)+"%\u001b[0m)");
     });
-    MASCP.Service.ClearCache(inserter.toString(),null,function() {
+    var do_insert = function() {
         console.log("Cleared data out on "+inserter.toString());
         var read_stream = fs.createReadStream(file);
         if (file.match(/gz$/)) {
@@ -250,7 +254,9 @@ var refresh_file = function(file,map,title) {
         }).on('error',function(error) {
             console.log(error.message)
         });
-    });
+    };
+
+    MASCP.Service.ClearCache(inserter.toString(),null,do_insert);
 
     return inserter;
 };
