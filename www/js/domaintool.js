@@ -1978,10 +1978,7 @@
       });
     };
 
-    var get_orthologs = function() {
-    };
-
-    var _get_orthologs = function(acc,renderer) {
+    var get_orthologs = function(acc,renderer) {
       if ( ! gapi || ! gapi.auth.getToken() ) {
         return;
       }
