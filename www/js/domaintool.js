@@ -636,10 +636,16 @@
       });
     };
 
-    var wire_history = function(renderer) {
+    var wire_history = function(renderer,handle_proteins) {
       if (history) {
         window.onpopstate = function(event) {
-          show_protein((event.state || {})['uniprot_id'],renderer);
+          var state = (event.state || {});
+          if (state['uniprot_id']) {
+            show_protein(state['uniprot_id'],renderer);
+          }
+          if (state['uniprot_ids']) {
+            handle_proteins(null,state['uniprot_ids'].split('+'));
+          }
         };
       }
     };
@@ -1222,7 +1228,7 @@
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
         if ( ! document.getElementById('prot_'+(ucacc.toLowerCase())) ) {
-          window.showFullProteinList();
+          // We should show the full list of proteins here?
         }
       }
 
@@ -2116,6 +2122,9 @@
 
 
       var handle_proteins = function(err,prots,auth_func) {
+        if (handle_proteins.disabled) {
+          return;
+        }
         if (err) {
           console.log(arguments);
           window.notify.alert(err.message || "Error loading proteins");
@@ -2147,6 +2156,8 @@
         add_keyboard_navigation();
       };
 
+      get_preferences(handle_proteins);
+
       if (window.location.toString().match(/doi/)) {
         var match = /doi\/(.*)\//.exec(window.location);
         match.shift();
@@ -2160,9 +2171,6 @@
         use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
       }
-
-
-      get_preferences(handle_proteins);
 
       setup_visual_renderer(renderer);
       var wheel_fn = function(e) {
@@ -2190,12 +2198,14 @@
       wire_uniprot_id_changer(renderer,handle_proteins);
       wire_clipboarder();
       wire_genesearch(renderer);
-      wire_history(renderer);
+      wire_history(renderer,handle_proteins);
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
 
       if (state.action && state.action == 'create') {
+
+        get_preferences(handle_proteins);
         // Use a particular static conf, or something
         // as the template configuration for loading up
         // of session data
@@ -2212,6 +2222,7 @@
           window.notify.info("Created new session").hideLater(1000);
           wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
+        return;
       }
 
       if (state.ids) {
@@ -2252,11 +2263,9 @@
             }
           });
         });
+        return;
       }
 
-      if (get_preferences().getActiveSession()) {
-        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
-      }
 
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
@@ -2283,22 +2292,16 @@
           // show_protein(prots[0],renderer);
           handle_proteins(null,prots,renderer);
           if (prots.length > 1) {
+            handle_proteins.disabled = true;
             return;
           }
         }
       }
 
-      window.showFullProteinList = function() {
-        // get_proteins(protein_doc_id,handle_proteins);
-      };
-
-
-      if (state.exportIds) {
-        get_proteins(protein_doc_id,handle_proteins);
-        setInterval(function() {
-          get_proteins(protein_doc_id,handle_proteins);
-        },10*60*1000);
+      if (get_preferences().getActiveSession()) {
+        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
       }
+
 
     };
     if (has_ready) {
