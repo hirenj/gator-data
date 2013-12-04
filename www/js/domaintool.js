@@ -1227,7 +1227,7 @@
       }
       if (history && history.pushState && (force || ( (history.state || {})['uniprot_id'] !== ucacc && ((history.state || {})['uniprot_ids'] || "").indexOf(ucacc) < 0)) ) {
         history.pushState({"uniprot_id" : ucacc},ucacc,"/uniprot/"+ucacc);
-        document.title = "GlycodomainViewer "+ucacc;
+        document.title = "GlycoDomain Viewer "+ucacc;
         if ( ! document.getElementById('prot_'+(ucacc.toLowerCase())) ) {
           // We should show the full list of proteins here?
         }
@@ -2287,7 +2287,7 @@
             if (prots.length == 1) {
               history.replaceState({"uniprot_id" : prots[0].id},prots[0].id,"/uniprot/"+prots[0].id);
             } else {
-              document.title = "GlycodomainViewer "+results[1];
+              document.title = "GlycoDomain Viewer "+results[1];
               history.replaceState({"uniprot_ids" : results[1] },prots.join(','),window.location);
             }
           }
