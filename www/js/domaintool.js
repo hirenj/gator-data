@@ -1178,6 +1178,8 @@
           renderer.showAnnotation(acc);
         }
 
+        renderer.showLayer(acc);
+
         // domain_retriever.renderDomains(acc,renderer,function(){
         //   if (! /comparison\//.exec(window.location)) {
         //     get_sites(acc,renderer,refresher);
