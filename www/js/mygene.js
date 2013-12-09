@@ -111,12 +111,19 @@
       return search_cache[newValue];
     }
     show_persistent_message('Searching..');
+    var done_alias = false;
+
     do_http_request('http://mygene.info/v2/query?species=human&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
       if (err) {
         flash_message('Error searching');
         return;
       }
       clear_messages();
+      if ( ! done_alias && val && val.hits && val.hits.length < 1 ) {
+        done_alias = true;
+        do_http_request('http://mygene.info/v2/query?species=human&fields=symbol,name,alias,uniprot,accession.protein&q=alias:'+newValue,arguments.callee);
+        return;
+      }
       var prots = [];
       var uprot_re1 = /^([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]$/;
       var uprot_re2 = /^[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]$/;
@@ -142,6 +149,13 @@
         val.toString = function() {
           return this.name + " ("+ this.symbol +")";
         };
+
+        if (prot.alias) {
+          val.toString = function() {
+            return this.name + " ("+ this.symbol + "/" + prot.alias.join('/') +")";
+          };
+        }
+
         prots.push(val);
       });
       if (prots.length == 0) {
