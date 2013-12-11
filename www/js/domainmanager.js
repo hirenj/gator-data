@@ -386,6 +386,10 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         if ( dom == "tmhmm-outside") {
           return;
         }
+        if ( dom == "tmhmm-inside") {
+          return;
+        }
+
         MASCP.registerLayer(lay_name, { 'fullname' : track_name || dom, 'color' : '#aaaaaa' },[renderer]);
         renderer.trackOrder.push(lay_name);
         if (editing_enabled) {
