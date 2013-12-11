@@ -65,7 +65,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
       };
 
       var check_result = function(err) {
-          if (err) {
+          if (err && err !== "No data") {
               bean.fire(self,"error",[err]);
               bean.fire(MASCP.Service,'requestComplete');
               self.requestComplete();
@@ -91,6 +91,8 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         self_runner.retrieve(self.agi,function(err) {
           if ( ! err ) {
             results[type] = this.result._raw_data;
+          } else {
+            results[type] = {};
           }
           check_result(err);
         });
@@ -380,6 +382,9 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         var track_name = domains[dom].name;
         if ( dom == "tmhmm-TMhelix") {
           track_name = "TM Transmembrane";
+        }
+        if ( dom == "tmhmm-outside") {
+          return;
         }
         MASCP.registerLayer(lay_name, { 'fullname' : track_name || dom, 'color' : '#aaaaaa' },[renderer]);
         renderer.trackOrder.push(lay_name);

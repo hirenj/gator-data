@@ -2269,10 +2269,15 @@
         return;
       }
 
+      if (get_preferences().getActiveSession()) {
+        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
+      }
 
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
         document.getElementById('drive_install').style.display = 'none';
+        get_proteins(protein_doc_id,handle_proteins);
+        return;
       }
 
       if (window.location.toString().match(/uniprot/)) {
@@ -2301,11 +2306,6 @@
           }
         }
       }
-
-      if (get_preferences().getActiveSession()) {
-        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
-      }
-
 
     };
     if (has_ready) {
