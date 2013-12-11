@@ -1851,7 +1851,7 @@
               sandbox.eval(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
                             "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
-                            "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
+                            "onerror" : function(message) { debugger; console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();
                               var obj = ({ "gotResult" : function() {
@@ -2159,7 +2159,6 @@
         add_keyboard_navigation();
       };
 
-      get_preferences(handle_proteins);
 
       if (window.location.toString().match(/doi/)) {
         var match = /doi\/(.*)\//.exec(window.location);
@@ -2173,6 +2172,8 @@
         };
         use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
         handle_proteins =  function() {};
+      } else {
+        get_preferences(handle_proteins);
       }
 
       setup_visual_renderer(renderer);
