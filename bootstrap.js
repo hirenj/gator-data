@@ -128,62 +128,54 @@ watch_file("./domains_all_uniprot_cdd_tmhmm.txt.gz",function(data_array) {
 	return data;
 },"CddRunner");
 
-watch_file("./homologene.data",function(lines) {
+/*
+We want the mapping file HUMAN_MOUSE_RAT_idmapping_selected.tab.gz
+Grab from ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/
+We only want the idmapping_selected.dat.gz files
+We want to run with the --mappings option set to the .gz file with all the mappings in it.
+*/
+
+watch_file("./homologene_with_cho.data",function(lines) {
 	var data = {};
 	var curr_group = null;
-	var id;
+	var group_data = null;
+
 	for ( var i = 0; i < lines.length; i++ ) {
 		var bits = lines[i];
 		var group_id = bits[0];
 		if (curr_group != group_id) {
-			id = null;
+			if (group_data !== null) {
+				// Human, Yeast, Mouse, Rat, Zebrafish, Drosophila, CHO
+				[9606,4932,10090,10116,7955,7227,10029].forEach(function(tax_id) {
+					if (group_data[tax_id]) {
+						if ( ! data[group_data[tax_id]] ) {
+							data[group_data[tax_id]] = { "data" : { "orthologs" : {} } } ;
+						}
+						for (var othertax in group_data) {
+							data[group_data[tax_id]].data.orthologs[othertax] = group_data[othertax].toLowerCase();
+						}
+						delete data[group_data[tax_id]].data.orthologs[tax_id];
+					}
+				});
+			}
+			group_data = {};
 		}
+
+		curr_group = group_id;
+
 		var tax_id = bits[1];
-		var prot_id = this.map_id(bits[5]);
-		if (tax_id == 9606) {
-			id = prot_id;
-			curr_group = group_id;
+		var prot_id = bits[5];
+		if (prot_id.indexOf('_') >= 0) {
+			prot_id = this.map_id(prot_id);
 		}
-		if ( id  === null ) {
-			continue;
-		}
-		if ( ! data[id] ) {
-	    	data[id] = { "data" : { "orthologs" : {} } };
-		} else {
-			data[id].data.orthologs[tax_id] = prot_id;
+		if (prot_id) {
+			group_data[tax_id] = prot_id.toLowerCase();
 		}
 	}
 	return data;
 },"homologene");
 
-watch_file("./cho_hs_orthologs",function(lines) {
-	var data = {};
-	for ( var i = 0; i < lines.length; i++ ) {
-		var id = lines[i][1];
-		var cho = lines[i][0];
-		if ( ! id || id === "") {
-			continue;
-		}
-		if ( ! data[id] ) {
-	    	data[id] = { "data" : { "orthologs" : {} } };
-	    }
-		data[id].data.orthologs[10029] = cho;
-	}
-	return data;
-},"cho_orthologs");
-
-live_update("homologene","cho_orthologs",function(old_data,new_data) {
-    if ( ! old_data ) {
-        return new_data;
-    }
-    if ( ! new_data ) {
-        return old_data;
-    }
-    for (var key in new_data.data.orthologs) {
-        old_data.data.orthologs[key] = new_data.data.orthologs[key];
-    }
-    return old_data;
-});
+set_rkeys("homologene",["orthologs"],["taxid","ortholog_uniprot"]);
 
 live_update("fulldomains",MASCP.UnionDomainReader,function(old_data,new_data)  {
         if ( ! old_data ) {
