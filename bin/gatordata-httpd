@@ -87,8 +87,11 @@ var refresh_document = function(doc,map) {
     return inserter;
 };
 
-var set_rkeys = function(set,keys) {
+var set_rkeys = function(set,keys,names) {
     nconf.set("rKeys:"+set,keys);
+    if (names) {
+        nconf.set("rNames:"+set,names);
+    }
     nconf.save(function(err) {
         if (err) {
             console.log("Could not write config");
@@ -176,7 +179,7 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
             var results = {};
             var a_timestamp = null;
             for (acc in snapshot) {
-                if (acc !== 'accs' && acc !== 'config') {
+                if (acc !== 'accs' && acc !== 'config' && acc !== 'defaults') {
                     var temp_data = JSON.parse(snapshot[acc].data);
 
                     // S3 adds its own etag
@@ -197,13 +200,19 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
                     return;
                 }
                 var block  = { 'data' : results };
-                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [] };
+                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [], 'rNames' : nconf.get('rNames')[service.resource_name.replace(/:/g,'_')] || [] };
+                if (block.defaults['rKeys'].length < 1) {
+                    delete block.defaults['rKeys'];
+                }
+                if (block.defaults['rNames'].length < 1) {
+                    delete block.defaults['rNames'];
+                }
                 block.title = service.resource_name;
                 zlib.gzip(JSON.stringify(block), function (_, result) {
                     var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
                     s3.putObject(params,function(err,data) {
                         if (err)
-                            console.log(err)
+                            console.log(err);
                         else
                             console.log("\n\nSuccessfully uploaded snapshot to data/history/"+dataset+"\n\n" );
                     });
@@ -1138,6 +1147,7 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.allow_snapshot = allow_snapshot;
             repl.repl.context.upload_set_s3 = upload_set_s3;
             repl.repl.context.add_local_datadoc = add_local_datadoc;
+            repl.repl.context.set_rkeys = set_rkeys;
         }
     }
 
