@@ -1848,9 +1848,18 @@
                 return;
               }
               var sandbox = new JSandbox();
+              var seq = renderer.sequence;
+              (function() {
+                var obj = ({ "gotResult" : function() {
+                  seq = renderer.sequence;
+                }, "agi" : acc });
+                jQuery(renderer).trigger('readerRegistered',[obj]);
+                obj.gotResult();
+              })();
+
               sandbox.eval(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
-                            "input" : { "sequence" : renderer.sequence, "data" : datas, "acc" : acc  },
+                            "input" : { "sequence" : seq, "data" : datas, "acc" : acc  },
                             "onerror" : function(message) { debugger; console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();
