@@ -139,8 +139,7 @@ var upload_batch = function(s3,bucket,dataset,datas,max_count,total,progress,fin
     });
 };
 
-var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
-
+var process_snapshot =function(dataset,progress,complete) {
     var service_object = function(resource) {
         var clazz = resource_map[resource];
         if ( ! clazz ) {
@@ -156,24 +155,14 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
         obj.resource_name = resource;
         return obj;
     };
-
-    var AWS = require('aws-sdk');
-    var s3 = new AWS.S3();
-
     var service = service_object(dataset);
     if (! service) {
         console.log("No service");
         return;
     }
 
-    var progress_func = function(count) {
-        console.log("\u001b[1F\u001b[1K"+service.resource_name+" s3 upload (\u001b[36;1m"+count.toFixed(0)+"\u001b[0m)");
-    };
-
     var total = 0;
     MASCP.Service.Snapshot(service,null,null,function(err,snapshot) {
-        var zlib = require('zlib');
-        var to_upload = [];
         if ( ! err ) {
             var acc;
             var results = {};
@@ -182,9 +171,11 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
                 if (acc !== 'accs' && acc !== 'config' && acc !== 'defaults') {
                     var temp_data = JSON.parse(snapshot[acc].data);
 
-                    // S3 adds its own etag
                     delete temp_data['etag'];
-                    to_upload.push({"acc" : acc, "data" : JSON.stringify(temp_data) });
+
+                    if (progress) {
+                        progress(acc,temp_data);
+                    }
 
                     if ( temp_data.data ) {
                         temp_data = temp_data.data;
@@ -194,33 +185,70 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
                     results[acc] = temp_data;
                 }
             }
-            upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
-                if (skip_snapshot) {
-                    console.log("\n\nFinished uploading data, skipping snapshot");
-                    return;
+            var block  = { 'data' : results };
+            block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [], 'rNames' : (nconf.get('rNames') || {})[service.resource_name.replace(/:/g,'_')] || [] };
+            if (block.defaults['rKeys'].length < 1) {
+                delete block.defaults['rKeys'];
+            }
+            if (block.defaults['rNames'].length < 1) {
+                delete block.defaults['rNames'];
+            }
+            block.title = service.resource_name;
+            var zlib = require('zlib');
+            zlib.gzip(JSON.stringify(block), function (_, result) {
+                if (complete) {
+                    complete(result);
                 }
-                var block  = { 'data' : results };
-                block.defaults = { 'rKeys' : nconf.get('rKeys')[service.resource_name.replace(/:/g,'_')] || [], 'rNames' : nconf.get('rNames')[service.resource_name.replace(/:/g,'_')] || [] };
-                if (block.defaults['rKeys'].length < 1) {
-                    delete block.defaults['rKeys'];
-                }
-                if (block.defaults['rNames'].length < 1) {
-                    delete block.defaults['rNames'];
-                }
-                block.title = service.resource_name;
-                zlib.gzip(JSON.stringify(block), function (_, result) {
-                    var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: result, ContentType : 'application/json', ContentEncoding : 'gzip' };
-                    s3.putObject(params,function(err,data) {
-                        if (err)
-                            console.log(err);
-                        else
-                            console.log("\n\nSuccessfully uploaded snapshot to data/history/"+dataset+"\n\n" );
-                    });
-                });
             });
         }
-
     });
+};
+
+var write_set_gzip = function(dataset,filename) {
+    var complete = function(gzip) {
+        fs.writeFile(filename,gzip, function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("Wrote dataset "+dataset+" to "+filename);
+            }
+        });
+    };
+    process_snapshot(dataset,null,complete);
+};
+
+var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
+
+    var AWS = require('aws-sdk');
+    var s3 = new AWS.S3();
+    var to_upload = [];
+
+    var progress = function(acc,data) {
+        to_upload.push({"acc" : acc, "data" : JSON.stringify(data) });
+    };
+
+    var progress_func = function(count) {
+        console.log("\u001b[1F\u001b[1K"+dataset+" s3 upload (\u001b[36;1m"+count.toFixed(0)+"/"+to_upload.length+"\u001b[0m)");
+    };
+
+    var complete = function(gzip) {
+        upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
+            if (skip_snapshot) {
+                console.log("\n\nFinished uploading data, skipping snapshot");
+                return;
+            }
+            var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: gzip, ContentType : 'application/json', ContentEncoding : 'gzip' };
+            s3.putObject(params,function(err,data) {
+                if (err)
+                    console.log(err);
+                else
+                    console.log("\n\nSuccessfully uploaded snapshot to data/history/"+dataset+"\n\n" );
+            });
+        });
+    };
+
+    process_snapshot(dataset,progress,complete);
+
 };
 
 var refresh_file = function(file,map,title) {
@@ -1147,6 +1175,7 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.allow_snapshot = allow_snapshot;
             repl.repl.context.upload_set_s3 = upload_set_s3;
             repl.repl.context.add_local_datadoc = add_local_datadoc;
+            repl.repl.context.write_set_gzip = write_set_gzip;
             repl.repl.context.set_rkeys = set_rkeys;
         }
     }
