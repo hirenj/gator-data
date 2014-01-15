@@ -2048,8 +2048,20 @@
       while (orthos_parent.firstChild) {
         orthos_parent.removeChild(orthos_parent.firstChild);
       }
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
+      var datareader = new MASCP.UserdataReader(null,'http://glycodomain-data.glycocode.com/data/latest/homologene/');
+      datareader.requestData = function() {
+          var agi = this.agi.toLowerCase();
+          var gatorURL = this._endpointURL.slice(-1) == '/' ? this._endpointURL+agi : this._endpointURL+'/'+agi;
+          return {
+              type: "GET",
+              dataType: "json",
+              url : gatorURL,
+              data: { 'agi'       : agi,
+                      'service'   : this.datasetname
+              }
+          };
+      };
+
       datareader.datasetname = "homologene";
       datareader.retrieve(acc,function(err) {
         if ( ! err ) {
