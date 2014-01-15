@@ -892,6 +892,9 @@
       }
       window.keyboard_enabled = true;
       window.addEventListener('keypress',function(e) {
+        if (e.srcElement.contentEditable) {
+          return;
+        }
         var to_select;
         if (e.keyCode == 110) {
           to_select = window.document.getElementsByClassName('selected')[0].nextSibling;
