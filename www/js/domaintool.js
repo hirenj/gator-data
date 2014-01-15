@@ -1289,9 +1289,9 @@
 
         // renderer.acc = acc;
         document.getElementById('uniprot_id').textContent = ucacc;
+        renderer.grow_container = true;
         renderer.setSequence(this.result.getSequence());
         set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
-        renderer.grow_container = true;
         if (success) {
           success();
         }
@@ -2194,7 +2194,6 @@
           e.preventDefault();
         }
         e.stopPropagation();
-        e.returnValue = false;
         return false;
       };
       document.getElementById('sequence_frame').addEventListener('DOMMouseScroll',wheel_fn,false);
