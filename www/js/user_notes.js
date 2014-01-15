@@ -561,7 +561,7 @@
   };
 
   var icon_content = function(self,annotation,symbol) {
-    return { 'symbol' : self.renderer[symbol].call(self.renderer), "hover_function" : function() { annotation.icon = symbol; }  };
+    return { 'symbol' : symbol, "hover_function" : function() { annotation.icon = symbol; }  };
   };
 
   var tag_content = function(self,annotation,tag) {
@@ -601,7 +601,7 @@
       var pie_contents;
       if ( ! set_col ) {
         if (annotation.type == 'symbol') {
-          pie_contents = self.generatePieContent(icon_content,annotation,["small_galnac","man","xyl","fuc","small_glcnac","nlinked"]);
+          pie_contents = self.generatePieContent(icon_content,annotation,["#sugar_galnac","#sugar_man","#sugar_xyl","#sugar_fuc","#sugar_glcnac","#sugar_glcnac(b1-4)glcnac"]);
         } else {
           var tags = [];
           for (var tag in self.tags) {
@@ -639,7 +639,7 @@
 
     var obj = { "gotResult" : function() {
       if (annotation.type == "symbol") {
-        var added = self.renderer.getAA(annotation.index).addToLayer("annotations"+annotation.acc,{"content" : annotation.icon ? self.renderer[annotation.icon]() : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 12 + top_offset, "height" : 24 });
+        var added = self.renderer.getAA(annotation.index).addToLayer("annotations"+annotation.acc,{"content" : annotation.icon ? annotation.icon : "X" , "bare_element" : (annotation.icon && (! ("ontouchstart" in window))) ? true : false, "border" : "#f00", "offset" : 6 + top_offset, "height" : 12 });
         rendered.push(added[0]);
         rendered.push(added[2]);
         rendered.push(added[1]);
