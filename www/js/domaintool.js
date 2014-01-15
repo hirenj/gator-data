@@ -12,19 +12,49 @@
         };
       }
       MASCP.GoogledataReader.isLoggedOut(function(err,loggedOut) {
+        var skip_waiting = null;
         if (! loggedOut) {
           if (self.getActiveSession()) {
             // We don't want to do an auto upgrade when using
             // session files
             default_method(function() {
+              skip_waiting = self.waiting;
+              self.waiting = [];
               self.addRealtime(self.getActiveSession());
+              self.ifReady(function() {
+                skip_waiting.forEach(function(wait) {
+                  self.waiting.push(wait);
+                });
+              });
             });
           } else {
+            // Run the default method that sets the session so that
+            // we know where the prefs come from
             default_method(function() {
+
+              skip_waiting = self.waiting;
+              self.waiting = [];
+
+              // Get the contents of the preferences of this original
+              // data
               self.getPreferences(function(err,orig_prefs) {
                 self.prefs_object = null;
+
+                // Switch to using the default preferences from the default
+                // prefs file
+
                 self.useDefaultPreferences(function(err,prots) {
+
+                  self.ifReady(function() {
+                    skip_waiting.forEach(function(wait) {
+                      self.waiting.push(wait);
+                    });
+                  });
+
                   var temp_prefs_obj = self.prefs_object;
+                  // Keep the prefs object handy so we know that we are
+                  // upgrading on the right preferences file
+
                   self.getPreferences(function(err,new_prefs) {
                     if ( ! new_prefs ) {
                       self.prefs_object = null;
@@ -33,6 +63,11 @@
                       default_method(function(){});
                       return;
                     }
+
+                    if (self.prefs_object !== null && self.prefs_object !== temp_prefs_obj) {
+                      return;
+                    }
+
                     self.prefs_object = temp_prefs_obj;
                     if (self.waiting) {
                       self.waiting.forEach(function(waiting) {
@@ -246,6 +281,7 @@
 
       });
       this.prefs_object = {
+        "source" : file,
         addWatchedDocument : function() {
           var args = Array.prototype.slice.call(arguments);
           args.unshift(file_obj);
@@ -311,6 +347,7 @@
         conf = json;
         var accs = conf.accessions || [];
         self.prefs_object = {
+          "source" : doc,
           addWatchedDocument : function() {
           },
           removeWatchedDocument : function() {
@@ -352,6 +389,7 @@
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
       this.prefs_object = {
+        "source" : "Domaintool preferences",
         addWatchedDocument : function() {
           var args = Array.prototype.slice.call(arguments);
           args.unshift(domain);
@@ -2240,6 +2278,10 @@
         return;
       }
 
+      if (get_preferences().getActiveSession()) {
+        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
+      }
+
       if (state.ids) {
         state.ids.forEach(function(doc_id) {
           (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title) {
@@ -2281,9 +2323,7 @@
         return;
       }
 
-      if (get_preferences().getActiveSession()) {
-        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
-      }
+
 
       if (state.exportIds && state.exportIds.length > 0) {
         protein_doc_id = state.exportIds[0];
