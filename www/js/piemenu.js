@@ -135,7 +135,7 @@ PieMenu.create = function(canvas,x,y,contents,opts) {
         els.push(circ);
         var symbol = item.symbol;
         if (typeof symbol == 'string') {
-            if (symbol.match(/^(:?https?:)?\//)) {
+            if (symbol.match(/^(:?https?:)?\/?.*#/)) {
                 if (! canvas.supports_use ) {
                     item.text = item.text_alt || item.symbol;
                 } else {
@@ -149,7 +149,7 @@ PieMenu.create = function(canvas,x,y,contents,opts) {
                     g.setAttribute('pointer-events','none');
                     els.push(g);
                 }
-            } else if (symbol.match(/^#/) || symbol.match(/^url/)) {
+            } else if (symbol.match(/^#[0123456789ABCDEF]{3,6}/) || symbol.match(/^url/)) {
                 circ.setAttribute('fill',symbol);
             } else {
                 symbol = canvas.text_circle(x_pos,y_pos,icon_size,symbol);
