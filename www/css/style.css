@@ -628,3 +628,42 @@
         z-index: 2;
         border-radius: 0px 0px 5px 5px;
     }
+
+    @media only screen and (max-device-width: 760px) {
+        #print, #clipboarder, #help, #zoomlabel, #zoomin, #zoomout {
+            display: none;
+        }
+        #information {
+            display: none;
+        }
+        #protein_list {
+            left: -100px;
+        }
+        #viewer {
+            left: 10px;
+            right: 0px;
+        }
+        #sequence_frame {
+            margin-right: 50px;
+        }
+        #selecttoggle input[value] {
+            position: fixed;
+            left: 10px;
+            right: 120px;
+            width: auto;
+            font-size: 1em;
+        }
+        #search_container, #uniprot_container, #description, #find, #drive_install {
+            -webkit-transition: 0.5s;
+            -moz-transition: 0.5s;
+            -o-transition: 0.5s;
+            transition: 0.5s;
+            display: block;
+        }
+        .hidden_controls {
+            height: 0px !important;
+            box-shadow: none !important;
+            border: none !important;
+            overflow: hidden;
+        }
+    }
