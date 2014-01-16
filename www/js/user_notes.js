@@ -226,8 +226,10 @@
     }
 
 
-    var moving_func = function(e) {
-      var p = svgPosition(e,canvas);
+    var moving_func = function(evt) {
+      evt.preventDefault();
+
+      var p = svgPosition(evt,canvas);
       end = p.x;
 
       var local_start;
@@ -257,11 +259,10 @@
         delete self.redrawTimeout;
         self.redrawAnnotations();
       },100);
-      e.preventDefault();
-    }
+    };
 
 
-    self.bindClick(canvas,function(e) {
+    self.bindClick(canvas,function(evt) {
       if (! self.selecting && self.annotations && self.annotations['hover_targets']) {
         self.annotations['hover_targets'] = [];
         self.renderer.select();
@@ -269,11 +270,11 @@
       }
     });
 
-    canvas.addEventListener('mousedown',function(e) {
+    canvas.addEventListener('mousedown',function(evt) {
       if (! self.selecting ) {
         return;
       }
-      var positions = mousePosition(e);
+      var positions = mousePosition(evt);
       var p = {};
       if (canvas.nodeName == 'svg') {
           p = canvas.createSVGPoint();
@@ -291,15 +292,15 @@
       end = p.x;
       canvas.addEventListener('mousemove',moving_func,false);
 
-      e.preventDefault();
+      evt.preventDefault();
     },false);
 
-    canvas.addEventListener('mouseup',function(e) {
+    canvas.addEventListener('mouseup',function(evt) {
       if (self.selecting && callback) {
         callback(selected);
       }
       canvas.removeEventListener('mousemove',moving_func);
-      e.preventDefault();
+      evt.preventDefault();
     });
 
     canvas.addEventListener('touchend',function() {
@@ -311,12 +312,13 @@
       canvas.removeEventListener('touchmove',moving_func);
     });
 
-    canvas.addEventListener('touchstart',function(e) {
+    canvas.addEventListener('touchstart',function(evt) {
         if (! self.selecting ) {
           return;
         }
-        if (e.changedTouches.length == 1) {
-            var positions = mousePosition(e.changedTouches[0]);
+        if (evt.changedTouches.length == 1) {
+            evt.preventDefault();
+            var positions = mousePosition(evt.changedTouches[0]);
             var p = {};
             if (canvas.nodeName == 'svg') {
                 p = canvas.createSVGPoint();
@@ -333,11 +335,9 @@
             start = p.x;
             end = p.x;
             canvas.addEventListener('touchmove',moving_func,false);
-
-            e.preventDefault();
         }
     },false);
-  }
+  };
 
   MASCP.AnnotationManager.prototype.initialiseAnnotations = function(prefs) {
     var self = this;
