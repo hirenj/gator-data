@@ -838,15 +838,17 @@
         }
         var curr_classname;
         if ( ! is_toggle_action ) {
+          // Android chrome does not handle concurrent touch events
+          // http://jsfiddle.net/Darbicus/z3Xdx/10/
           manager.selecting = ! manager.selecting;
           curr_classname = toggler.className.replace('selecting','');
           toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
           bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
         } else {
           if ( ! toggler.firstChild.getAttribute('value') ) {
-            manager.selecting = false;
             curr_classname = toggler.className.replace('selecting','');
             toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+            bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
           }
         }
         evt.preventDefault();
