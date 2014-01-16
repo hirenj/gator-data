@@ -1339,6 +1339,52 @@
 
     };
 
+    var hide_controls = function() {
+      document.getElementById('uniprot_container').classList.add('hidden_controls');
+      document.getElementById('search_container').classList.add('hidden_controls');
+      document.getElementById('description').classList.add('hidden_controls');
+      document.getElementById('drive_install').classList.add('hidden_controls');
+      document.getElementById('find').classList.add('hidden_controls');
+      document.getElementById('align').classList.add('hidden_controls');
+
+      document.getElementById('sequence_frame').scrollIntoView();
+    };
+
+    var show_controls = function() {
+      document.getElementById('uniprot_container').classList.remove('hidden_controls');
+      document.getElementById('search_container').classList.remove('hidden_controls');
+      document.getElementById('description').classList.remove('hidden_controls');
+      document.getElementById('drive_install').classList.remove('hidden_controls');
+      document.getElementById('find').classList.remove('hidden_controls');
+      document.getElementById('align').classList.remove('hidden_controls');
+    };
+
+    var wire_smartphone_controls = function() {
+      document.getElementById('sequence_frame').addEventListener('touchstart',function() {
+        document.activeElement.blur();
+      });
+      var just_hidden = false;
+      var is_hidden = false;
+      document.getElementById('viewer').addEventListener('scroll',function(){
+        if (this.scrollTop < 1 && ! just_hidden) {
+          show_controls();
+          just_hidden = false;
+          is_hidden = false;
+        } else {
+          if (this.scrollTop > 0.3*document.getElementById('sequence_frame').offsetTop) {
+            if ( ! is_hidden ) {
+              just_hidden = true;
+              hide_controls();
+            }
+            is_hidden = true;
+            setTimeout(function() {
+              just_hidden = false;
+            },200);
+          }
+        }
+      },false);
+    };
+
     var wire_tag_edit = function(annotation_manager) {
       var flipped;
       bean.add(annotation_manager,'editclick',function() {
@@ -2266,6 +2312,9 @@
       wire_clipboarder();
       wire_genesearch(renderer);
       wire_history(renderer,handle_proteins);
+      if (window.matchMedia && window.matchMedia('screen and (max-device-width: 760px)').matches) {
+        wire_smartphone_controls();
+      }
 
       var state = get_passed_in_state();
       var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
