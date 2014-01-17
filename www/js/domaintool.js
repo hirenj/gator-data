@@ -723,7 +723,7 @@
         if (renderer.sequence) {
           selector_callback();
         }
-        renderer.bind('sequenceChange',selector_callback);
+        bean.add(renderer,'sequenceChange',selector_callback);
         document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
           evt.preventDefault();
         });
@@ -775,7 +775,7 @@
         });
       };
 
-      jQuery(renderer).bind('sequenceChange', seq_change_func);
+      bean.add(renderer,'sequenceChange', seq_change_func);
       bean.add(renderer,'draggingtoggle',function(enabled) {
         dragger.enabled = enabled;
       });
@@ -963,7 +963,7 @@
 
     var scale_text_elements = function(renderer) {
         renderer.text_els = [];
-        jQuery(renderer).bind('zoomChange',function() {
+        bean.add(renderer,'zoomChange',function() {
           if (renderer.printing) {
             return;
           }
@@ -1107,7 +1107,7 @@
           rend.text_els = [];
           rend.acc = prot;
           (function(my_rend) {
-            jQuery(my_rend).bind('sequenceChange', function() {
+            bean.add(my_rend,'sequenceChange', function() {
               if ( ! mf && window.matchMedia) {
                 mf = my_rend._media_func;
                 (my_rend.win() || window).matchMedia('print').addListener(print_func);
@@ -1289,8 +1289,8 @@
       var a_reader = new MASCP.UniprotReader();
 
       MASCP.Service.CacheService(a_reader);
-      jQuery(renderer).bind('sequenceChange',function() {
-        jQuery(renderer).unbind('sequenceChange',arguments.callee);
+      bean.add(renderer,'sequenceChange',function() {
+        bean.remove(renderer,'sequenceChange',arguments.callee);
         console.log("Retrieving data");
         retrieve_data(ucacc,renderer);
       });
