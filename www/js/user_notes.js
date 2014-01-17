@@ -199,7 +199,7 @@
   MASCP.AnnotationManager.prototype.addSelector = function(callback) {
     var self = this;
     if ( ! self.renderer._canvas) {
-      self.renderer.bind('sequenceChange',function() {
+      bean.add(renderer,'sequenceChange',function() {
         self.addSelector(callback);
       });
       return;

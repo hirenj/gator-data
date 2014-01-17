@@ -560,7 +560,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               update_domains.call(self,renderer,self.acc);
             }
           };
-          jQuery(renderer).bind('sequenceChange',function() {
+          bean.add(renderer,'sequenceChange',function() {
             jQuery(renderer).unbind('orderChanged',order_changed_func);
           });
           jQuery(renderer).bind('orderChanged',order_changed_func);
