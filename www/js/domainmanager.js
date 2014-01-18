@@ -548,7 +548,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           };
 
           edit_toggler.enabled = true;
-          var order_changed_func = function(e,order) {
+          var order_changed_func = function(order) {
             console.log("Order changed");
             if ((order.indexOf((self.acc || "").toUpperCase()) == (order.length - 1) && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
               console.log(self.acc);
@@ -561,9 +561,9 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             }
           };
           bean.add(renderer,'sequenceChange',function() {
-            jQuery(renderer).unbind('orderChanged',order_changed_func);
+            bean.remove(renderer,'orderChanged',order_changed_func);
           });
-          jQuery(renderer).bind('orderChanged',order_changed_func);
+          bean.add(renderer,'orderChanged',order_changed_func);
         }
       });
     });
