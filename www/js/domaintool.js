@@ -1774,7 +1774,7 @@
       if (! options.inline) {
         if ( ! MASCP.getGroup('extra_data')) {
           MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
-          jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
+          bean.add(MASCP.getGroup('extra_data'),'visibilityChange',function(rend,visible) {
             if (rend.navigation.getController(this)) {
               window.extra_shown = visible;
             }
