@@ -513,7 +513,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             'gotResult' : function() {
               render_domains(renderer,domains,acc,options.track,options.offset,options.icons ? options.icons.namespace : null);
 
-              jQuery(renderer.navigation).bind('toggleEdit',function() {
+              bean.add(renderer.navigation,'toggleEdit',function() {
                 if (edit_toggler.enabled) {
                   edit_toggler(renderer);
                 }
