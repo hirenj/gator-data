@@ -538,7 +538,7 @@
           }
           renderer.showLayer(layer);
           renderer.refresh();
-          jQuery(renderer).trigger('resultsRendered',[self]);
+          renderer.trigger('resultsRendered',[self]);
         });
       };
     };
@@ -597,7 +597,7 @@
           //     renderer.getAA(sites[i]).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : parseInt(renderer.trackHeight*4/3),  "bare_element" : true });
           // }
           renderer.showLayer(layer);
-          jQuery(renderer).trigger('resultsRendered',[self]);
+          renderer.trigger('resultsRendered',[self]);
         });
       };
     };
@@ -865,7 +865,7 @@
         message = "Did you know you can pinch to zoom the sequence?";
       }
 
-      jQuery('#zoomin').click(function() {
+      document.getElementById('zoomin').addEventListener('click',function() {
         var start_zoom = renderer.zoom;
         var curr_zoom = start_zoom;
         if (start === null) {
@@ -893,9 +893,9 @@
           start = null;
           document.getElementById('zoomlabel').removeAttribute('data-hint');
         },3000);
-      });
+      },false);
 
-      jQuery('#zoomout').click(function(e) {
+      document.getElementById('zoomout').addEventListener('click',function() {
         var start_zoom = renderer.zoom;
         var curr_zoom = start_zoom;
         if (start === null) {
@@ -923,7 +923,7 @@
           start = null;
           document.getElementById('zoomlabel').removeAttribute('data-hint');
         },3000);
-      });
+      },false);
     };
 
     var add_keyboard_navigation = function() {
@@ -1799,7 +1799,7 @@
       }
       datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0), "icons" : options.icons });
 
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader == datareader) {
           renderer.refresh();
           renderer.unbind('resultsRendered',arguments.callee);
@@ -1992,7 +1992,7 @@
       datareader.setupSequenceRenderer = render_sites(acc,true,top_offset);
       datareader.registerSequenceRenderer(renderer);
 
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader !== datareader) {
           return;
         }
@@ -2000,7 +2000,7 @@
           renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
           renderer.showLayer(renderer.acc ? "all_domains" : acc);
         }
-        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        renderer.unbind('resultsRendered',arguments.callee);
         if (reader == datareader && done) {
           done();
           done = null;
@@ -2045,7 +2045,7 @@
       MASCP.registerLayer("netoglyc31",{ "fullname" : "Net-O-Glyc 3.1"});
       datareader.setupSequenceRenderer = render_sites("netoglyc31",false,-1);
       datareader.registerSequenceRenderer(renderer);
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader !== datareader) {
           return;
         }
@@ -2053,7 +2053,7 @@
           renderer.trackOrder.push("netoglyc31");
           renderer.showLayer("netoglyc31");
         }
-        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        renderer.unbind('resultsRendered',arguments.callee);
         if (reader == datareader && done) {
           done();
           done = null;
