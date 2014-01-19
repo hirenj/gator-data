@@ -513,7 +513,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             'gotResult' : function() {
               render_domains(renderer,domains,acc,options.track,options.offset,options.icons ? options.icons.namespace : null);
 
-              jQuery(renderer.navigation).bind('toggleEdit',function() {
+              bean.add(renderer.navigation,'toggleEdit',function() {
                 if (edit_toggler.enabled) {
                   edit_toggler(renderer);
                 }
@@ -548,7 +548,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
           };
 
           edit_toggler.enabled = true;
-          var order_changed_func = function(e,order) {
+          var order_changed_func = function(order) {
             console.log("Order changed");
             if ((order.indexOf((self.acc || "").toUpperCase()) == (order.length - 1) && order.length > 0) || ( order.length == 1 && order[0] == (self.acc.toUpperCase()) ) ) {
               console.log(self.acc);
@@ -560,10 +560,10 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               update_domains.call(self,renderer,self.acc);
             }
           };
-          jQuery(renderer).bind('sequenceChange',function() {
-            jQuery(renderer).unbind('orderChanged',order_changed_func);
+          bean.add(renderer,'sequenceChange',function() {
+            bean.remove(renderer,'orderChanged',order_changed_func);
           });
-          jQuery(renderer).bind('orderChanged',order_changed_func);
+          bean.add(renderer,'orderChanged',order_changed_func);
         }
       });
     });
