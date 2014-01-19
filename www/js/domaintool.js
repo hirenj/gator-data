@@ -538,7 +538,7 @@
           }
           renderer.showLayer(layer);
           renderer.refresh();
-          jQuery(renderer).trigger('resultsRendered',[self]);
+          renderer.trigger('resultsRendered',[self]);
         });
       };
     };
@@ -597,7 +597,7 @@
           //     renderer.getAA(sites[i]).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : parseInt(renderer.trackHeight*4/3),  "bare_element" : true });
           // }
           renderer.showLayer(layer);
-          jQuery(renderer).trigger('resultsRendered',[self]);
+          renderer.trigger('resultsRendered',[self]);
         });
       };
     };
@@ -723,7 +723,7 @@
         if (renderer.sequence) {
           selector_callback();
         }
-        renderer.bind('sequenceChange',selector_callback);
+        bean.add(renderer,'sequenceChange',selector_callback);
         document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
           evt.preventDefault();
         });
@@ -775,7 +775,7 @@
         });
       };
 
-      jQuery(renderer).bind('sequenceChange', seq_change_func);
+      bean.add(renderer,'sequenceChange', seq_change_func);
       bean.add(renderer,'draggingtoggle',function(enabled) {
         dragger.enabled = enabled;
       });
@@ -865,7 +865,7 @@
         message = "Did you know you can pinch to zoom the sequence?";
       }
 
-      jQuery('#zoomin').click(function() {
+      document.getElementById('zoomin').addEventListener('click',function() {
         var start_zoom = renderer.zoom;
         var curr_zoom = start_zoom;
         if (start === null) {
@@ -893,9 +893,9 @@
           start = null;
           document.getElementById('zoomlabel').removeAttribute('data-hint');
         },3000);
-      });
+      },false);
 
-      jQuery('#zoomout').click(function(e) {
+      document.getElementById('zoomout').addEventListener('click',function() {
         var start_zoom = renderer.zoom;
         var curr_zoom = start_zoom;
         if (start === null) {
@@ -923,7 +923,7 @@
           start = null;
           document.getElementById('zoomlabel').removeAttribute('data-hint');
         },3000);
-      });
+      },false);
     };
 
     var add_keyboard_navigation = function() {
@@ -963,7 +963,7 @@
 
     var scale_text_elements = function(renderer) {
         renderer.text_els = [];
-        jQuery(renderer).bind('zoomChange',function() {
+        bean.add(renderer,'zoomChange',function() {
           if (renderer.printing) {
             return;
           }
@@ -1107,7 +1107,7 @@
           rend.text_els = [];
           rend.acc = prot;
           (function(my_rend) {
-            jQuery(my_rend).bind('sequenceChange', function() {
+            bean.add(my_rend,'sequenceChange', function() {
               if ( ! mf && window.matchMedia) {
                 mf = my_rend._media_func;
                 (my_rend.win() || window).matchMedia('print').addListener(print_func);
@@ -1289,8 +1289,8 @@
       var a_reader = new MASCP.UniprotReader();
 
       MASCP.Service.CacheService(a_reader);
-      jQuery(renderer).bind('sequenceChange',function() {
-        jQuery(renderer).unbind('sequenceChange',arguments.callee);
+      bean.add(renderer,'sequenceChange',function() {
+        bean.remove(renderer,'sequenceChange',arguments.callee);
         console.log("Retrieving data");
         retrieve_data(ucacc,renderer);
       });
@@ -1774,7 +1774,7 @@
       if (! options.inline) {
         if ( ! MASCP.getGroup('extra_data')) {
           MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
-          jQuery(MASCP.getGroup('extra_data')).bind('visibilityChange',function(ev,rend,visible) {
+          bean.add(MASCP.getGroup('extra_data'),'visibilityChange',function(rend,visible) {
             if (rend.navigation.getController(this)) {
               window.extra_shown = visible;
             }
@@ -1799,7 +1799,7 @@
       }
       datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0), "icons" : options.icons });
 
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader == datareader) {
           renderer.refresh();
           renderer.unbind('resultsRendered',arguments.callee);
@@ -1942,7 +1942,7 @@
                 var obj = ({ "gotResult" : function() {
                   seq = renderer.sequence;
                 }, "agi" : acc });
-                jQuery(renderer).trigger('readerRegistered',[obj]);
+                renderer.trigger('readerRegistered',[obj]);
                 obj.gotResult();
               })();
 
@@ -1969,7 +1969,7 @@
                                 renderer.trigger('resultsRendered',[this]);
                                 renderer.refresh();
                               }, "agi" : acc });
-                              jQuery(renderer).trigger('readerRegistered',[obj]);
+                              renderer.trigger('readerRegistered',[obj]);
                               obj.gotResult();
                             }
                           });
@@ -1992,7 +1992,7 @@
       datareader.setupSequenceRenderer = render_sites(acc,true,top_offset);
       datareader.registerSequenceRenderer(renderer);
 
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader !== datareader) {
           return;
         }
@@ -2000,7 +2000,7 @@
           renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
           renderer.showLayer(renderer.acc ? "all_domains" : acc);
         }
-        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        renderer.unbind('resultsRendered',arguments.callee);
         if (reader == datareader && done) {
           done();
           done = null;
@@ -2045,7 +2045,7 @@
       MASCP.registerLayer("netoglyc31",{ "fullname" : "Net-O-Glyc 3.1"});
       datareader.setupSequenceRenderer = render_sites("netoglyc31",false,-1);
       datareader.registerSequenceRenderer(renderer);
-      renderer.bind('resultsRendered',function(e,reader) {
+      renderer.bind('resultsRendered',function(reader) {
         if (reader !== datareader) {
           return;
         }
@@ -2053,7 +2053,7 @@
           renderer.trackOrder.push("netoglyc31");
           renderer.showLayer("netoglyc31");
         }
-        jQuery(renderer).unbind('resultsRendered',arguments.callee);
+        renderer.unbind('resultsRendered',arguments.callee);
         if (reader == datareader && done) {
           done();
           done = null;

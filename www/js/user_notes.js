@@ -199,7 +199,7 @@
   MASCP.AnnotationManager.prototype.addSelector = function(callback) {
     var self = this;
     if ( ! self.renderer._canvas) {
-      self.renderer.bind('sequenceChange',function() {
+      bean.add(renderer,'sequenceChange',function() {
         self.addSelector(callback);
       });
       return;
@@ -682,7 +682,7 @@
 
       }
     }, "agi" : annotation.acc };
-    jQuery(self.renderer).trigger('readerRegistered',[obj]);
+    self.renderer.trigger('readerRegistered',[obj]);
     obj.gotResult();
     return { "rendered" : rendered, "click_element" : click_el, "tag_element" : tag_el };
   };
