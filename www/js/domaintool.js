@@ -1942,7 +1942,7 @@
                 var obj = ({ "gotResult" : function() {
                   seq = renderer.sequence;
                 }, "agi" : acc });
-                jQuery(renderer).trigger('readerRegistered',[obj]);
+                renderer.trigger('readerRegistered',[obj]);
                 obj.gotResult();
               })();
 
@@ -1969,7 +1969,7 @@
                                 renderer.trigger('resultsRendered',[this]);
                                 renderer.refresh();
                               }, "agi" : acc });
-                              jQuery(renderer).trigger('readerRegistered',[obj]);
+                              renderer.trigger('readerRegistered',[obj]);
                               obj.gotResult();
                             }
                           });
