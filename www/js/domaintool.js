@@ -1930,7 +1930,7 @@
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
           var datas = this.result._raw_data.data;
-          if (pref.render_options["renderer"]) {
+          if (pref.render_options["renderer"] && JSandbox) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               if (err) {
                 window.notify.alert("Could not render "+pref.title);
