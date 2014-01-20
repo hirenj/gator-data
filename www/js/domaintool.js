@@ -1406,7 +1406,8 @@
           annotation_manager.renderer.fillTemplate("tags_tmpl",{ "tags" : tags },function(error,html) {
             flipped = flippant.flip(document.getElementById('sequence_frame'), html);
             var matches = flipped.querySelectorAll('ul .remove');
-            for (var i = 0 ; i < matches.length; i++) {
+            var i;
+            for (i = 0 ; i < matches.length; i++) {
               matches[i].addEventListener('click',function() {
                 var self = this;
                 var wanted_tag = self.parentNode.getAttribute('data-tag');
@@ -1415,7 +1416,7 @@
               },false);
             }
             matches = flipped.querySelectorAll('ul *[contentEditable]');
-            for (var i = 0 ; i < matches.length; i++) {
+            for (i = 0 ; i < matches.length; i++) {
               matches[i].addEventListener('input',function() {
                 var self = this;
                 var wanted_tag = self.parentNode.getAttribute('data-tag');
@@ -1769,7 +1770,7 @@
             renderer.importIcons(options["icons"].namespace,doc.documentElement);
           }
         },"xml");
-      };
+      }
 
       if (! options.inline) {
         if ( ! MASCP.getGroup('extra_data')) {
@@ -1915,7 +1916,7 @@
               console.log("Imported icons");
             }
           },"xml");
-        };
+        }
 
         reader.retrieve(acc,function() {
           if ( ! this.result ) {
@@ -1949,7 +1950,7 @@
               sandbox.eval(doc,function() {
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
                             "input" : { "sequence" : seq, "data" : datas, "acc" : acc  },
-                            "onerror" : function(message) { debugger; console.log(pref.title); console.log("Errored out"); console.log(message); },
+                            "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();
                               var obj = ({ "gotResult" : function() {
