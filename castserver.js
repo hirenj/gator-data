@@ -18,12 +18,24 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({port: 8080});
 wss.on('connection', function(ws) {
-    console.log("We got a new connection");
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    canvas.vgSwapBuffers();
+    ctx.globalAlpha = 1;
+
+    ws.on('close', function() { 
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        canvas.vgSwapBuffers();
+    });
+
+
     ws.on('message', function(message) {
         message = JSON.parse(message);
         if (message.image) {
+            ctx.globalAlpha = 1;
             ctx.fillStyle = 'white';
-            ctx.fillRect(200, 0, 1500, canvas.height);
+            roundRect(ctx,200,150,1500,canvas.height-300,50,true,false);
 
 
             var base64 = message.image.replace(/.*,/,'');
@@ -35,8 +47,9 @@ wss.on('connection', function(ws) {
             var out_width = imageObj.width;
             var out_height = imageObj.height;
             var scale = 1500 / out_width;
-            out_height = out_height * scale;
-            ctx.drawImage(imageObj,200,200,1500,out_height );
+            out_height = 10 + out_height * scale;
+            var top = 150+0.5*(canvas.height-300-out_height); 
+            ctx.drawImage(imageObj,200,top,1500-10,out_height );
             canvas.vgSwapBuffers();
         }
     });
