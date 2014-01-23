@@ -966,13 +966,8 @@
     var wire_websockets = function(server,renderer) {
       var socket;
       socket = new WebSocket("ws://"+server,"gatorcast");
-      socket.addEventListener('close',function() {
-        socket = null;
-      });
       var fire_update = function() {
-        if (socket) {
-          renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
-        }
+        renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
       };
 
       var update_timeout;
@@ -1217,7 +1212,7 @@
 
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
-      wire_websockets('192.168.2.138:8080',renderer);
+      wire_websockets('192.168.2.33:8080',renderer);
     };
 
     var domain_retriever;
