@@ -3,7 +3,7 @@
 /*global Image: true */
 "use strict";
 
-var Canvas = require('./lib/canvas');
+var Canvas = require('openvg-canvas');
 var Image = Canvas.Image;
 var canvas = new Canvas();
 var ctx = canvas.getContext('2d');
@@ -14,6 +14,31 @@ ctx.clearRect(0, 0, canvas.width, canvas.height);
 ctx.fillStyle = 'black';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+var roundRect = function (ctx, x, y, width, height, radius, fill, stroke) {
+  if (typeof stroke == "undefined" ) {
+    stroke = true;
+  }
+  if (typeof radius === "undefined") {
+    radius = 5;
+  }
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  if (stroke) {
+    ctx.stroke();
+  }
+  if (fill) {
+    ctx.fill();
+  }        
+};
 
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({port: 8080});
@@ -51,6 +76,7 @@ wss.on('connection', function(ws) {
             var top = 150+0.5*(canvas.height-300-out_height); 
             ctx.drawImage(imageObj,200,top,1500-10,out_height );
             canvas.vgSwapBuffers();
+            imageObj.vgDestroy();
         }
     });
 });
