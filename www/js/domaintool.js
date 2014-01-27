@@ -961,6 +961,28 @@
         renderer.refresh();
     };
 
+
+
+    var wire_websockets = function(server,renderer) {
+      var socket;
+      socket = new WebSocket("ws://"+server,"gatorcast");
+      var fire_update = function() {
+        renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
+      };
+
+      var update_timeout;
+
+      var update_function = function() {
+        clearTimeout(update_timeout);
+        update_timeout = setTimeout(fire_update,300);
+      };
+
+      renderer.bind('zoomChange',update_function);
+      renderer.bind('sequenceChange',function() {
+        bean.add(renderer._canvas,'panend',update_function);
+      })
+    };
+
     var scale_text_elements = function(renderer) {
         renderer.text_els = [];
         bean.add(renderer,'zoomChange',function() {
@@ -1190,6 +1212,7 @@
 
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
+      wire_websockets('192.168.2.33:8080',renderer);
     };
 
     var domain_retriever;
