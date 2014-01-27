@@ -964,6 +964,9 @@
 
 
     var wire_websockets = function(server,renderer) {
+      if ( ! "WebSocket" in window ) {
+        return;
+      }
       var socket;
       socket = new WebSocket("ws://"+server,"gatorcast");
       var fire_update = function() {
@@ -976,11 +979,12 @@
         clearTimeout(update_timeout);
         update_timeout = setTimeout(fire_update,300);
       };
-
-      renderer.bind('zoomChange',update_function);
-      renderer.bind('sequenceChange',function() {
-        bean.add(renderer._canvas,'panend',update_function);
-      })
+      socket.onopen = function() {
+        renderer.bind('zoomChange',update_function);
+        renderer.bind('sequenceChange',function() {
+          bean.add(renderer._canvas,'panend',update_function);
+        })
+      };
     };
 
     var scale_text_elements = function(renderer) {
