@@ -963,27 +963,18 @@
 
 
 
-    var wire_websockets = function(server,renderer) {
+    var wire_websockets = function(server,opened) {
       if ( ! "WebSocket" in window ) {
         return;
       }
       var socket;
       socket = new WebSocket("ws://"+server,"gatorcast");
-      var fire_update = function() {
-        renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
-      };
 
-      var update_timeout;
-
-      var update_function = function() {
-        clearTimeout(update_timeout);
-        update_timeout = setTimeout(fire_update,300);
-      };
       socket.onopen = function() {
-        renderer.bind('zoomChange',update_function);
-        renderer.bind('sequenceChange',function() {
-          bean.add(renderer._canvas,'panend',update_function);
-        })
+        console.log("Opened socket");
+        if (opened) {
+          opened(socket);
+        }
       };
     };
 
@@ -1216,11 +1207,42 @@
 
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
-      wire_websockets('192.168.2.33:8080',renderer);
+
+      wire_gatordisplay(renderer);
+      wire_websockets('localhost:8080',function(socket) {
+        socket.onmessage = function(ev) {
+          show_protein(ev.data,renderer);
+        };
+      });
     };
 
     var domain_retriever;
 
+    var wire_gatordisplay = function(renderer) {
+
+      var socket = null;
+
+      var fire_update = function() {
+        if (socket) {
+          renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
+        }
+      };
+
+      var update_timeout;
+
+      var update_function = function() {
+        clearTimeout(update_timeout);
+        update_timeout = setTimeout(fire_update,300);
+      };
+
+      wire_websockets('192.168.2.33:8080',function(newsock) {
+        socket = newsock;
+        renderer.bind('zoomChange',update_function);
+        renderer.bind('sequenceChange',function() {
+          bean.add(renderer._canvas,'panend',update_function);
+        });
+      });
+    };
 
     var retrieve_data = function(acc,renderer,end_func) {
         acc = (acc || "").toUpperCase();
