@@ -1211,7 +1211,14 @@
       wire_gatordisplay(renderer);
       wire_websockets('localhost:8080',function(socket) {
         socket.onmessage = function(ev) {
-          show_protein(ev.data,renderer);
+          update_protein_list((ev.data || '').split(/,/).map(function(up) {
+            var dat = { "id" : up, "name" : up };
+            dat.toString = function() {
+              return this.id;
+            };
+            return dat;
+          }),renderer);
+          // show_protein(,renderer);
         };
       });
     };
