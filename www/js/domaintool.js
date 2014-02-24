@@ -1235,7 +1235,7 @@
         update_timeout = setTimeout(fire_update,300);
       };
 
-      wire_websockets('192.168.2.33:8080',function(newsock) {
+      wire_websockets('glycodomain.ccg:8080',function(newsock) {
         socket = newsock;
         renderer.bind('zoomChange',update_function);
         renderer.bind('sequenceChange',function() {
