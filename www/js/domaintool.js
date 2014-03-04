@@ -38,12 +38,23 @@
               // Get the contents of the preferences of this original
               // data
               self.getPreferences(function(err,orig_prefs) {
+                if (err) {
+                  console.log("Didn't get prefs");
+                  default_method(function(){});
+                  return;
+                }
+
                 self.prefs_object = null;
 
                 // Switch to using the default preferences from the default
                 // prefs file
 
                 self.useDefaultPreferences(function(err,prots) {
+                  if (err) {
+                    console.log("Didn't get prefs");
+                    default_method(function(){});
+                    return;
+                  }
 
                   self.ifReady(function() {
                     skip_waiting.forEach(function(wait) {
@@ -56,7 +67,7 @@
                   // upgrading on the right preferences file
 
                   self.getPreferences(function(err,new_prefs) {
-                    if ( ! new_prefs ) {
+                    if ( err || ! new_prefs ) {
                       self.prefs_object = null;
                       temp_prefs_obj = null;
                       console.log("Didn't get prefs");
@@ -156,11 +167,19 @@
     DomaintoolPreferences.prototype.copyToRealtime = function(folder,callback) {
       var self = this;
       self.getPreferences(function(err,orig_prefs) {
+        if (err) {
+          callback.call(null,err);
+          return;
+        }
         (new MASCP.GoogledataReader()).createPreferences(folder,function(err,content,doc_id,title) {
           delete self.prefs_object;
           self.setActiveSession(doc_id,title);
           self.addRealtime(doc_id);
           self.getPreferences(function(err,new_prefs) {
+            if (err) {
+              callback.call(null,err);
+              return;
+            }
             if (DomaintoolPreferences.upgradePreferences) {
               DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
             }
@@ -196,6 +215,10 @@
           }
           self.usePreferenceFile(file);
           self.getPreferences(function(err,prefs,etag) {
+            if (err) {
+              window.notify.alert("Could not get preferences, please reload page");
+              return;
+            }
             gapi.drive.realtime.load(file, function(doc) {
               console.log("Realtime ready");
               self.realtime = doc;
@@ -238,6 +261,7 @@
           }
           if (err) {
             callback.call(null,err);
+            return;
           }
           var key;
           for (key in (file_obj.content)) {
@@ -1588,6 +1612,10 @@
               };
               var remove_customdoc = function() {
                 get_preferences().getPreferences(function(err,prefs) {
+                  if (err) {
+                    window.notify.alert("Could not perform operation, please reload page");
+                    return;
+                  }
                   prefs.accepted_domains[0] = { "file" : "User specified domains", "type" : "googleFile" };
                   get_preferences().sync(function() {
                     flipped.close();
@@ -1597,8 +1625,27 @@
               };
               var copy_to_customdoc =  function() {
                 get_preferences().getPreferences(function(err,prefs) {
+                  if (err) {
+                    flipped.close();
+                    flipped = false;
+                    window.notify.alert("Could not perform operation, please reload page");
+                    return;
+                  }
                   MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat) {
+                    if (err) {
+                      flipped.close();
+                      flipped = false;
+                      window.notify.alert("Could not perform operation, please reload page");
+                      return;
+                    }
                     (new MASCP.GoogledataReader()).createFile("root",dat,"Copied domains","application/json; data-type=domaintool-domains",function(err,content,id){
+                      if (err) {
+                        flipped.close();
+                        flipped = false;
+                        window.notify.alert("Could not perform operation, please reload page");
+                        return;
+                      }
+
                       prefs.accepted_domains[0] = {"file" : { "file_id" : id }, "type" : "googleFile", "owner" : "Self", "title" : "Copied domains"};
                       get_preferences().sync(function() {
                         flipped.close();
@@ -2423,6 +2470,10 @@
               if (type == 'application/json; data-type=domaintool-domains') {
                 get_preferences().ifReady(function() {
                   get_preferences().getPreferences(function(err,prefs) {
+                  if (err) {
+                    window.notify.alert("Error loading preferences, please reload page");
+                    return;
+                  }
                   prefs.accepted_domains[0] = {"type" : "googleFile" , "file" : { "file_id" : doc_id }, "title" : title };
                   MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat,permissions,owner) {
                     prefs.accepted_domains[0].owner = owner;
