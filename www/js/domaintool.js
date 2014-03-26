@@ -1233,16 +1233,53 @@
       wire_renderer(renderer);
 
       wire_gatordisplay(renderer);
-      wire_websockets('localhost:8080',function(socket) {
+      wire_websockets('localhost:8880',function(socket) {
         socket.onmessage = function(ev) {
-          update_protein_list((ev.data || '').split(/,/).map(function(up) {
-            var dat = { "id" : up, "name" : up };
-            dat.toString = function() {
-              return this.id;
-            };
-            return dat;
-          }),renderer);
-          // show_protein(,renderer);
+          if (! ev.data) {
+            return;
+          }
+          var data = JSON.parse(ev.data);
+          if (data.message == "showProtein") {
+            if (Array.isArray(data.data)) {
+              update_protein_list(data.data.map(function(up) {
+                var dat = { "id" : up, "name" : up };
+                dat.toString = function() {
+                  return this.id;
+                };
+                return dat;
+              }),renderer);
+            } else {
+              show_protein(data.data,renderer);
+            }
+            return;
+          }
+          if (data.message == "upgradeConnection") {
+            get_preferences().getPreferences(function() {
+              if ( ! gapi || ! gapi.auth.getToken() ) {
+                console.log("No gapi");
+                return;
+              }
+              if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
+                var caller = arguments.callee;
+                window.notify.ask_permission("Allow connection to R",function(granted) {
+                  if (granted) {
+                    var key = Math.random().toString(36).slice(2);
+                    sessionStorage.setItem("RConnectionKey", key);
+                    data.data = key;
+                    caller();
+                  }
+                }).hideLater(30000);
+              } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+                window.notify.info("Connected to R on local machine").hideLater(5000);
+                socket.send(JSON.stringify({
+                  "message" : "token",
+                  "data" : {  "authtoken": gapi.auth.getToken().access_token ,
+                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
+                            }
+                            }));
+              }
+            });
+          }
         };
       });
     };
