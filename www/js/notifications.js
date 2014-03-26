@@ -6,6 +6,7 @@
 	var LEVEL_ALERT = 1;
 	var LEVEL_WARNING = 2;
 	var LEVEL_INFO = 3;
+	var LEVEL_ASK = -2;
 	var window_ready = false;
 	var notification_container = null;
 
@@ -34,6 +35,11 @@
 		return this.notify(message,LEVEL_INFO);
 	};
 
+	Notify.ask_permission = function(message,asked) {
+		var block = this.notify(message,LEVEL_ASK);
+		block.askCallback = asked;
+		return block;
+	}
 
 	var try_notify = function() {
 		if (notifications.length < 1) {
@@ -47,6 +53,9 @@
 			notification_container = build_container(document);
 		}
 		var element = build_notification(notification.message, notification.level);
+		if (notification.level == LEVEL_ASK) {
+			convert_to_ask(element,notification);
+		}
 		notification_container.appendChild(element);
 		if (notification.hide_time) {
 			setTimeout(function(){
@@ -86,6 +95,31 @@
 		};
 		notification.style.position = 'relative';
 		return notification;
+	};
+
+	var convert_to_ask = function(element,notification) {
+		if (! notification.askCallback ) {
+			notification.askCallback = function() {};
+		}
+		var yes_button = document.createElement('div');
+		yes_button.textContent = 'Agree';
+		yes_button.setAttribute('class','yes_button');
+		element.insertBefore(yes_button,element.lastChild);
+		var no_button = document.createElement('div');
+		no_button.textContent = 'Cancel';
+		no_button.setAttribute('class','no_button');
+		element.insertBefore(no_button,element.lastChild);
+		no_button.addEventListener('click',function() {
+			hide_notification(element);
+			notification.askCallback(false);
+		});
+		yes_button.addEventListener('click',function() {
+			hide_notification(element);
+			notification.askCallback(true);
+		});
+		element.lastChild.addEventListener('click',function() {
+			notification.askCallback(false);
+		});
 	};
 
 	var hide_later = function(time) {

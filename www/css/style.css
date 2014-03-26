@@ -152,6 +152,29 @@
             height: 100%;
             cursor: pointer;
         }
+        .notification .yes_button, .notification .no_button {
+            position: absolute;
+            top: 0px;
+            height: 100%;
+            cursor: pointer;
+            padding-left: 5px;
+            padding-right: 5px;
+            line-height: 30px;
+            display: inline-block;
+            color: #000;
+            width: 60px;
+            min-width: 60px;
+            max-width: 60px;
+        }
+        .notification .yes_button {
+            right: 150px;
+            background: #aaffaa;
+        }
+
+        .notification .no_button {
+            right: 50px;
+            background: #ffaaaa;
+        }
 
         .notification {
             color: #ffffff;
@@ -167,6 +190,9 @@
         }
         .notification_container .level_3 {
             background: #779977;
+        }
+        .notification_container .level_-2 {
+            background: #99aaaa;
         }
 
         ul.drive_preferences, ul.domains_preferences {
