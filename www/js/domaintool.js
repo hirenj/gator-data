@@ -1292,7 +1292,7 @@
 
       var fire_update = function() {
         if (socket) {
-          renderer.pngURL(function(dat) { socket.send(JSON.stringify({"image" : dat })); },800);
+          renderer.pngURL(function(dat) { socket.send(JSON.stringify({"type" : "image" , "image" : dat })); },800);
         }
       };
 
