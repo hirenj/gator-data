@@ -772,6 +772,13 @@
     var wire_renderer_sequence_change = function(renderer) {
       var dragger = new GOMap.Diagram.Dragger();
       var seq_change_func = function() {
+        MASCP.Service.request("/icons.svg",function(err,doc) {
+          if (doc) {
+            renderer.importIcons("ui",doc.documentElement);
+            console.log("Imported UI icons");
+          }
+        },"xml");
+
         var zoomFactor = 0.95 * renderer._container.parentNode.clientWidth / (2 * renderer.sequence.length);
         renderer.zoom = zoomFactor;
         dragger.applyToElement(renderer._canvas);
@@ -2049,10 +2056,11 @@
 
         var method = pref["sites"] || pref.render_options["sites"];
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
-        if ((pref || {})["icons"]) {
-          MASCP.Service.request(pref["icons"].url,function(err,doc) {
+        if (pref && pref.icons || (pref.render_options || {}).icons ) {
+          var icon_block = pref.icons || (pref.render_options || {}).icons;
+          MASCP.Service.request(icon_block.url,function(err,doc) {
             if (doc) {
-              renderer.importIcons(pref["icons"].namespace,doc.documentElement);
+              renderer.importIcons(icon_block.namespace,doc.documentElement);
               console.log("Imported icons");
             }
           },"xml");
