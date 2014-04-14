@@ -963,7 +963,7 @@
       }
       window.keyboard_enabled = true;
       window.addEventListener('keypress',function(e) {
-        if (e.srcElement.contentEditable) {
+        if (e.srcElement.isContentEditable) {
           return;
         }
         var to_select;
