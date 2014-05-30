@@ -1303,6 +1303,16 @@
             }
             return;
           }
+          if (data.message == "compactRenderer") {
+            renderer.trackGap = -8;
+            var lay;
+            for (lay in MASCP.layers) {
+              if (lay.match("annotation")) {
+                renderer.hideLayer(lay);
+              }
+              renderer.refresh();
+            }
+          }
           if (data.message == "alignProtein") {
             if (Array.isArray(data.data)) {
               if ( ! socket_alignment_func || window.showing_clustal ) {
