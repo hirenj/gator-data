@@ -1283,6 +1283,7 @@
 
       wire_gatordisplay(renderer);
       wire_websockets('localhost:8880',function(socket) {
+        var socket_alignment_func;
         socket.onmessage = function(ev) {
           if (! ev.data) {
             return;
@@ -1297,6 +1298,17 @@
                 };
                 return dat;
               }),renderer);
+            } else {
+              show_protein(data.data,renderer);
+            }
+            return;
+          }
+          if (data.message == "alignProtein") {
+            if (Array.isArray(data.data)) {
+              if ( ! socket_alignment_func || window.showing_clustal ) {
+                socket_alignment_func = prepare_alignment(data.data,renderer);
+              }
+              socket_alignment_func();
             } else {
               show_protein(data.data,renderer);
             }
