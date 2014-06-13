@@ -1797,8 +1797,11 @@
         var all_ids = [];
         var uprot_re1 = /([A-N]|[R-Z])[0-9][A-Z]([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
         var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
-
-        (uniprot.textContent || "").split(/\n/).forEach(function(id) {
+        var text_data = uniprot.textContent || "";
+        if (uniprot.childElementCount > 0) {
+          text_data = uniprot.childNodes.map(function(n) { n.textContent }).join("\n");
+        }
+        text_data.split(/\n/).forEach(function(id) {
           id = id.replace(/\s+/g,'');
           if (id.toUpperCase().match(uprot_re1) || id.toUpperCase().match(uprot_re2)) {
             var prot = { "id" : id, "name" : id };
