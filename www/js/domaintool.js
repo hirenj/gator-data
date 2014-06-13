@@ -1799,7 +1799,7 @@
         var uprot_re2 = /[OPQ][0-9]([A-Z]|[0-9])([A-Z]|[0-9])([A-Z]|[0-9])[0-9]/;
         var text_data = uniprot.textContent || "";
         if (uniprot.childElementCount > 0) {
-          text_data = Array.prototype.slice.apply(uniprot.childNodes).map(function(n) { n.textContent }).join("\n");
+          text_data = Array.prototype.slice.apply(uniprot.childNodes).map(function(n) { return n.textContent; }).join("\n");
         }
         text_data.split(/\n/).forEach(function(id) {
           id = id.replace(/\s+/g,'');
