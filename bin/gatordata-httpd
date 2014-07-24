@@ -39,10 +39,6 @@ var resource_map = {
 };
 
 
-MASCP.UserdataReader.datasets(function(service) {
-    resource_map[service] = MASCP.UserdataReader;
-});
-
 var live_resources = nconf.get('liveupdate') || {};
 
 (function() {
@@ -68,6 +64,12 @@ process.on( 'SIGINT', function() {
         console.log("Clean exit, saving config file");
         process.exit();
     });
+});
+
+process.stdout.on('error', function(err) {
+    if (err.errno !== process.EPIPE) {
+        throw err;
+    }
 });
 
 process.addListener("uncaughtException", function (err) {
@@ -205,6 +207,7 @@ var process_snapshot =function(dataset,progress,complete) {
 };
 
 var write_set_gzip = function(dataset,filename) {
+    var callbacks = [].splice.call(arguments,2);
     var complete = function(gzip) {
         fs.writeFile(filename,gzip, function(err) {
             if(err) {
@@ -212,12 +215,29 @@ var write_set_gzip = function(dataset,filename) {
             } else {
                 console.log("Wrote dataset "+dataset+" to "+filename);
             }
+            if (callbacks.length > 0) {
+                callbacks.forEach(function(callback) {
+                    callback.call();
+                });
+            }
         });
     };
     process_snapshot(dataset,null,complete);
 };
 
+var test_upload = function(dataset) {
+    var callbacks = [].splice.call(arguments,1);
+    process_snapshot(dataset,function(acc,data) { console.log(JSON.stringify(data)); } ,function(){
+        if (callbacks.length > 0) {
+            callbacks.forEach(function(callback) {
+                callback.call();
+            });
+        }
+    });
+};
+
 var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
+    var callbacks = [].splice.call(arguments,3);
 
     var AWS = require('aws-sdk');
     var s3 = new AWS.S3();
@@ -235,6 +255,11 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
         upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
             if (skip_snapshot) {
                 console.log("\n\nFinished uploading data, skipping snapshot");
+                if (callbacks.length > 0) {
+                    callbacks.forEach(function(callback) {
+                        callback.call();
+                    });
+                }
                 return;
             }
             var params = {Bucket: bucket, Key: 'data/history/'+dataset, Body: gzip, ContentType : 'application/json', ContentEncoding : 'gzip' };
@@ -243,6 +268,12 @@ var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
                     console.log(err);
                 else
                     console.log("\n\nSuccessfully uploaded snapshot to data/history/"+dataset+"\n\n" );
+
+                if (callbacks.length > 0) {
+                    callbacks.forEach(function(callback) {
+                        callback.call();
+                    });
+                }
             });
         });
     };
@@ -404,13 +435,16 @@ var start_document_watching = function() {
     }
 };
 
-var watch_file = function(filename,map,title,callback) {
+var watch_file = function(filename,map,title) {
+    var callbacks = [].splice.call(arguments,3);
     if (nconf.get('watching:file:'+filename)) {
         var curr = nconf.get('watching:file:'+filename);
         if (curr.parser_function.toString() === (map || "").toString()) {
             console.log("Already watching file "+filename);
-            if (callback) {
-                callback();
+            if (callbacks.length > 0) {
+                callbacks.forEach(function(callback) {
+                    callback.call();
+                });
             }
             return;
         }
@@ -426,8 +460,10 @@ var watch_file = function(filename,map,title,callback) {
                 } else {
                     console.log("Data inserted for "+filename+" - will automatically update");
                 }
-                if (callback) {
-                    callback(err);
+                if (callbacks.length > 0) {
+                    callbacks.forEach(function(callback) {
+                        callback.call();
+                    });
                 }
             });
         } else {
@@ -435,8 +471,10 @@ var watch_file = function(filename,map,title,callback) {
         }
     });
     inserter.bind('error',function() {
-        if (callback) {
-            callback.call("Some file error");
+        if (callbacks.length > 0) {
+            callbacks.forEach(function(callback) {
+                callback.call("Some file error");
+            });
         }
     });
 }
@@ -454,7 +492,8 @@ var datadoc_parser = function(datablock) {
     return datablock.data;
 };
 
-var add_local_datadoc = function(doc,title,callback) {
+var add_local_datadoc = function(doc,title) {
+    var callbacks = [].splice.call(arguments,2);
     var stream = fs.createReadStream(doc);
     if (doc.match(/gz$/)) {
         var zlib = require('zlib');
@@ -478,8 +517,10 @@ var add_local_datadoc = function(doc,title,callback) {
         inserter.bind('ready',function() {
             console.log("Inserted");
             resource_map[title] = MASCP.UserdataReader;
-            if (callback) {
-                callback.call();
+            if (callbacks.length > 0) {
+                callbacks.forEach(function(callback) {
+                    callback.call();
+                });
             }
         });
         inserter.setData(title,{"data" : dataset});
@@ -528,7 +569,8 @@ var add_local_datadoc = function(doc,title,callback) {
 
 };
 
-var watch_datadoc = function(doc,callback) {
+var watch_datadoc = function(doc) {
+    var callbacks = [].splice.call(arguments,1);
     if (nconf.get('watching:datadoc:'+doc)) {
         var curr = nconf.get('watching:datadoc:'+doc);
         if (curr && curr.toString()) {
@@ -546,8 +588,10 @@ var watch_datadoc = function(doc,callback) {
             if (err) {
                 console.log("Could not write config");
             } else {
-                if (callback) {
-                    callback();
+                if (callbacks.length > 0) {
+                    callbacks.forEach(function(callback) {
+                        callback.call();
+                    });
                 }
                 console.log("Data inserted - will automatically update for datadoc:"+doc);
             }
@@ -555,13 +599,16 @@ var watch_datadoc = function(doc,callback) {
     });
     inserter.bind('error',function(err) {
         console.log("Error retrieving data document for datadoc:"+doc);
-        if (callback) {
-            callback(err);
+        if (callbacks.length > 0) {
+            callbacks.forEach(function(callback) {
+                callback.call(err);
+            });
         }
     });
 }
 
-var watch_spreadsheet = function(doc,map,callback) {
+var watch_spreadsheet = function(doc,map) {
+    var callbacks = [].splice.call(arguments,2);
     if (nconf.get('watching:spreadsheet:'+doc)) {
         var curr = nconf.get('watching:spreadsheet:'+doc);
         if (curr.parser_function.toString() === (map || "").toString()) {
@@ -600,23 +647,29 @@ var watch_spreadsheet = function(doc,map,callback) {
                 if (err) {
                     console.log("Could not write config");
                 } else {
-                    if (callback) {
-                        callback();
+                    if (callbacks.length > 0) {
+                        callbacks.forEach(function(callback) {
+                            callback.call();
+                        });
                     }
                     console.log("Data inserted - will automatically update for spreadsheet:"+doc);
                 }
             });
         } else {
             console.log("Please try again with a defined parser function");
-            if (callback) {
-                callback("Please try again with a defined parser function");
+            if (callbacks.length > 0) {
+                callbacks.forEach(function(callback) {
+                    callback.call("Please try again with a defined parser function");
+                });
             }
         }
     });
     inserter.bind('error',function(err) {
         console.log("Error retrieving spreadsheet for spreadsheet:"+doc);
-        if (callback) {
-            callback(err);
+        if (callbacks.length > 0) {
+            callbacks.forEach(function(callback) {
+                callback.call(err);
+            });
         }
     });
 };
@@ -1152,6 +1205,9 @@ MASCP.events.once('all_ready',function() {
                 watch_datadoc: auto_exit(watch_datadoc),
                 watch_file : auto_exit(watch_file),
                 add_local_datadoc : auto_exit(add_local_datadoc),
+                test_upload : auto_exit(test_upload),
+                write_set_gzip: auto_exit(write_set_gzip),
+                upload_set_s3 : auto_exit(upload_set_s3),
                 set_rkeys : set_rkeys,
                 live_update : live_update
             }, "<stdin>");
@@ -1174,6 +1230,7 @@ MASCP.events.once('all_ready',function() {
             repl.repl.context.allowed_snapshots = function() { return(JSON.parse(JSON.stringify(allowed_snapshots))); };
             repl.repl.context.allow_snapshot = allow_snapshot;
             repl.repl.context.upload_set_s3 = upload_set_s3;
+            repl.repl.context.test_upload = test_upload;
             repl.repl.context.add_local_datadoc = add_local_datadoc;
             repl.repl.context.write_set_gzip = write_set_gzip;
             repl.repl.context.set_rkeys = set_rkeys;
@@ -1183,44 +1240,48 @@ MASCP.events.once('all_ready',function() {
 });
 
 MASCP.events.once('ready',function() {
-    if (nconf.get("mappings")) {
-        var file = nconf.get("mappings");
-        var read_stream = fs.createReadStream(file);
-        (function() {
-            var csv = require('csv');
-            var mappings = {};
-            if (file.match(/gz$/)) {
-                var zlib = require('zlib');
-                var zipped_stream = read_stream;
-                read_stream = zipped_stream.pipe(zlib.createGunzip());
-            }
-            console.log("Loading mappings");
-            csv()
-            .fromStream(read_stream, {
-                delimiter : "\t",
-                quote : "☃"
-            }).on('data',function(dat) {
-                var ids = dat[3].split(/;\s+/);
-                ids.forEach(function(id) {
-                    mappings[id.toLowerCase()] = dat[0].toLowerCase();
+    MASCP.UserdataReader.datasets(function(service) {
+        resource_map[service] = MASCP.UserdataReader;
+    },function() {
+        if (nconf.get("mappings")) {
+            var file = nconf.get("mappings");
+            var read_stream = fs.createReadStream(file);
+            (function() {
+                var csv = require('csv');
+                var mappings = {};
+                if (file.match(/gz$/)) {
+                    var zlib = require('zlib');
+                    var zipped_stream = read_stream;
+                    read_stream = zipped_stream.pipe(zlib.createGunzip());
+                }
+                console.log("Loading mappings");
+                csv()
+                .fromStream(read_stream, {
+                    delimiter : "\t",
+                    quote : "☃"
+                }).on('data',function(dat) {
+                    var ids = dat[3].split(/;\s+/);
+                    ids.forEach(function(id) {
+                        mappings[id.toLowerCase()] = dat[0].toLowerCase();
+                    });
+                }).on('end',function() {
+                    id_mapper = function(id) {
+                        if (mappings[id.toLowerCase()]) {
+                            return mappings[id.toLowerCase()];
+                        } else {
+                            return id;
+                        }
+                    };
+                    console.log("Loaded up mappings");
+                    MASCP.events.emit('all_ready');
+                }).on('error',function(error) {
+                    console.log(error.message)
                 });
-            }).on('end',function() {
-                id_mapper = function(id) {
-                    if (mappings[id.toLowerCase()]) {
-                        return mappings[id.toLowerCase()];
-                    } else {
-                        return id;
-                    }
-                };
-                console.log("Loaded up mappings");
-                MASCP.events.emit('all_ready');
-            }).on('error',function(error) {
-                console.log(error.message)
-            });
-        })();
-    } else {
-        MASCP.events.emit('all_ready');
-    }
+            })();
+        } else {
+            MASCP.events.emit('all_ready');
+        }
+    });
 });
 
-MASCP.events.emit('ready');
+//MASCP.events.emit('ready');
