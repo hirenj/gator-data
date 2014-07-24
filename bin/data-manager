@@ -1,0 +1,151 @@
+#!/bin/bash
+
+GATORDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+GATORDATA_BIN="$GATORDIR/gatordata-httpd"
+GATOR_CLI="gator-cli"
+GATORDATA="$GATORDATA_BIN --bootstrap"
+
+COMMAND=$1
+shift
+
+BUCKET='glycodomain-data.glycocode.com'
+TESTID='q14118'
+
+
+for i in "$@"
+do
+case $i in
+    -t=*|--title=*)
+    TITLE="${i#*=}"
+    shift
+    ;;
+    -r=*|--rkeys=*)
+    RKEYS="${i#*=}"
+    shift
+    ;;
+    --base64)
+	RKEYS="'base64'"
+    shift
+    ;;
+    -f=*|--file=*)
+	FILENAME="${i#*=}"
+	shift
+	;;
+	--bucket=*)
+	BUCKET="${i#*=}"
+	shift
+	;;
+    --testid=*)
+    TESTID="${i#*=}"
+    shift
+    ;;
+    --test)
+    TEST="true"
+    shift
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+read -r -d '' LOAD_DATADOC_SCRIPT <<-EOF
+	add_local_datadoc('$FILENAME','$TITLE',function() {
+		set_rkeys('$TITLE',[$RKEYS]);
+	});
+	EOF
+
+read -r -d '' WRITE_GZIP <<-EOF
+	write_set_gzip('$TITLE','$FILENAME');
+	EOF
+
+read -r -d '' TEST_UPLOAD <<-EOF
+	test_upload('$TITLE');
+	EOF
+
+
+read -r -d '' S3_UPLOAD <<-EOF
+	upload_set_s3('$BUCKET','$TITLE',true);
+	EOF
+
+
+read -r -d '' LOAD_DOMAINS_SCRIPT <<-EOF
+	var domains_parser = function(data_array) {
+		var data = {};
+		for (var i = 0; i < data_array.length; i++) {
+			var row = data_array[i];
+			var id = row[0];
+			if ( ! data[id] ) {
+				data[id] = { "data": {} };
+			}
+			if ( ! data[id].data[row[4]] ) {
+				data[id].data[row[4]] = { "peptides" : [] };
+			}
+			data[id].data[row[4]].peptides.push([ row[1], row[2] ]);
+			data[id].data[row[4]].name = row[4];
+			data[id].data[row[4]].evalue = row[3];
+
+			if (row[5] && row[6]) {
+				data[id].data[row[4]].name = row[5];
+				data[id].data[row[4]].description = row[6];
+			}
+		}
+		return data;
+	};
+
+
+	watch_file("$FILENAME",domains_parser,$TITLE);
+	set_rkeys($TITLE,["*.peptides"])
+	EOF
+
+read -r -d '' TEST_RETRIEVE <<-EOF
+	var a_reader = new MASCP.UserdataReader(null,'http://127.0.0.1:3000/data/latest/$TITLE/$TESTID');
+	var result = a_reader.retrieve('$TESTID',function(err){
+		if (err) {
+			console.log("We got an error");
+			console.log(err);
+		}
+		console.log(this.result);
+	});
+	EOF
+
+
+# load --file filename --title title --base64
+# load --file filename --title title --rkeys keys
+if [ "$COMMAND" == "load" ]; then
+	echo "$LOAD_DATADOC_SCRIPT" | $GATORDATA
+fi
+
+# domains --file filename --title title
+if [ "$COMMAND" == "domains" ]; then
+	echo "$LOAD_DOMAINS_SCRIPT" | $GATORDATA
+fi
+
+if [ "$COMMAND" == "testserver" ]; then
+	$GATORDATA_BIN
+fi
+
+# testretrieve --title title --testid q14118
+if [ "$COMMAND" == "testretrieve" ]; then
+	echo "$TEST_RETRIEVE" | $GATOR_CLI
+fi
+
+# upload --title title --snapshot --bucket bucket
+if [ "$COMMAND" == "upload" ]; then
+	if [ "$TEST" == "true" ]; then
+		echo "$TEST_UPLOAD" | $GATORDATA
+	else
+		$($HOME/bin/get_aws_credentials $BUCKET)
+		if [ $? -ne 0 ]; then
+		    echo "Could not get credentials for bucket $BUCKET"
+		    exit 1
+		else
+			echo "$S3_UPLOAD" | $GATORDATA
+		fi
+	fi
+fi
+
+if [ "$COMMAND" == "gzip" ]; then
+	echo "$WRITE_GZIP" | $GATORDATA
+fi
