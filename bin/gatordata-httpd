@@ -141,6 +141,46 @@ var upload_batch = function(s3,bucket,dataset,datas,max_count,total,progress,fin
     });
 };
 
+var process_snapshot_per_object = function(dataset,progress,complete) {
+    var service_object = function(resource) {
+        var clazz = resource_map[resource];
+        if ( ! clazz ) {
+            return;
+        }
+        var obj = new clazz(null,null);
+        if (clazz == MASCP.UserdataReader) {
+            obj.datasetname = resource;
+        }
+        obj.resource_name = resource;
+        return obj;
+    };
+    var service = service_object(dataset);
+    if (! service) {
+        console.log("No service");
+        return;
+    }
+
+    var total = 0;
+    MASCP.Service.CachedAgis(service,function(accs) {
+        var i;
+        var progress_done = function() {
+            var acc = accs.shift();
+            if ( ! acc ) {
+                complete();
+                return;
+            }
+            service_object(dataset).retrieve(acc,function(err) {
+                if( this.result && this.result._raw_data) {
+                    progress(acc,this.result._raw_data,progress_done);
+                } else {
+                    progress(acc,{},progress_done);
+                }
+            });
+        };
+        progress_done();
+    });
+};
+
 var process_snapshot =function(dataset,progress,complete) {
     var service_object = function(resource) {
         var clazz = resource_map[resource];
@@ -227,7 +267,7 @@ var write_set_gzip = function(dataset,filename) {
 
 var test_upload = function(dataset) {
     var callbacks = [].splice.call(arguments,1);
-    process_snapshot(dataset,function(acc,data) { console.log(JSON.stringify(data)); } ,function(){
+    process_snapshot_per_object(dataset,function(acc,data,next) { console.log(acc + ":" + JSON.stringify(data)); next(); } ,function(){
         if (callbacks.length > 0) {
             callbacks.forEach(function(callback) {
                 callback.call();
@@ -236,23 +276,50 @@ var test_upload = function(dataset) {
     });
 };
 
+
 var upload_set_s3 = function(bucket,dataset,skip_snapshot) {
     var callbacks = [].splice.call(arguments,3);
 
     var AWS = require('aws-sdk');
     var s3 = new AWS.S3();
     var to_upload = [];
+    var batch_count = 0;
+    var batch_size = 100;
 
     var progress = function(acc,data) {
         to_upload.push({"acc" : acc, "data" : JSON.stringify(data) });
     };
 
     var progress_func = function(count) {
-        console.log("\u001b[1F\u001b[1K"+dataset+" s3 upload (\u001b[36;1m"+count.toFixed(0)+"/"+to_upload.length+"\u001b[0m)");
+        console.log("\u001b[1F\u001b[1K"+dataset+" s3 upload (\u001b[36;1m"+( (batch_count*batch_size) + count).toFixed(0)+"/"+to_upload.length+"\u001b[0m)");
     };
 
+    if (skip_snapshot) {
+        process_snapshot_per_object(dataset,function(acc,data,cback) {
+            progress(acc,data);
+            if (to_upload.length >= batch_size) {
+                upload_batch(s3,bucket,dataset,to_upload,batch_size,0,progress_func,function() {
+                    to_upload = [];
+                    batch_count += 1;
+                    cback();
+                });
+            } else {
+                cback();
+            }
+        },function() {
+            console.log("\n\nFinished uploading data, skipping snapshot");
+            if (callbacks.length > 0) {
+                callbacks.forEach(function(callback) {
+                    callback.call();
+                });
+            }
+        });
+        return;
+    }
+
+
     var complete = function(gzip) {
-        upload_batch(s3,bucket,dataset,to_upload,100,0,progress_func,function() {
+        upload_batch(s3,bucket,dataset,to_upload,batch_size,0,progress_func,function() {
             if (skip_snapshot) {
                 console.log("\n\nFinished uploading data, skipping snapshot");
                 if (callbacks.length > 0) {
