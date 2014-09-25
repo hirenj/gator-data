@@ -1351,6 +1351,25 @@
               }
             });
           }
+          if (data.message == "retrieveSession") {
+            get_preferences().getPreferences(function(err,prefs) {
+              if ( ! gapi || ! gapi.auth.getToken() ) {
+                console.log("No gapi");
+                return;
+              }
+              if (err) {
+                return;
+              }
+              if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+                socket.send(JSON.stringify({
+                  "message" : "preferences",
+                  "data" : {  "preferences": prefs ,
+                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
+                            }
+                            }));
+              }
+            });
+          }
         };
       });
     };
