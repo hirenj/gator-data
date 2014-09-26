@@ -1041,7 +1041,7 @@
         return;
       }
       var socket;
-      socket = new WebSocket("ws://"+server,"gatorcast");
+      socket = new WebSocket("ws://"+server);
 
       socket.onopen = function() {
         console.log("Opened socket");
