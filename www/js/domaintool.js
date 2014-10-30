@@ -825,7 +825,7 @@
         renderer.zoom = zoomFactor;
         dragger.applyToElement(renderer._canvas);
         dragger.addTouchZoomControls(renderer, renderer._canvas);
-        GOMap.Diagram.addScrollZoomControls(renderer, renderer._canvas,0.1);
+        GOMap.Diagram.addScrollZoomControls.call({'enabled': true},renderer, renderer._canvas,0.1);
         GOMap.Diagram.addScrollBar(renderer, renderer._canvas,document.getElementById('scroll_box'));
 
         renderer.getVisibleLength = function() {
@@ -2182,8 +2182,8 @@
               })();
 
               sandbox.eval(doc,function() {
-                this.eval({ "data" : "renderData(input.sequence,input.data,input.acc)",
-                            "input" : { "sequence" : seq, "data" : datas, "acc" : acc  },
+                this.eval({ "data" : "renderData(input.sequence,input.data,input.acc,input.track)",
+                            "input" : { "sequence" : seq, "data" : datas, "acc" : acc, "track" : track_name },
                             "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(r) {
                               sandbox.terminate();

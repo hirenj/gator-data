@@ -27,21 +27,23 @@ document.addEventListener('konamiCode',function() {
 		return datablock.data;
 	};
 
-	window.addGatorURL = function(url,name) {
+	window.addGatorURL = function(url,name,trackname) {
 		if ( ! name ) {
 			name = 'Testing';
+		}
+		if ( ! trackname ) {
+			trackname = name;
 		}
 		get_preferences().getPreferences(function(err,prefs) {
 			var block = {};
 			block.parser_function = pfunc.toString();
-			block.render_options = { 'track' : name , 'renderer' : '/'+name+'.renderer' };
-			block.title = 'Testing '+name;
+			block.render_options = { 'track' : trackname , 'renderer' : '/'+name+'.renderer' };
+			block.title = 'Testing '+trackname;
 			block.type = 'gatorURL';
 			prefs.user_datasets[url] = block;
 			get_preferences().sync(function() { console.log("Done"); } );
 		});
 	};
-
 	window.addPrefBlock = function(filename) {
 		get_preferences().getPreferences(function(err,prefs){
 			var block = {};
