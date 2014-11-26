@@ -2593,7 +2593,7 @@
                   window.notify.info("Successfully loaded "+(loaded || "")).hideLater(500);
                 });
               }
-              if (type === 'application/json; data-type=domaintool-session') {
+              if (type === 'application/json+domaintool-session') {
                 get_preferences().addRealtime(doc_id);
                 get_preferences().setActiveSession(doc_id,title);
                 wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
