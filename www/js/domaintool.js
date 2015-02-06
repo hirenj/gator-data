@@ -2349,11 +2349,11 @@
       datareader.retrieve(acc,function(err) {
         if ( ! err ) {
           var orthos = this.result._raw_data.data.orthologs;
-          var ids=[10029,10090,10116];
-          var labels={ 10029 : "CHO", 10090 : "Mouse", 10116 : "Rat "};
+          var ids=[10029,10090,10116,9606];
+          var labels={ 10029 : "CHO", 10090 : "Mouse", 10116 : "Rat ", 9606: "Human"};
           ids.forEach(function(id) {
             var accession = orthos[id];
-            if (accession) {
+            if (accession && accession !== acc) {
               var button = document.createElement('button');
               button.setAttribute('class','ortho_button ortho_'+id);
               button.textContent = labels[id];
