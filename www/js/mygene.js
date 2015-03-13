@@ -135,7 +135,12 @@
         if (prot.uniprot) {
           uniprot =  prot.uniprot['Swiss-Prot'] || prot.uniprot['TrEMBL'];
           if (uniprot instanceof Array) {
-            uniprot = uniprot[0];
+            for (var i = 0; i < uniprot.length; i++) {
+              if (! prot['accession.protein'] || prot['accession.protein'].indexOf(uniprot[i]) >= 0 ) {
+                uniprot = uniprot[i];
+                break;
+              }
+            }
           }
         } else if (prot['accession.protein']) {
           for (var i = 0; i < prot['accession.protein'].length; i++ ) {
