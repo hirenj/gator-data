@@ -11,6 +11,11 @@
         <g id="light_galnac">
 			<rect x="0" y="0" fill="#ffffB3" width="100" height="100" stroke-width="10" stroke="#a6a635"/>
         </g>
+		<g id="neuac(a2-3)gal(b1-3)galnac">
+			<circle fill="#FFFF00" stroke="#000000" stroke-width="2" cx="50" cy="50" r="15"/>
+			<rect x="35" y="69.32" fill="#FFFF00" stroke="#000000" stroke-width="2" width="31.68" height="32"/>
+			<rect x="50" y="0" transform="rotate(45,50,0)" fill="#FF00FF" stroke="#000000" stroke-width="2" width="22.5" height="22.5"/>
+        </g>
         <g id="gal(b1-3)galnac">
 			<circle cx="50" cy="22" fill="#ff0" r="20" stroke-width="3" stroke="#000"/>
 			<rect x="26" y="50" fill="#ff0" width="48" height="48" stroke-width="3" stroke="#000"/>
@@ -66,4 +71,5 @@
 	<use xlink:href="#hexnac" x="1000" y="100" width="100" height="100"/>
 	<use xlink:href="#xyl" x="1100" y="100" width="100" height="100"/>
 	<use xlink:href="#glcnac(b1-4)glcnac.potential" x="1200" y="100" width="100" height="100"/>
+	<use xlink:href="#neuac(a2-3)gal(b1-3)galnac" x="1300" y="100" width="100" height="100"/>
 </svg>
