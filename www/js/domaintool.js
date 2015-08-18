@@ -2059,12 +2059,18 @@
       });
     };
 
+    MASCP.msdata_default_url = '/msdata.renderer.js';
 
     var get_renderer = function(renderer_url,callback) {
+
+      if (renderer_url.match(/^msdata:default/)) {
+        renderer_url = MASCP.msdata_default_url;
+      }
 
       if (renderer_url.match(/^(https?:\/)?\//)) {
           MASCP.Service.request(renderer_url,callback,true);
       }
+
       // Respond to google: urls and default to using a google doc for the renderer url
       if (renderer_url.match(/^google/) || renderer_url.match(/^\w+$/)) {
           (new MASCP.GoogledataReader()).getDocument(renderer_url,null,callback);
@@ -2582,9 +2588,9 @@
 
       if (state.ids) {
         state.ids.forEach(function(doc_id) {
-          (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title) {
+          (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title,extension) {
             if ( ! err ) {
-              if (type === 'application/json; data-type=msdata') {
+              if (title.match(/\.msdata\.json$/) || type === 'application/json; data-type=msdata') {
                 get_preferences().watchFile(doc_id,function(err,loaded) {
                   if (err) {
                     window.notify.alert(err.message);
