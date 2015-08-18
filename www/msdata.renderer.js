@@ -64,6 +64,10 @@ var render_peptide = function(peptide,depth) {
 		} else {
 			content['fill'] = '#aaa';
 		}
+		if (isNaN(parseFloat(value))) {
+			content['fill'] = '#555';
+			content['fill-opacity'] = 1;
+		}
 		return_data.push({ "aa" : peptide.start - 1, "type" : "marker", "options" : { "alt_content" : content, "content" :  [ isNaN(parseFloat(value)) ? value : Math.log10(peptide.quant.quant).toFixed(2) ] , "height" : 6, "stretch" : "left", "text_fill" : "#000", "fill" : "#fff", "no_tracer" : true, "bare_element" : true, "offset" : base_offset + 6 } });
 	}
 
