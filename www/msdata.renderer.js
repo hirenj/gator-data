@@ -64,7 +64,7 @@ var render_peptide = function(peptide,depth) {
 		} else {
 			content['fill'] = '#aaa';
 		}
-		return_data.push({ "aa" : peptide.start - 1, "type" : "marker", "options" : { "alt_content" : content, "content" :  [ Math.log10(peptide.quant.quant).toFixed(2) ] , "height" : 6, "stretch" : "left", "text_fill" : "#000", "fill" : "#fff", "no_tracer" : true, "bare_element" : true, "offset" : base_offset + 6 } });
+		return_data.push({ "aa" : peptide.start - 1, "type" : "marker", "options" : { "alt_content" : content, "content" :  [ isNaN(parseFloat(value)) ? value : Math.log10(peptide.quant.quant).toFixed(2) ] , "height" : 6, "stretch" : "left", "text_fill" : "#000", "fill" : "#fff", "no_tracer" : true, "bare_element" : true, "offset" : base_offset + 6 } });
 	}
 
 	return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#ui_revealmore", "content" :  peptide.source.split('_'), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 3 }});
