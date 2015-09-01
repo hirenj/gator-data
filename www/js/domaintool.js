@@ -322,6 +322,9 @@
         old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
           old_get_preferences.call(google_obj,file_obj,function(err,pr) {
             send_etag(file_obj);
+            if (err && err.cause && err.cause.status == 304) {
+              err = null;
+            }
             callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
           });
         });
