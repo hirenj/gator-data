@@ -76,4 +76,5 @@
 	<use xlink:href="#xyl" x="1100" y="100" width="100" height="100"/>
 	<use xlink:href="#glcnac(b1-4)glcnac.potential" x="1200" y="100" width="100" height="100"/>
 	<use xlink:href="#neuac(a2-3)gal(b1-3)galnac" x="1300" y="100" width="100" height="100"/>
+	<use xlink:href="#man(a1-2)man" x="1400" y="100" width="100" height="100"/>
 </svg>
