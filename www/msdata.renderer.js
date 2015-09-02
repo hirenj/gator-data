@@ -41,6 +41,7 @@ var render_peptide = function(peptide,depth) {
 		var site = site_block[0];
 		has_site = true;
 		var composition = site_block[1];
+		console.log(composition);
 		if (composition === "HexNAc") {
 			composition = 'galnac';
 		}
