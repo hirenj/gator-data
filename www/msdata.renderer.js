@@ -40,14 +40,20 @@ var render_peptide = function(peptide,depth) {
 	(peptide.sites || []).forEach(function renderSite(site_block) {
 		var site = site_block[0];
 		has_site = true;
-        var composition = site_block[1];
-        if (composition === "HexNAc") {
-            composition = 'galnac';
-        }
-        if (composition === "HexHexNAc") {
-            composition = 'gal(b1-3)galnac';
-        }
-		if (composition == 'galnac') {
+		var composition = site_block[1];
+		if (composition === "HexNAc") {
+			composition = 'galnac';
+		}
+		if (composition === "HexHexNAc") {
+			composition = 'gal(b1-3)galnac';
+		}
+		if (composition == 'HexHex') {
+			composition = 'man(a1-2)man';
+		}
+		if (composition === 'Hex') {
+			composition = 'man';
+		}
+		if (composition == 'galnac' || composition == 'man') {
 			return_data.push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }});
 		} else {
 			return_data.push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 10, "offset" : base_offset - 5, "bare_element" : true }});
