@@ -2366,7 +2366,11 @@
               var button = document.createElement('button');
               button.setAttribute('class','ortho_button ortho_'+id);
               button.textContent = labels[id];
-              button.addEventListener('click',function() {
+              button.addEventListener('click',function(evt) {
+                if (evt.metaKey) {
+                  window.open(window.location + '+' + accession.toUpperCase() ,'_blank');
+                  return;
+                }
                 window.location += '+'+accession.toUpperCase();
                 // show_protein(accession,renderer);
               },false);
