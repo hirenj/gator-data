@@ -2594,19 +2594,35 @@
       }
 
       if (state.ids) {
+        var watching = [];
         state.ids.forEach(function(doc_id) {
           (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title,extension) {
             if ( ! err ) {
               if (title.match(/\.msdata\.json$/) || type === 'application/json; data-type=msdata') {
-                get_preferences().watchFile(doc_id,function(err,loaded) {
-                  if (err) {
-                    window.notify.alert(err.message);
-                    return;
-                  }
-                  window.notify.info("Successfully loaded "+(loaded || "")).hideLater(500);
-                });
+                watching.unshift(doc_id);
+                var run_watch = function() {
+                  var to_remove = watching[0];
+                  get_preferences().watchFile(watching[0],function(err,loaded) {
+                    if (err) {
+                      window.notify.alert(err.message);
+                      setTimeout( run_watch, 500);
+                      return;
+                    }
+                    var watch_idx = watching.indexOf(to_remove);
+                    if (watch_idx > -1) {
+                      watching.splice(watch_idx,1);
+                    }
+                    window.notify.info("Successfully loaded "+(loaded || "")).hideLater(500);
+                    if (watching.length > 0) {
+                      setTimeout( run_watch, 100);
+                    }
+                  });
+                };
+                if (watching.length  == 1) {
+                  run_watch();
+                }
               }
-              if (type === 'application/json+domaintool-session') {
+              if (extension == 'domaintoolsession' || type === 'application/json+domaintool-session') {
                 get_preferences().addRealtime(doc_id);
                 get_preferences().setActiveSession(doc_id,title);
                 wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
