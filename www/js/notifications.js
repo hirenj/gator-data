@@ -134,7 +134,7 @@
 	}
 
 	var hide_notification = function(notification) {
-		if (notification.parentNode) {
+		if (notification && notification.parentNode) {
 			notification.parentNode.removeChild(notification);
 		}
 	}
