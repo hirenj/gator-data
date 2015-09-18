@@ -2600,13 +2600,15 @@
           (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title,extension) {
             if ( ! err ) {
               if (title.match(/\.msdata\.json$/) || type === 'application/json; data-type=msdata') {
-                watching.unshift(doc_id);
+                watching.unshift(JSON.stringify({'doc' : doc_id, 'title' : title }));
                 var run_watch = function() {
-                  var to_remove = watching[0];
+                  var remove_string = watching[0];
+                  var remove_block = JSON.parse(remove_string);
+                  var to_remove = remove_block.doc;
                   if (last_notification !== null) {
                     last_notification.hide();
                   }
-                  last_notification = window.notify.info("Attempting to load "+title);
+                  last_notification = window.notify.info("Attempting to load "+remove_block.title);
                   get_preferences().watchFile(watching[0],function(err,loaded) {
                     if (err) {
                       if (last_notification !== null) {
@@ -2616,14 +2618,14 @@
                       setTimeout( run_watch, 500);
                       return;
                     }
-                    var watch_idx = watching.indexOf(to_remove);
+                    var watch_idx = watching.indexOf(remove_string);
                     if (watch_idx > -1) {
                       watching.splice(watch_idx,1);
                     }
                     if (last_notification !== null) {
                       last_notification.hide();
                     }
-                    last_notification = window.notify.info("Successfully loaded "+(loaded || ""));
+                    last_notification = window.notify.info("Successfully loaded "+(remove_block.title || ""));
                     if (watching.length > 0) {
                       setTimeout( run_watch, 100);
                     } else {
