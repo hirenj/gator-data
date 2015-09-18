@@ -2609,7 +2609,7 @@
                     last_notification.hide();
                   }
                   last_notification = window.notify.info("Attempting to load "+remove_block.title);
-                  get_preferences().watchFile(watching[0],function(err,loaded) {
+                  get_preferences().watchFile(to_remove,function(err,loaded) {
                     if (err) {
                       if (last_notification !== null) {
                         last_notification.hide();
