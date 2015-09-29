@@ -77,9 +77,8 @@ var render_peptide = function(peptide,depth) {
 		return_data.push({ "aa" : peptide.start - 1, "type" : "marker", "options" : { "alt_content" : content, "content" :  [ isNaN(parseFloat(value)) ? value : Math.log10(peptide.quant.quant).toFixed(2) ] , "height" : 6, "stretch" : "left", "text_fill" : "#000", "fill" : "#fff", "no_tracer" : true, "bare_element" : true, "offset" : base_offset + 6 } });
 	}
 	if (peptide.hexnac_type) {
-		console.log(peptide.hexnac_type);
 		if (peptide.hexnac_type.indexOf('GlcNAc') > -1) {
-			return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#sugar_glcnac", "content" :  peptide.hexnac_ratio, "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset - 3 }});
+			return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#sugar_glcnac", "content" :  [].concat(peptide.hexnac_ratio), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset - 3 }});
 		}
 	}
 	return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#ui_revealmore", "content" :  peptide.source.split('_'), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 3 }});
