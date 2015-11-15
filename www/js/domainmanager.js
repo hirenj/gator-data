@@ -379,7 +379,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         if (dom == "KDEL") {
           domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
         }
-        var track_name = domains[dom].name;
+        var track_name = domains[dom].name.trim();
         if ( dom == "tmhmm-TMhelix") {
           track_name = "TM Transmembrane";
         }
@@ -441,7 +441,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
             if (! domains[dom].name) {
               domains[dom].name = dom;
             }
-            var dom_key = (domains[dom].name).replace(/\s/g,'_');
+            var dom_key = (domains[dom].name.trim()).replace(/\s/g,'_');
             if (window.DOMAIN_DEFINITIONS[dom_key]) {
                 var dats = window.DOMAIN_DEFINITIONS[dom_key];
                 var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
@@ -454,7 +454,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
                 box = renderer.getAA(start).addBoxOverlay(lay_name,end-start+1,1);
             }
 
-            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ "offset" : offset, 'txt' : domains[dom].name });
+            var a_text = renderer.getAA(parseInt(0.5*(start+end))).addTextOverlay(target_layer,0,{ "offset" : offset, 'txt' : domains[dom].name.trim() });
             a_text.setAttribute('fill','#111111');
             a_text.setAttribute('stroke','#999999');
             renderer.text_els.push([a_text,all_box]);
