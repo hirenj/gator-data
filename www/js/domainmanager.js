@@ -379,7 +379,7 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
         if (dom == "KDEL") {
           domains[dom].peptides.push([ renderer.sequence.length - 3, renderer.sequence.length  ]);
         }
-        var track_name = domains[dom].name.trim();
+        var track_name = domains[dom].name ? domains[dom].name.trim() : null;
         if ( dom == "tmhmm-TMhelix") {
           track_name = "TM Transmembrane";
         }
