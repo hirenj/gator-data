@@ -2174,10 +2174,20 @@
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
           var datas = this.result._raw_data.data;
+          var render_tries = 0;
           if (pref.render_options["renderer"] && JSandbox) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
+              render_tries += 1;
               if (err) {
-                console.error(err);
+                if (err.cause.status == 403) {
+                  var self_func = arguments.callee;
+                  if (render_tries < 4) {
+                    setTimeout(function(){
+                      get_cached_renderer(pref.render_options["renderer",self_func]);
+                    },200);
+                    return;
+                  }
+                }
                 window.notify.alert("Could not render "+pref.title);
                 return;
               }
