@@ -2183,7 +2183,7 @@
                   var self_func = arguments.callee;
                   if (render_tries < 4) {
                     setTimeout(function(){
-                      get_cached_renderer(pref.render_options["renderer",self_func]);
+                      get_cached_renderer(pref.render_options["renderer"],self_func);
                     },200);
                     return;
                   }
