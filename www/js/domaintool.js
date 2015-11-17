@@ -2177,6 +2177,7 @@
           if (pref.render_options["renderer"] && JSandbox) {
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               if (err) {
+                console.error(err);
                 window.notify.alert("Could not render "+pref.title);
                 return;
               }
