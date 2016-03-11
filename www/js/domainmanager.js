@@ -450,6 +450,9 @@ if ( typeof MASCP == 'undefined' || typeof MASCP.Service == 'undefined' ) {
               domains[dom].name = dom;
             }
             var dom_key = (domains[dom].name.trim()).replace(/\s/g,'_');
+            if ( ! window.DOMAIN_DEFINITIONS[dom_key] && window.DOMAIN_DEFINITIONS[dom_key+"."]) {
+              dom_key = dom_key+".";
+            }
             if (window.DOMAIN_DEFINITIONS[dom_key]) {
                 var dats = window.DOMAIN_DEFINITIONS[dom_key];
                 var fill = (renderer.gradients.length > 0) ? "url('#grad_"+dats[1]+"')" : dats[1];
