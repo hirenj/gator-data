@@ -304,12 +304,14 @@ window.DOMAIN_DEFINITIONS = {
 "CLECT_chondrolectin_like"	: [ "ellipse", "red" ],
 "CLECT_DC-SIGN_like"	: [ "ellipse", "red" ],
 "lectin_L-type"	: [ "ellipse", "red" ],
+"L-type_lectin-like." : ["ellipse" , "red"],
 
 "ER_ret" : [ "ellipse", "gray" ],
 "ER"	: [ "ellipse", "gray" ],
 "KDEL"	: [ "ellipse", "gray" ],
 
 "tmhmm-TMhelix"	: [ "pentagon","gray" ],
+"TMhelix"		: [ "pentagon","gray" ],
 
 "IG"	: [ "ellipse", "pink" ],
 "Ig"	: [ "ellipse", "pink" ],
