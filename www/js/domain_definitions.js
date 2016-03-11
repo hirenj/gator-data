@@ -830,7 +830,7 @@ window.DOMAIN_DEFINITIONS = {
 "Laminin_EGF-like_5." : ["hexagon", "red"],
 "Laminin_IV_type_B." : ["hexagon", "red"],
 "Laminin_G_3"	: ["hexagon", "red"],
-"Laminin-G-like" : ["hexagon" : "red"],
+"Laminin-G-like" : ["hexagon" , "red"],
 "Laminin_G-like_1."	: ["hexagon", "red"],
 "Laminin_G-like_2."	: ["hexagon", "red"],
 
