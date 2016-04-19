@@ -53,6 +53,9 @@ var render_peptide = function(peptide,depth) {
 		if (composition === 'Hex') {
 			composition = 'man';
 		}
+		if (composition.toLowerCase() == 'glcnac(b1-4)glcnac') {
+			composition = composition.toLowerCase();
+		}
 		if (composition == 'galnac' || composition == 'man') {
 			return_data.push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }});
 		} else {
