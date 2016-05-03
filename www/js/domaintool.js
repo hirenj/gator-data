@@ -1141,114 +1141,6 @@
       return;
     };
 
-    var do_printing = function(proteins) {
-        var win = window.open();
-        var a_doc = win.document;
-        a_doc.open();
-        a_doc.close();
-        var link = a_doc.createElement('link');
-        link.setAttribute('rel','stylesheet');
-        link.setAttribute('href','/css/style.css');
-        link.setAttribute('type','text/css');
-        a_doc.head.appendChild(link);
-        var counter = 0;
-        var objs = [];
-        var mf = null;
-        var in_print = false;
-        var print_func = function(matcher) {
-          if (matcher) {
-            in_print = ! matcher.matches;
-          }
-
-          for (var i = 0; i < objs.length; i++) {
-            mf.call(objs[i],matcher);
-          }
-        };
-        var count = 1;
-        var print_single = function (prot,cback) {
-          var whole_div = a_doc.createElement('div');
-          var clazz = 'print_group';
-          if (((count % 3) === 0) && count > 0 ) {
-            clazz = 'print_group print_group_3';
-          }
-          if ((((count+1) % 3) === 0) && count > 0) {
-            clazz = 'print_group print_group_1';
-          }
-          whole_div.setAttribute('class',clazz);
-          count++;
-          var seperator = a_doc.createElement('div');
-          seperator.setAttribute('class','print_seperator');
-          whole_div.appendChild(seperator);
-          var description = a_doc.createElement('div');
-          description.setAttribute('class','print_description');
-          seperator.appendChild(description);
-          var accession_text = a_doc.createElement('div');
-          accession_text.setAttribute('class','print_accession');
-          accession_text.textContent = prot.toUpperCase();
-          seperator.appendChild(accession_text);
-          var sequence_container = a_doc.createElement('div');
-          whole_div.appendChild(sequence_container);
-          sequence_container.setAttribute('class','print_sequence');
-          a_doc.body.appendChild(whole_div);
-          console.log("Made a new div for "+prot);
-          var rend = create_renderer(sequence_container);
-          objs.push(rend);
-          if (mf !== null) {
-            rend._media_func = true;
-          }
-          rend.padding = 30;
-          rend.text_els = [];
-          rend.acc = prot;
-          (function(my_rend) {
-            bean.add(my_rend,'sequenceChange', function() {
-              if ( ! mf && window.matchMedia) {
-                mf = my_rend._media_func;
-                (my_rend.win() || window).matchMedia('print').addListener(print_func);
-                my_rend._media_func = function() {};
-              }
-              rend.navigation.hide();
-              rend.navigation.show = function(){};
-              retrieve_data(prot,my_rend,function() {
-                my_rend.trackOrder = [prot];
-                setTimeout(function() {
-                  my_rend.printing = true;
-                  my_rend.text_els.forEach(function(el) {
-                    el[0].setAttribute('stroke-width','0');
-                    el[0].setAttribute('fill','#ffffff');
-                  });
-                },1000);
-                console.log("Done for "+prot);
-                cback(my_rend);
-              });
-            });
-          })(rend);
-          rend.trackGap = -8;
-          rend.trackHeight = 12;
-          rend.fixedFontScale = 0.3;
-          var a_reader = new MASCP.UniprotReader();
-
-          MASCP.Service.CacheService(a_reader);
-
-          var accession = prot;
-          a_reader.retrieve(accession,function(e) {
-            description.textContent = this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,'');
-            rend.setSequence(this.result.getSequence());
-          });
-        };
-        (function(renderer) {
-          var acc = proteins.shift();
-          var self_func = arguments.callee;
-          if (acc) {
-            counter += 1;
-            if (counter < 10) {
-              setTimeout(function() {
-                print_single(acc.id.toLowerCase(),self_func);
-              },0);
-            }
-          }
-        })();
-    };
-
     var use_doi_conf = function(doc,callback) {
       if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
         if (doc.match(/^[a-z\-]+$/)) {
@@ -1407,56 +1299,13 @@
 
     var retrieve_data = function(acc,renderer,end_func) {
         acc = (acc || "").toUpperCase();
-        // var count = 0;
-        // var refresher = function() {
-        //   count++;
-        //   if (count == 3) {
-        //     if (renderer.trackOrder.indexOf(acc) < 0) {
-        //       renderer.trackOrder.push(acc);
-        //     }
-        //     renderer.showLayer(acc);
-        //     renderer.refresh();
-
-        //     if (end_func) {
-        //       end_func.call();
-        //     }
-        //   }
-        // };
-
-        // get_peptides(acc,renderer,function() {
-          get_usersets(acc,renderer);
-        // });
+        get_usersets(acc,renderer);
 
         if (renderer.showAnnotation) {
           renderer.showAnnotation(acc);
         }
 
         renderer.showLayer(acc);
-
-        // domain_retriever.renderDomains(acc,renderer,function(){
-        //   if (! /comparison\//.exec(window.location)) {
-        //     get_sites(acc,renderer,refresher);
-        //     get_peptides(acc,renderer,refresher);
-        //     get_predictions(acc,renderer,refresher);
-        //     get_usersets(acc,renderer);
-        //     if (renderer.showAnnotation) {
-        //       renderer.showAnnotation(acc);
-        //     }
-        //   } else {
-        //     MASCP.registerLayer(track_name,{"fullname" : "Net-O-Glyc 4.0"});
-        //     if (renderer.trackOrder.indexOf(track_name) < 0 ) {
-        //       renderer.trackOrder.push(track_name);
-        //     }
-        //     renderer.showLayer(track_name);
-        //     get_predictions(acc,renderer,refresher);
-        //     get_predictions_31(acc,renderer,function() {
-        //       count += 1;
-        //       refresher();
-        //     });
-        //     renderer.navigation.show();
-        //   }
-
-        // });
     };
 
     var set_description = function(description) {
@@ -1962,37 +1811,6 @@
 
     };
 
-    var get_sites = function(acc,renderer,done) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdC1ESDlXVzlkVEZfTkVHS01POFJ1a0E";
-      datareader.setupSequenceRenderer = render_sites(acc,true);
-      datareader.registerSequenceRenderer(renderer);
-
-      if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
-        renderer.trackOrder.unshift(renderer.acc ? "all_domains" : acc);
-      }
-      datareader.retrieve(acc,function(err) {
-        if (this.result) {
-          window.notify.info("Retrieved GalNAc site data").hideLater(1000);
-          if (this.result._raw_data.data.sites.length < 1 ) {
-            window.notify.info("No sites for "+acc);
-          }
-        } else {
-            window.notify.info("No GalNAc SimpleCell sites found for "+acc.toUpperCase()).hideLater(2000);
-        }
-        if (err) {
-          if (err !== "No data") {
-            window.notify.warn("Could not retrieve GalNAc site data");
-          }
-        }
-        console.log("Got sites okay");
-        if (done) {
-          done();
-        }
-      });
-    };
-
     var get_generic_data = function(acc,renderer,datareader,options,done) {
       // Not sure we need to set the endpointURL
       if ( ! options.url ) {
@@ -2236,109 +2054,6 @@
       });
     };
 
-    var get_predictions = function(acc,renderer,done) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "predictions";
-      var top_offset = 18;
-      if  (/comparison\//.exec(window.location)) {
-        top_offset = 0;
-      }
-      datareader.setupSequenceRenderer = render_sites(acc,true,top_offset);
-      datareader.registerSequenceRenderer(renderer);
-
-      renderer.bind('resultsRendered',function(reader) {
-        if (reader !== datareader) {
-          return;
-        }
-        if (renderer.trackOrder.indexOf(renderer.acc ? "all_domains" : acc) < 0) {
-          renderer.trackOrder.push(renderer.acc ? "all_domains" : acc);
-          renderer.showLayer(renderer.acc ? "all_domains" : acc);
-        }
-        renderer.unbind('resultsRendered',arguments.callee);
-        if (reader == datareader && done) {
-          done();
-          done = null;
-        }
-      });
-
-      datareader.retrieve(acc,function(err) {
-
-        if (this.result) {
-          window.notify.info("Retrieved NetOGlyc4.0 prediction data").hideLater(1000);
-          if (this.result._raw_data.data.sites.length < 1 || this.result._raw_data.data.sites[0] === null ) {
-            window.notify.info(acc.toUpperCase()+" is not predicted to carry O-GalNAc modifications").hideLater(5000);
-          }
-        } else {
-            window.notify.info("No NetOGlyc4.0 prediction data available for "+acc.toUpperCase()).hideLater(5000);
-        }
-        if (err) {
-          if (err !== "No data") {
-            window.notify.warn("Could not retrieve NetOGlyc4.0 site data");
-          }
-        }
-
-        var a_seq = renderer.sequence.toLowerCase();
-        if (this.result && this.result._raw_data) {
-          this.result._raw_data.data.sites.forEach(function(site) {
-            a_seq = a_seq.substr(0,site-1) + a_seq.substr(site-1,1).toUpperCase() +  a_seq.substr(site);
-          });
-        } else {
-          if (done) {
-            done();
-          }
-        }
-        document.getElementById('clipboarder').sequence = a_seq;
-      });
-    };
-
-    var get_predictions_31 = function(acc,renderer,done) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "predictions31";
-
-      MASCP.registerLayer("netoglyc31",{ "fullname" : "Net-O-Glyc 3.1"});
-      datareader.setupSequenceRenderer = render_sites("netoglyc31",false,-1);
-      datareader.registerSequenceRenderer(renderer);
-      renderer.bind('resultsRendered',function(reader) {
-        if (reader !== datareader) {
-          return;
-        }
-        if (renderer.trackOrder.indexOf("netoglyc31") < 0) {
-          renderer.trackOrder.push("netoglyc31");
-          renderer.showLayer("netoglyc31");
-        }
-        renderer.unbind('resultsRendered',arguments.callee);
-        if (reader == datareader && done) {
-          done();
-          done = null;
-        }
-      });
-      datareader.retrieve(acc,function() {
-        if (this.result && renderer.trackOrder.indexOf("netoglyc31") < 0) {
-          renderer.trackOrder.push("netoglyc31");
-        } else {
-          if (done) {
-            done();
-          }
-        }
-      });
-    };
-
-    var get_peptides = function(acc,renderer,done) {
-      MASCP.UserdataReader.SERVICE_URL = '/data/latest/gator';
-      var datareader = new MASCP.UserdataReader();
-      datareader.datasetname = "spreadsheet:0Ai48KKDu9leCdHVYektENmlwcVVqOHZHZzZBZVVBYWc";
-
-      datareader.setupSequenceRenderer = render_peptides(acc);
-      datareader.registerSequenceRenderer(renderer);
-
-      datareader.retrieve(acc,function() {
-        if (done) {
-          done();
-        }
-      });
-    };
 
     var get_orthologs = function(acc,renderer) {
       if ( ! gapi || ! gapi.auth.getToken() ) {
@@ -2521,9 +2236,6 @@
           }
         }
         update_protein_list(prots,renderer,auth_func);
-        document.getElementById('print').addEventListener('click',function() {
-          do_printing(prots);
-        },false);
 
         add_keyboard_navigation();
       };
