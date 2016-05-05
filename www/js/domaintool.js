@@ -457,8 +457,29 @@
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
+      var parser_function = function(datablock){
+        for (var key in datablock.data) {
+          if (key == "" || key.match(/\s/)) {
+            delete datablock.data[key];
+          } else {
+            var dat = datablock.data[key];
+            delete datablock.data[key];
+            datablock.data[key.toLowerCase()] = {
+              "data" : dat,
+              "retrieved" : datablock.retrieved,
+              "etag" : datablock.etag,
+              "title" : datablock.title
+            };
+          }
+        }
+        delete datablock.retrieved;
+        delete datablock.etag;
+        delete datablock.title;
+        return datablock.data;
+      };
+
       this.prefs_object = {
-        "source" : "Domaintool preferences",
+        "source" : domain,
         addWatchedDocument : function() {
           var args = Array.prototype.slice.call(arguments);
           args.unshift(domain);
@@ -472,7 +493,42 @@
         readWatchedDocuments : function() {
           var args = Array.prototype.slice.call(arguments);
           args.unshift(domain);
-          google_obj.readWatchedDocuments.apply(google_obj,args);
+
+          var readdocs = function(domain,callback) {
+            this.getPreferences(domain,function(err,prefs) {
+                if (err) {
+                  if (err.cause === "No user event") {
+                    console.log("Consuming no user event");
+                    return;
+                  }
+                  if (err.cause == "Browser not supported") {
+                    console.log("Consuming no browser support");
+                    return;
+                  }
+                  callback.call(null,{ "status" : "preferences", "original_error" : err });
+                  return;
+                }
+                var temp_prefs = JSON.parse(JSON.stringify(prefs.user_datasets));
+                Object.keys(temp_prefs).forEach(function(key) {
+                  if (! key.indexOf('http') >= 0) {
+                    delete temp_prefs[key];
+                  }
+                });
+                temp_prefs['combined'] = {
+                  'type' : 'dataset',
+                  'title' : 'Combined',
+                  'parser_function' : parser_function.toString(),
+                  'render_options' : {
+                    'track' : 'combined',
+                    'renderer' : 'msdata:default',
+                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
+                  }
+                };
+                MASCP.IterateServicesFromConfig(temp_prefs,callback);
+            });
+          };
+
+          readdocs.apply(google_obj,args);
         },
         listWatchedDocuments : function() {
           var args = Array.prototype.slice.call(arguments);
@@ -589,88 +645,6 @@
       }
       return window.prefs;
     };
-
-    var render_peptides = function(layer) {
-      return function(renderer) {
-        this.bind('resultReceived',function(e) {
-          var self = this;
-          var peptides = self.result._raw_data.data.peptides || [], i = 0, match = null;
-          for (i = peptides.length - 1; i >= 0; i--) {
-            var pep = peptides[i];
-            var start = parseInt(pep[0]);
-            var end = parseInt(pep[1]);
-            if ( ! renderer.getAA(start)) {
-              continue;
-            }
-            var el = renderer.getAA(start).addBoxOverlay(layer,end-start+1,1,{ "offset" : -3, "height_scale": 0.1, "fill" : "#999", "merge" : false });
-            el.parentNode.insertBefore(el,el.parentNode.firstChild.nextSibling);
-          }
-          renderer.showLayer(layer);
-          renderer.refresh();
-          renderer.trigger('resultsRendered',[self]);
-        });
-      };
-    };
-
-
-
-    var render_sites = function(layer,do_grouping,offset) {
-      if (typeof(offset) == 'undefined' || offset === null) {
-        offset = 0;
-      }
-      return function(renderer) {
-        this.bind('resultReceived',function(e) {
-          var self = this;
-          var sites = self.result._raw_data.data.sites || [], i = 0, match = null;
-          // renderer._layer_containers[layer].track_height = parseInt(renderer.trackHeight*2/3);
-
-          var group = [];
-          for (i = 0; i < sites.length; i++) {
-              var current = sites[i], next = null;
-              if ( ! current ) {
-                continue;
-              }
-              if (sites[i+1]) {
-                next = sites[i+1];
-              }
-              if ( ! do_grouping || (! next || ((next - current) > 10) || renderer.sequence.substring(current,next-1).match(/[ST]/)) ) {
-                if (group.length < 3) {
-                  group.push(current);
-                  group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 9,  "bare_element" : true });
-                  });
-                } else {
-                  group.push(current);
-                  group.forEach(function(site){
-                    renderer.getAA(site).addToLayer(layer,{"content" : (offset < 1) ? renderer.galnac() : renderer.light_galnac(), "offset" : offset, "height" : 9,  "bare_element" : true })[1].zoom_level = 'text';
-                  });
-                  var rect = renderer.getAA(group[0]).addShapeOverlay(layer,current-group[0]+1,{ "shape" : "roundrect", "offset" : offset - 4.875, "height" : 9.75 });
-                  var a_galnac = (offset < 1) ? renderer.galnac() : renderer.light_galnac();
-                  rect.setAttribute('fill',a_galnac.getAttribute('fill'));
-                  rect.setAttribute('stroke',a_galnac.getAttribute('stroke'));
-                  rect.setAttribute('stroke-width',70);
-                  a_galnac.parentNode.removeChild(a_galnac);
-                  rect.removeAttribute('style');
-                  rect.setAttribute('rx','120');
-                  rect.setAttribute('ry','120');
-                  rect.zoom_level = 'summary';
-                }
-                group = [];
-              } else {
-                group.push(current);
-              }
-          }
-
-
-          // for (i = sites.length - 1; i >= 0; i--) {
-          //     renderer.getAA(sites[i]).addToLayer(layer,{"content" : (offset > 0) ? renderer.light_galnac() : renderer.galnac(), "offset" : offset, "height" : parseInt(renderer.trackHeight*4/3),  "bare_element" : true });
-          // }
-          renderer.showLayer(layer);
-          renderer.trigger('resultsRendered',[self]);
-        });
-      };
-    };
-
 
     var wire_plainsearch = function() {
       var auto = new Autocomplete(document.getElementById('searchGene'),{
