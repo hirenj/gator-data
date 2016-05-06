@@ -520,7 +520,7 @@
                   'parser_function' : parser_function.toString(),
                   'render_options' : {
                     'track' : 'combined',
-                    'renderer' : 'msdata:default',
+                    'renderer' : 'msdata:packed',
                     'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
                   }
                 };
@@ -1855,12 +1855,19 @@
     };
 
     MASCP.msdata_default_url = '/msdata.renderer.js';
+    MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
+
 
     var get_renderer = function(renderer_url,callback) {
 
       if (renderer_url.match(/^msdata:default/)) {
         renderer_url = MASCP.msdata_default_url;
       }
+
+      if (renderer_url.match(/^msdata:packed/)) {
+        renderer_url = MASCP.msdata_packed_url;
+      }
+
 
       if (renderer_url.match(/^(https?:\/)?\//)) {
           MASCP.Service.request(renderer_url,callback,true);
