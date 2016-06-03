@@ -3,7 +3,7 @@ FROM	ubuntu:trusty
 RUN		apt-get update --fix-missing
 RUN 	apt-get install -y nodejs curl npm
 RUN     ln -s /usr/bin/nodejs /usr/bin/node
-RUN 	curl -LO 'https://github.com/hirenj/gator-data/archive/mascp-gator.tar.gz'
+RUN 	curl -LO 'https://github.com/hirenj/gator-data/archive/snpviewer.tar.gz'
 RUN     tar -zxvf mascp-gator.tar.gz
 RUN     mkdir -p /var/ && mv gator-data-mascp-gator /var/gator-data
 RUN     cd /var/gator-data; npm install
