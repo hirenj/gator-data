@@ -31,7 +31,7 @@
        "express" : "2.4.x",
        "optimist": "0.2.x",
        "carrier" : "0.1.x",
-       "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/mascp-jstools-2.2"
+       "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/mascp-gator"
    },
    "main" : "bin/snpviewer-httpd",
    "bin" : {
@@ -39,7 +39,7 @@
    },
    "implements": ["snpviewer-httpd"],
    "os": ["linux", "macos", "win"],
-   "cpu": ["x86", "ppc", "x86_64"],
+   "cpu": ["x86", "ppc", "x86_64", "x64"],
    "engines": ["v8", "node >= 0.4.11"],
    "directories": {
        "lib": "js/lib",
