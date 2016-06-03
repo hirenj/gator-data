@@ -41,7 +41,7 @@ MASCP.events.once('ready',function() {
     });
     
     if (argv.static) {
-        app.listen(port,'127.0.0.1');
+        app.listen(port);
         console.log('Server running at http://127.0.0.1:'+port+'/');
         return;
     }
@@ -145,7 +145,7 @@ MASCP.events.once('ready',function() {
         get_latest(req.param('agi'), service_object(req), res);
     });
 
-    app.listen(port,'127.0.0.1');
+    app.listen(port);
     console.log('Server running at http://127.0.0.1:'+port+'/');
 
     if (! require('tty').isatty(process.stdin)) {
