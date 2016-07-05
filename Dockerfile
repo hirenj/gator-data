@@ -1,7 +1,7 @@
 FROM	ubuntu:trusty
 
 RUN		apt-get update --fix-missing
-RUN 	apt-get install -y nodejs curl npm
+RUN 	apt-get install -y nodejs curl npm unzip
 RUN     ln -s /usr/bin/nodejs /usr/bin/node
 RUN 	curl -LO 'https://github.com/hirenj/gator-data/archive/snpviewer.tar.gz'
 RUN     tar -zxvf snpviewer.tar.gz
