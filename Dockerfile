@@ -11,4 +11,6 @@ RUN   cd /var/gator-data; curl -LO 'https://s3.amazonaws.com/gator-data/Gator.zi
 
 EXPOSE  3000
 
+WORKDIR /var/gator-data
+
 CMD		["/usr/bin/node", "/var/gator-data/bin/gatordata-httpd"]
