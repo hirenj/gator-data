@@ -1,4 +1,5 @@
 function renderData(seq,peptides) {
+peptides = peptides['application/json+msdata'] || [];
 console.log(peptides);
 var intervals = [];
 
