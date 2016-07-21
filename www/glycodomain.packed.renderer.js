@@ -5,8 +5,11 @@ var return_data = [];
 
 var render_domain = function(domain) {
     console.log(domain);
-    var pep_line = { "aa": domain.start, "type" : "box" , "width" : (domain.end - domain.start), "options" : { "offset" : 0, "height_scale" : 0.5, "fill" : "#999", "merge" : false  }};
-    return_data.push(pep_line);
+    if (((domain.end - domain.start) / seq.length) >= 0.8) {
+    	return;
+    }
+    var dom = { "aa": domain.start, "type" : "shape" , "width" : (domain.end - domain.start), "options" : { "offset" : 2.5, "height" : 5, "fill" : "#999", "shape" : "hexagon", "stroke" : "#000", "stroke_width" : "0.5"  }};
+    return_data.push(dom);
 };
 
 doms.forEach(render_domain);
