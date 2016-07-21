@@ -524,6 +524,17 @@
                     'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
                   }
                 };
+                temp_prefs['glycodomain'] = {
+                  'type' : 'dataset',
+                  'inline' : 'true',
+                  'parser_function' : parser_function.toString(),
+                  'render_options' : {
+                    'offset' : 0,
+                    'renderer' : 'domains:packed',
+                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
+                  }
+                };
+                console.log(temp_prefs);
                 MASCP.IterateServicesFromConfig(temp_prefs,callback);
             });
           };
@@ -1856,6 +1867,7 @@
 
     MASCP.msdata_default_url = '/msdata.renderer.js';
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
+    MASCP.domains_packed_url = '/glycodomain.packed.renderer.js';
 
 
     var get_renderer = function(renderer_url,callback) {
@@ -1866,6 +1878,10 @@
 
       if (renderer_url.match(/^msdata:packed/)) {
         renderer_url = MASCP.msdata_packed_url;
+      }
+
+      if (renderer_url.match(/^domains:packed/)) {
+        renderer_url = MASCP.domains_packed_url;
       }
 
 
