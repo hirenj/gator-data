@@ -511,6 +511,16 @@
                 var temp_prefs = JSON.parse(JSON.stringify(prefs.user_datasets));
                 Object.keys(temp_prefs).forEach(function(key) {
                   if (! key.indexOf('http') >= 0) {
+                    if (temp_prefs[key].type == 'dataset') {
+                      if ( ! MASCP.getGroup('datasets')) {
+                        MASCP.registerGroup('datasets', { 'fullname' : 'Combined'});
+                      }
+                      if ( ! MASCP.getLayer('combined') ) {
+                        MASCP.registerLayer('combined', {'fullname' : 'Combined'});
+                      }
+                      MASCP.registerLayer(temp_prefs[key].title, {'fullname' : temp_prefs[key].title, 'group' : 'datasets'});
+                      return;
+                    }
                     delete temp_prefs[key];
                   }
                 });
@@ -1976,21 +1986,68 @@
           },"xml");
         }
 
-        reader.retrieve(acc,function() {
+        reader.retrieve(acc,function(force) {
+          var layer_hidden = false;
           if ( ! this.result ) {
             return;
-          }
-          if ( renderer.trackOrder.indexOf(track_name) < 0 ) {
-            MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
-            renderer.trackOrder.push(track_name);
-            renderer.showLayer(track_name);
           }
           if ( ! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).disabled ) {
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
+
+          if ( renderer.trackOrder.indexOf(track_name) < 0 ) {
+            MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
+            if (! MASCP.getLayer(track_name).group) {
+              renderer.trackOrder = renderer.trackOrder.concat(track_name);
+              renderer.showLayer(track_name);
+            } else {
+              if (renderer.trackOrder.indexOf(MASCP.getLayer(track_name).group.name) < 0 ){
+                renderer.trackOrder = renderer.trackOrder.concat([ 'combined', MASCP.getLayer(track_name).group.name ]);
+              }
+              renderer.hideLayer(track_name);
+              layer_hidden = true;
+            }
+          } else {
+            if (MASCP.getLayer(track_name).group && ! force ) {
+              renderer.hideLayer(track_name);
+              layer_hidden = true;
+            } else {
+              renderer.showLayer(track_name);
+            }
+          }
+
+          if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
+            renderer.createGroupController('combined','datasets');
+          }
           var datas = this.result._raw_data.data;
           var render_tries = 0;
-          if (pref.render_options["renderer"] && JSandbox) {
+
+          if (force) {
+            MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
+            layer_hidden = false;
+          }
+
+          if (layer_hidden) {
+            var self_func = arguments.callee;
+            var self_result = this.result;
+            var vis_change_func = function(renderer,visible) {
+              if ( ! renderer ) {
+                bean.remove(MASCP.getLayer(track_name),'visibilityChange',arguments.callee);
+                this.unbind('sequenceChange',arguments.callee);
+                return;
+              }
+              if (visible) {
+                vis_change_func.call(renderer);
+                setTimeout(function() {
+                  self_func.call({'result': self_result},true);
+                },0);
+              }
+            };
+            bean.add(MASCP.getLayer(track_name),'visibilityChange',vis_change_func);
+            renderer.bind('sequenceChange',vis_change_func);
+          }
+          if (! layer_hidden && pref.render_options["renderer"] && JSandbox) {
+            console.log("Rendering ",track_name);
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               render_tries += 1;
               if (err) {
