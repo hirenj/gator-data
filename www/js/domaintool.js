@@ -400,6 +400,28 @@
         MASCP.Service.request(url,callback);
     };
 
+    var parser_function = function(datablock){
+      for (var key in datablock.data) {
+        if (key == "" || key.match(/\s/)) {
+          delete datablock.data[key];
+        } else {
+          var dat = datablock.data[key];
+          delete datablock.data[key];
+          datablock.data[key.toLowerCase()] = {
+            "data" : dat,
+            "retrieved" : datablock.retrieved,
+            "etag" : datablock.etag,
+            "title" : datablock.title
+          };
+        }
+      }
+      delete datablock.retrieved;
+      delete datablock.etag;
+      delete datablock.title;
+      return datablock.data;
+    };
+
+
     DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
       conf = { "user_datasets" : {} };
@@ -414,6 +436,30 @@
           return;
         }
         conf = json;
+        console.log(conf);
+        if (conf.specific) {
+          conf.specific.splice(0,-1)
+          var sets = {};
+          conf.specific.forEach(function(set) {
+            sets[set] = { type: "dataset", render_options: { renderer: 'msdata:default', offset: 10 }, parser_function: "function (datablock){\n            for (var key in datablock.data) {\n              if (key == \"\" || key.match(/\\s/)) {\n                delete datablock.data[key];\n              } else {\n                var dat = datablock.data[key];\n                delete datablock.data[key];\n                datablock.data[key.toLowerCase()] = {\n                  \"data\" : dat,\n                  \"retrieved\" : datablock.retrieved,\n                  \"etag\" : datablock.etag,\n                  \"title\" : datablock.title\n                };\n              }\n            }\n            delete datablock.retrieved;\n            delete datablock.etag;\n            delete datablock.title;\n            return datablock.data;\n        }" };
+          });
+          sets['glycodomain'] = {
+                  'type' : 'dataset',
+                  'inline' : 'true',
+                  'parser_function' : parser_function.toString(),
+                  'render_options' : {
+                    'offset' : 0,
+                    'renderer' : 'domains:packed',
+                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
+                  }
+          };
+          conf = {
+            "version" : "1.2",
+            "title" : "Someset",
+            "user_datasets" : sets
+          };
+        }
+
         var accs = conf.accessions || [];
         self.prefs_object = {
           "source" : doc,
@@ -742,11 +788,13 @@
       if (history) {
         window.onpopstate = function(event) {
           var state = (event.state || {});
+          console.log(state);
           if (state['uniprot_id']) {
             show_protein(state['uniprot_id'],renderer);
           }
           if (state['uniprot_ids']) {
-            handle_proteins(null,state['uniprot_ids'].split('+'));
+            console.log(state);
+            handle_proteins(null,state['uniprot_ids'].split('+').map(function(prot) { return { id: prot, name: prot }}));
           }
         };
       }
@@ -1026,9 +1074,9 @@
         renderer.padding = 10;
         renderer.trackOrder = [];
         renderer.reset();
-        renderer.trackGap = 16;
-        renderer.trackHeight = 12;
-        renderer.fixedFontScale = 0.3;
+        renderer.trackGap = 4;
+        renderer.trackHeight = 4;
+        renderer.fixedFontScale = 1;
         renderer.refresh();
     };
 
@@ -1146,7 +1194,15 @@
         }
       }
       get_preferences().clearActiveSession();
-      get_preferences().useStaticPreferences('/doi/'+doc,callback);
+      var url_base = '';
+      MASCP.AuthenticateGator(function() {
+        var conf = {
+          'url' : url_base+'/doi/'+encodeURIComponent(doc),
+          'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'type' : 'GET'
+        };
+        get_preferences().useStaticPreferences(conf,callback);
+      });
     };
 
     var create_renderer = function(container) {
