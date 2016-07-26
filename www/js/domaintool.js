@@ -1173,7 +1173,6 @@
 
       wire_gatordisplay(renderer);
       wire_websockets('localhost:8880',function(socket) {
-        var socket_alignment_func;
         socket.onmessage = function(ev) {
           if (! ev.data) {
             return;
@@ -1202,17 +1201,6 @@
               }
               renderer.refresh();
             }
-          }
-          if (data.message == "alignProtein") {
-            if (Array.isArray(data.data)) {
-              if ( ! socket_alignment_func || window.showing_clustal ) {
-                socket_alignment_func = prepare_alignment(data.data,renderer);
-              }
-              socket_alignment_func();
-            } else {
-              show_protein(data.data,renderer);
-            }
-            return;
           }
           if (data.message == "upgradeConnection") {
             get_preferences().getPreferences(function() {
@@ -1341,6 +1329,9 @@
 
 
       var a_reader = new MASCP.UniprotReader();
+      if (MASCP.getLayer(ucacc)) {
+        delete MASCP.getLayer(ucacc).group;
+      }
 
       MASCP.Service.CacheService(a_reader);
       bean.add(renderer,'sequenceChange',function() {
@@ -1994,13 +1985,13 @@
           if ( ! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).disabled ) {
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
+          MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
 
           if ( renderer.trackOrder.indexOf(track_name) < 0 ) {
-            MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
             if (! MASCP.getLayer(track_name).group) {
               renderer.trackOrder = renderer.trackOrder.concat(track_name);
               renderer.showLayer(track_name);
-            } else {
+            } else if (MASCP.getLayer(track_name).group == MASCP.getGroup('datasets')) {
               if (renderer.trackOrder.indexOf(MASCP.getLayer(track_name).group.name) < 0 ){
                 renderer.trackOrder = renderer.trackOrder.concat([ 'combined', MASCP.getLayer(track_name).group.name ]);
               }
@@ -2008,14 +1999,17 @@
               layer_hidden = true;
             }
           } else {
-            if (MASCP.getLayer(track_name).group && ! force ) {
+            if (MASCP.getLayer(track_name).group && MASCP.getLayer(track_name).group == MASCP.getGroup('datasets') && ! force ) {
               renderer.hideLayer(track_name);
               layer_hidden = true;
             } else {
               renderer.showLayer(track_name);
             }
           }
-
+          console.log(track_name," is active? ",renderer.isLayerActive(track_name));
+          if ( ! renderer.isLayerActive(track_name) ) {
+            console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
+          }
           if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
             renderer.createGroupController('combined','datasets');
           }
@@ -2194,38 +2188,35 @@
         runner.retrieve("dummy",readyfunc);
     };
 
+    var collect_sequences = function(prots,sequences,callback) {
+      var acc = prots.shift();
+      var caller = collect_sequences;
+      var a_reader = new MASCP.UniprotReader();
+      MASCP.Service.CacheService(a_reader);
+      a_reader.retrieve(acc.toString(),function(e) {
+        var organism_name = this.result.getDescription().replace(/.*_/,'').replace(/\s.+/,'');
+        if (organism_name == "HUMAN") {
+          organism_name = "";
+        }
+        var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi, 'name' : this.result.getDescription().replace(/.* GN=/,'').replace(/\s.+/,'')+" "+organism_name };
+        bit.toString = function() { return this.sequence; };
+        sequences.push(bit);
+        if (prots.length <= 0) {
+          callback(sequences);
+        } else {
+          caller(prots,sequences,callback);
+        }
+      });
+    };
+
     var prepare_alignment = function(prots,renderer) {
-      var sequences = [];
       var ready = false;
-      (function() {
-        var acc = prots.shift();
-        var caller = arguments.callee;
-        var a_reader = new MASCP.UniprotReader();
-        MASCP.Service.CacheService(a_reader);
-        a_reader.retrieve(acc.toString(),function(e) {
-          var organism_name = this.result.getDescription().replace(/.*_/,'').replace(/\s.+/,'');
-          if (organism_name == "HUMAN") {
-            organism_name = "";
-          }
-          var bit = { 'sequence' : this.result.getSequence(), 'agi' : this.agi, 'name' : this.result.getDescription().replace(/.* GN=/,'').replace(/\s.+/,'')+" "+organism_name };
-          bit.toString = function() { return this.sequence; };
-          sequences.push(bit);
-          if (prots.length <= 0) {
-            renderer.acc = null;
-            do_clustal(sequences,null,function() {
-              document.getElementById('align').setAttribute('class','ready');
-              ready = true;
-            });
-          } else {
-            caller();
-          }
-        });
-      })();
-      return function() {
-        if (ready && ! window.showing_clustal) {
+      collect_sequences(prots,[],function(sequences) {
+        if (! window.showing_clustal) {
           setup_renderer(renderer);
           renderer.sequence = "";
           do_clustal(sequences,renderer,function() {
+            document.getElementById('align').setAttribute('class','ready');
             sequences.forEach(function(seq) {
               retrieve_data(seq.agi.toUpperCase(),renderer);
             });
@@ -2238,7 +2229,7 @@
             }
           });
         }
-      };
+      });
     };
 
     var has_ready = MASCP.ready;
@@ -2276,12 +2267,8 @@
           document.getElementById('align').style.display = 'block';
           document.getElementById('align').addEventListener('click',function() {
             var my_prots = [].concat(prots);
-            this.removeEventListener('click',arguments.callee);
-            callback_func = prepare_alignment(my_prots,renderer);
             document.getElementById('align').setAttribute('class','running');
-            this.addEventListener('click',function() {
-              callback_func();
-            },false);
+            prepare_alignment(my_prots,renderer);
           },false);
         } else {
           if (document.getElementById('align').style.display == 'block') {
