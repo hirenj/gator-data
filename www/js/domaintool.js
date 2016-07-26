@@ -1074,7 +1074,7 @@
         renderer.padding = 10;
         renderer.trackOrder = [];
         renderer.reset();
-        renderer.trackGap = 4;
+        renderer.trackGap = 5;
         renderer.trackHeight = 4;
         renderer.fixedFontScale = 1;
         renderer.refresh();
