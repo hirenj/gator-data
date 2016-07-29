@@ -1,16 +1,18 @@
 
 var SHAPE_LOOKUP = {
   'Cleavage' : 'pentagon-flip',
-  'Inhibitor' : 'pentagon-flip',
   'Binding' : 'ellipse',
   'Adhesion' : 'ellipse',
+  'IG-like' : 'ellipse',
   'Transferase' : 'pentagon',
+  'Factor' : 'hexagon',
   'Kinase' : 'pentagon'
 };
 
 var COLOUR_LOOKUP = {
-  'Cleavage' : 'red',
-  'Protein' : 'orange'
+  'Inhibitor' : 'red',
+  'Protein' : 'orange',
+  'Lipid' : '#fee',
 };
 
 var overlap = function(a,b) {
@@ -26,32 +28,43 @@ var return_data = [];
 
 var groups_by_shape = {};
 
-var render_domain = function(domain) {
+var render_cluster = function(offset,cluster) {
+  var dom = { "aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : offset, "height" : 3, "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
+  return_data.push(dom);
+
+};
+
+var classify = function(domain) {
     if (((domain.end - domain.start) / seq.length) >= 0.8) {
     	return;
     }
     var classes = domain.class || [];
-    var shape = 'rectangle';
-    var colour = '#999';
+    var is_repeat = classes.indexOf('Repeat') >= 0;
+    var shape;
+    var colour;
     classes.forEach(function(classname) {
       var class_parts = classname.split('/').map(function(clazz) { return clazz.trim(); });
-      shape = SHAPE_LOOKUP[class_parts[0]] || 'rectangle';
-      colour = COLOUR_LOOKUP[class_parts[1]] || '#999';
+      shape = shape ? shape : SHAPE_LOOKUP[class_parts[0]];
+      colour = colour ? colour : COLOUR_LOOKUP[class_parts[1]];
     });
+    if ( ! shape ) {
+      shape = 'rectangle';
+    }
+    if ( ! colour ) {
+      colour = '#eef';
+    }
     // console.log(domain);
     // console.log(shape + " " + colour);
-    groups_by_shape[shape + " " + colour ] = groups_by_shape[shape + " " + colour] || [];
+    groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '') ] = groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '')] || [];
     domain.shape = shape;
     domain.colour = colour;
-    groups_by_shape[shape + " " + colour ].push(domain);
-    // Domains by shape + colour
-    // var dom = { "aa": domain.start, "type" : "shape" , "width" : (domain.end - domain.start), "options" : { "offset" : 2.5, "height" : 5, "fill" : colour, "shape" : shape, "stroke" : "#000", "stroke_width" : "0.5"  }};
-    // return_data.push(dom);
+    groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '')].push(domain);
 };
 
-doms.forEach(render_domain);
+doms.forEach(classify);
 
 console.log(groups_by_shape);
+var offset = -4;
 Object.keys(groups_by_shape).forEach(function(shape) {
   var clusters = [];
   var doms = groups_by_shape[shape];
@@ -73,7 +86,8 @@ Object.keys(groups_by_shape).forEach(function(shape) {
       clusters.push({ "doms" : [dom], "start": dom.start, "end": dom.end });
     }
   }
-  console.log(clusters);
+  clusters.forEach(render_cluster.bind(null,offset));
+  offset += 4;
 });
 
 return return_data;
