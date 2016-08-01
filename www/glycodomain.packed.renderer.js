@@ -25,13 +25,31 @@ function renderData(seq,doms) {
 console.log("In Domain rendering");
 
 var return_data = [];
+var labels = [];
 
 var groups_by_shape = {};
 
+var generic_colour = '#eef';
+
 var render_cluster = function(offset,cluster) {
+  var names = cluster.doms.map(function(dom) {
+    return dom.dom;
+  }).filter(function(item,idx,self) {
+    return self.indexOf(item) === idx;
+  });
   var dom = { "aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : offset, "height" : 3, "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
   return_data.push(dom);
+  dom = {"aa": cluster.start, "type" : "marker", "options" : { "content" : names.join(','), stretch: "right", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+  labels.push(dom);
 
+  if ((cluster.end - cluster.start) > 50) {
+    dom = {"aa": cluster.end - 10, "type" : "marker", "options" : { "content" : names.join(','), angle: 0, stretch: "left", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+    labels.push(dom);
+    if ((cluster.end - cluster.start) > 100) {
+      dom = {"aa": parseInt(0.5*(cluster.start + cluster.end)), "type" : "marker", "options" : { "content" : names.join(','), stretch: true, "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+      labels.push(dom);
+    }
+  }
 };
 
 var classify = function(domain) {
@@ -51,10 +69,8 @@ var classify = function(domain) {
       shape = 'rectangle';
     }
     if ( ! colour ) {
-      colour = '#eef';
+      colour = generic_colour;
     }
-    // console.log(domain);
-    // console.log(shape + " " + colour);
     groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '') ] = groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '')] || [];
     domain.shape = shape;
     domain.colour = colour;
@@ -86,6 +102,29 @@ var cluster = function(doms) {
     doms.push(clus);
   });
 };
+
+var remove_generics = function(specific,generic) {
+  if ( ! generic || ! generic.length ) {
+    return;
+  }
+  for (var i = 0; i < generic.length; i++) {
+    specific.forEach(function(cluster) {
+      if ( generic[i].remove ) {
+        return;
+      }
+      if (overlap(cluster,generic[i]) > 0.8*(generic[i].end - generic[i].start)) {
+        generic[i].remove = true;
+        cluster.doms = cluster.doms.concat(generic[i].doms);
+      }
+    });
+  }
+  var wanted = generic.filter(function(clus) { return ! clus.remove; });
+  generic.length = 0;
+  wanted.forEach(function(clus) {
+    generic.push(clus);
+  });
+};
+
 
 var remove_repeat_overlap = function(all_objects) {
   var all_shapes = Object.keys(all_objects);
@@ -133,6 +172,13 @@ Object.keys(groups_by_shape).forEach(function(shape) {
 
 remove_repeat_overlap(groups_by_shape);
 
+Object.keys(groups_by_shape).filter(function(shape) {
+  return shape.indexOf(generic_colour) < 0;
+}).forEach(function(shape) {
+  var geom = shape.split(/\s/)[0];
+  remove_generics(groups_by_shape[shape],groups_by_shape[ geom+" "+generic_colour ]);
+});
+
 console.log(groups_by_shape);
 
 var offset = -4;
@@ -141,12 +187,12 @@ Object.keys(groups_by_shape).forEach(function(shape) {
     return;
   }
   groups_by_shape[shape].forEach(render_cluster.bind(null,offset));
-  offset += 4;
+  offset += 10;
 });
 
 
 
-return return_data;
+return return_data.concat(labels);
 
 
 }
