@@ -1193,15 +1193,14 @@
           return;
         }
       }
-      get_preferences().clearActiveSession();
-      var url_base = '';
-      MASCP.AuthenticateGator(function() {
+      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
         var conf = {
           'url' : url_base+'/doi/'+encodeURIComponent(doc),
           'auth' : MASCP.GATOR_AUTH_TOKEN,
           'async' : true,
           'type' : 'GET'
         };
+        get_preferences().clearActiveSession();
         get_preferences().useStaticPreferences(conf,callback);
       });
     };
@@ -1559,6 +1558,7 @@
         var self_func = arguments.callee;
 
         if (auth_func) {
+          MASCP.GatorDataReader.authenticate();
           document.getElementById('drive_install').addEventListener('click',function() {
             var this_ev = arguments.callee;
             if (window.ga) {
@@ -1598,6 +1598,7 @@
           return;
         } else {
           MASCP.GatorDataReader.ID_TOKEN = gapi.auth.getToken().id_token;
+          MASCP.GatorDataReader.authenticate();
           document.getElementById('drive_install').removeEventListener('click',arguments.callee);
           var flipped;
           document.getElementById('drive_install').classList.add("drive_preferences");
