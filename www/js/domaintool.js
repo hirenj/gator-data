@@ -441,7 +441,7 @@
           conf.specific.splice(0,-1)
           var sets = {};
           conf.specific.forEach(function(set) {
-            sets[set] = { type: "dataset", render_options: { renderer: 'msdata:default', offset: 10 }, parser_function: "function (datablock){\n            for (var key in datablock.data) {\n              if (key == \"\" || key.match(/\\s/)) {\n                delete datablock.data[key];\n              } else {\n                var dat = datablock.data[key];\n                delete datablock.data[key];\n                datablock.data[key.toLowerCase()] = {\n                  \"data\" : dat,\n                  \"retrieved\" : datablock.retrieved,\n                  \"etag\" : datablock.etag,\n                  \"title\" : datablock.title\n                };\n              }\n            }\n            delete datablock.retrieved;\n            delete datablock.etag;\n            delete datablock.title;\n            return datablock.data;\n        }" };
+            sets[set] = { type: "dataset", render_options: { renderer: 'msdata:default', track: "Data", offset: 10 }, parser_function: "function (datablock){\n            for (var key in datablock.data) {\n              if (key == \"\" || key.match(/\\s/)) {\n                delete datablock.data[key];\n              } else {\n                var dat = datablock.data[key];\n                delete datablock.data[key];\n                datablock.data[key.toLowerCase()] = {\n                  \"data\" : dat,\n                  \"retrieved\" : datablock.retrieved,\n                  \"etag\" : datablock.etag,\n                  \"title\" : datablock.title\n                };\n              }\n            }\n            delete datablock.retrieved;\n            delete datablock.etag;\n            delete datablock.title;\n            return datablock.data;\n        }" };
           });
           sets['glycodomain'] = {
                   'type' : 'dataset',
@@ -1199,6 +1199,7 @@
         var conf = {
           'url' : url_base+'/doi/'+encodeURIComponent(doc),
           'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'async' : true,
           'type' : 'GET'
         };
         get_preferences().useStaticPreferences(conf,callback);
