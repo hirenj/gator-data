@@ -1597,6 +1597,7 @@
           document.getElementById('drive_install').style.display = 'none';
           return;
         } else {
+          MASCP.GatorDataReader.ID_TOKEN = gapi.auth.getToken().id_token;
           document.getElementById('drive_install').removeEventListener('click',arguments.callee);
           var flipped;
           document.getElementById('drive_install').classList.add("drive_preferences");
