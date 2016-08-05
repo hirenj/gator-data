@@ -2229,7 +2229,6 @@
     var end_clustal = function() {};
 
     var do_clustal = function(seqs,renderer,readyfunc) {
-        MASCP.ClustalRunner.SERVICE_URL = '/tools/clustalw/';
         var runner = new MASCP.ClustalRunner();
         runner.sequences = seqs;
         if (renderer) {
