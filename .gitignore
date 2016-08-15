@@ -1,9 +1,6 @@
-etc/myapp/config.js
-ssl/ssl.key
 cached.db
 node_modules
 googlepipe.cfg
-etc/nginx/redirects
 www/*.json
 www/*.renderer
 renderer*.js
