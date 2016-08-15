@@ -6,10 +6,15 @@ var intervals = [];
 var return_data = [];
 
 peptides.forEach(function(glycopep,i) {
+	if ( ! glycopep.peptide_start ) {
+		intervals.push({ "index" : i, "start" : true,  "pep" : i });
+		intervals.push({ "index" : i, "start" : false , "pep" : i });
+		return;
+	}
 	var start;
 	var end;
 	start = glycopep.peptide_start;
-	end = start + glycopep.sequence.length - 1;
+	end = glycopep.peptide_end ?  glycopep.peptide_end : start + glycopep.sequence.length - 1;
 	glycopep.start = start;
 	glycopep.end = end;
 	intervals.push({ "index" : start, "start" : true,  "pep" : i });
