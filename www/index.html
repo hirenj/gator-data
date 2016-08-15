@@ -11,20 +11,6 @@
     <script src="/js/testing.js"></script>
     <script src="/js/notifications.js"></script>
     <title>GlycoDomain Viewer</title>
-
-<!--[if IE]>
-        <script type="text/javascript">
-        window.IE = 9
-        </script>
-<![endif]-->
-<!--[if lt IE 9]>
-        <script type="text/javascript">
-        window.IE = 8
-        </script>
-<![endif]-->
-
-    <script src="/js/browsersupport.js"></script>
-
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -37,22 +23,6 @@
     </script>
 </head>
 <body>
-    <script type="text/html" id="insertion_tmpl">
-        <div style="font-family: Courier;"><%=insert%>
-        </div>
-    </script>
-    <script type="text/html" id="description_tmpl">
-        <div style="background: #ffffff; font-size: 150pt; height: 100%;">
-        <%=start%> to <%=end%><br/>
-        <%=desc%>
-        </div>
-    </script>
-    <script type="text/html" id="peptide_tmpl">
-        <div style="background: #ffffff; font-size: 250pt; height: 100%;">
-        <%=start%> to <%=end%><br/>
-        <%=desc%>
-        </div>
-    </script>
     <script type="text/html" id="userset_tmpl">
         <h3>Data set preferences</h3>
         <ul class="drive_preferences">
@@ -87,7 +57,6 @@
     <button id="find" class="hint--bottom hint--bottom-left" data-hint="Search sequence"></button>
     <div id="selecttoggle" class="hint--left" data-hint="Click to enable drag selection"><input type="text"></input></div>
     <div id="viewer">
-        <input type="button" value="Print" id="print"/>
         <input type="button" value="Copy" id="clipboarder" />
         <span id="search_container" class="hint--right hint--always">
         <label for="searchGene" id="searchGeneLabel">Search</label><input id="searchGene" type="search"/>
@@ -134,14 +103,10 @@
     <script type="text/javascript" src="/js/md5.js"></script>
     <script type="text/javascript" src="/js/classlist.js"></script>
     <script type="text/javascript" src="/js/mascp-jstools.js"></script>
-    <script type="text/javascript" src="/js/domain_definitions.js"></script>
     <script type="text/javascript" src="/js/autocomplete.js"></script>
     <script type="text/javascript" src="/js/mygene.js"></script>
-    <script type="text/javascript" src="/js/domainmanager.js"></script>
     <script type="text/javascript" src="/js/domaintool.js"></script>
-    <script type="text/javascript" src="/js/user_notes.js"></script>
     <script type="text/javascript" src="/js/flippant.js"></script>
-    <script type="text/javascript" src="/js/piemenu.js"></script>
     <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=init"></script>
 </body>
 </html>
