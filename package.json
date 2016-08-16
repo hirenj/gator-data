@@ -1,6 +1,6 @@
 {
    "name": "gator-data",
-   "version": "1.0.0",
+   "version": "2.0.0",
    "homepage" : "http://hirenj.github.com/gator-data/",
    "description": "GATOR web server",
    "keywords": [
@@ -28,26 +28,7 @@
        } 
    ],
    "dependencies": {
-       "express" : "2.5.x",
-       "nconf"   : "0.6.x",
-       "optimist": "0.2.x",
-       "carrier" : "0.1.x",
-       "aws-sdk" : "2.0.x",
-       "csv"     : "0.0.x",
-       "mascp-jstools" : "https://github.com/hirenj/mascp-jstools/tarball/develop"
-   },
-   "main" : "bin/gatordata-httpd",
-   "bin" : {
-       "httpd" : "bin/gator-httpd"
-   },
-   "implements": ["gatordata-httpd"],
-   "os": ["linux", "macos", "win"],
-   "cpu": ["x86", "ppc", "x86_64"],
-   "engines": ["v8", "node >= 0.4.11"],
-   "directories": {
-       "lib": "js/lib",
-       "bin": "local/binaries",
-       "jars": "extlib/java" 
+       "mascp-jstools" : "hirenj/mascp-jstools"
    },
    "private" : "true"
 }
