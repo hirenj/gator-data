@@ -514,7 +514,7 @@
                 }
                 var temp_prefs = JSON.parse(JSON.stringify(prefs.user_datasets));
                 Object.keys(temp_prefs).forEach(function(key) {
-                  if (! key.indexOf('http') >= 0) {
+                  if (! key.indexOf('http') >= 0 && key !== 'combined' && key !== 'glycodomain') {
                     if (temp_prefs[key].type == 'dataset') {
                       if ( ! MASCP.getGroup('datasets')) {
                         MASCP.registerGroup('datasets', { 'fullname' : 'Combined'});
@@ -522,6 +522,7 @@
                       if ( ! MASCP.getLayer('combined') ) {
                         MASCP.registerLayer('combined', {'fullname' : 'Combined'});
                       }
+                      console.log("Registering group for ",temp_prefs[key].title);
                       MASCP.registerLayer(temp_prefs[key].title, {'fullname' : temp_prefs[key].title, 'group' : 'datasets'});
                       return;
                     }
@@ -548,7 +549,6 @@
                     'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
                   }
                 };
-                console.log(temp_prefs);
                 MASCP.IterateServicesFromConfig(temp_prefs,callback);
             });
           };
@@ -1170,7 +1170,7 @@
         setup_renderer(renderer);
 
         scale_text_elements(renderer);
-        MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+        MASCP.GOOGLE_CLIENT_ID="979764834319-753mqsahj8kqu0qi61hhp5mu02f8br0v.apps.googleusercontent.com";
         // domain_retriever = new MASCP.DomainRetriever(get_preferences(),renderer,function(editing,acc) {
         //   get_orthologs = _get_orthologs;
         //   get_orthologs(acc,renderer);
@@ -1184,86 +1184,84 @@
 
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
-
-      wire_gatordisplay(renderer);
-      wire_websockets('localhost:8880',function(socket) {
-        socket.onmessage = function(ev) {
-          if (! ev.data) {
-            return;
-          }
-          var data = JSON.parse(ev.data);
-          if (data.message == "showProtein") {
-            if (Array.isArray(data.data)) {
-              update_protein_list(data.data.map(function(up) {
-                var dat = { "id" : up, "name" : up };
-                dat.toString = function() {
-                  return this.id;
-                };
-                return dat;
-              }),renderer);
-            } else {
-              show_protein(data.data,renderer);
-            }
-            return;
-          }
-          if (data.message == "compactRenderer") {
-            renderer.trackGap = -8;
-            var lay;
-            for (lay in MASCP.layers) {
-              if (lay.match("annotation")) {
-                renderer.hideLayer(lay);
-              }
-              renderer.refresh();
-            }
-          }
-          if (data.message == "upgradeConnection") {
-            get_preferences().getPreferences(function() {
-              if ( ! gapi || ! gapi.auth.getToken() ) {
-                console.log("No gapi");
-                return;
-              }
-              if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
-                var caller = arguments.callee;
-                window.notify.ask_permission("Allow connection to R",function(granted) {
-                  if (granted) {
-                    var key = Math.random().toString(36).slice(2);
-                    sessionStorage.setItem("RConnectionKey", key);
-                    data.data = key;
-                    caller();
-                  }
-                }).hideLater(30000);
-              } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-                window.notify.info("Connected to R on local machine").hideLater(5000);
-                socket.send(JSON.stringify({
-                  "message" : "token",
-                  "data" : {  "authtoken": gapi.auth.getToken().access_token ,
-                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
-                            }
-                            }));
-              }
-            });
-          }
-          if (data.message == "retrieveSession") {
-            get_preferences().getPreferences(function(err,prefs) {
-              if ( ! gapi || ! gapi.auth.getToken() ) {
-                console.log("No gapi");
-                return;
-              }
-              if (err) {
-                return;
-              }
-              if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-                socket.send(JSON.stringify({
-                  "message" : "preferences",
-                  "data" : {  "preferences": prefs ,
-                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
-                            }
-                            }));
-              }
-            });
-          }
-        };
-      });
+      // wire_websockets('localhost:8880',function(socket) {
+      //   socket.onmessage = function(ev) {
+      //     if (! ev.data) {
+      //       return;
+      //     }
+      //     var data = JSON.parse(ev.data);
+      //     if (data.message == "showProtein") {
+      //       if (Array.isArray(data.data)) {
+      //         update_protein_list(data.data.map(function(up) {
+      //           var dat = { "id" : up, "name" : up };
+      //           dat.toString = function() {
+      //             return this.id;
+      //           };
+      //           return dat;
+      //         }),renderer);
+      //       } else {
+      //         show_protein(data.data,renderer);
+      //       }
+      //       return;
+      //     }
+      //     if (data.message == "compactRenderer") {
+      //       renderer.trackGap = -8;
+      //       var lay;
+      //       for (lay in MASCP.layers) {
+      //         if (lay.match("annotation")) {
+      //           renderer.hideLayer(lay);
+      //         }
+      //         renderer.refresh();
+      //       }
+      //     }
+      //     if (data.message == "upgradeConnection") {
+      //       get_preferences().getPreferences(function() {
+      //         if ( ! gapi || ! gapi.auth.getToken() ) {
+      //           console.log("No gapi");
+      //           return;
+      //         }
+      //         if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
+      //           var caller = arguments.callee;
+      //           window.notify.ask_permission("Allow connection to R",function(granted) {
+      //             if (granted) {
+      //               var key = Math.random().toString(36).slice(2);
+      //               sessionStorage.setItem("RConnectionKey", key);
+      //               data.data = key;
+      //               caller();
+      //             }
+      //           }).hideLater(30000);
+      //         } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+      //           window.notify.info("Connected to R on local machine").hideLater(5000);
+      //           socket.send(JSON.stringify({
+      //             "message" : "token",
+      //             "data" : {  "authtoken": gapi.auth.getToken().access_token ,
+      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
+      //                       }
+      //                       }));
+      //         }
+      //       });
+      //     }
+      //     if (data.message == "retrieveSession") {
+      //       get_preferences().getPreferences(function(err,prefs) {
+      //         if ( ! gapi || ! gapi.auth.getToken() ) {
+      //           console.log("No gapi");
+      //           return;
+      //         }
+      //         if (err) {
+      //           return;
+      //         }
+      //         if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+      //           socket.send(JSON.stringify({
+      //             "message" : "preferences",
+      //             "data" : {  "preferences": prefs ,
+      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
+      //                       }
+      //                       }));
+      //         }
+      //       });
+      //     }
+      //   };
+      // });
     };
 
     var domain_retriever;
@@ -1737,7 +1735,7 @@
 
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
-      MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+      MASCP.GOOGLE_CLIENT_ID="979764834319-753mqsahj8kqu0qi61hhp5mu02f8br0v.apps.googleusercontent.com";
       var datareader = greader.getDocument(null,null,function(err) {
         if (err && err.cause && err.cause == "No user event") {
           callback.call(null,null,err.authorize);
@@ -1770,7 +1768,7 @@
         }
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
-        MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
+        MASCP.GOOGLE_CLIENT_ID="979764834319-753mqsahj8kqu0qi61hhp5mu02f8br0v.apps.googleusercontent.com";
         var notification = window.notify.info("Loading protein list");
         var datareader = greader.createReader(doc_id,function(datas) {
           var dataset = {};
@@ -1999,11 +1997,13 @@
           if ( ! this.result ) {
             return;
           }
+
+          var datas = this.result._raw_data.data;
+
           if ( ! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).disabled ) {
             MASCP.registerLayer(track_name, {"fullname" : track_name }, [renderer]);
           }
           MASCP.registerLayer(track_name, { "fullname" : track_name }, [renderer]);
-
           if ( renderer.trackOrder.indexOf(track_name) < 0 ) {
             if (! MASCP.getLayer(track_name).group) {
               renderer.trackOrder = renderer.trackOrder.concat(track_name);
@@ -2030,7 +2030,6 @@
           if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
             renderer.createGroupController('combined','datasets');
           }
-          var datas = this.result._raw_data.data;
           var render_tries = 0;
 
           if (force) {
