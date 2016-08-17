@@ -38,7 +38,7 @@ var render_peptide = function(peptide,depth) {
 
 	return_data.push(pep_line);
 
-	if ( ! peptide.sites ) {
+	if ( ! peptide.sites || peptide.sites.length == 0 ) {
 		return_data.push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : peptide.composition[0], "stretch": true, "height" : 5, "fill" : "none", "text_fill" : "#555", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
