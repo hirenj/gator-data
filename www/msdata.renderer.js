@@ -6,7 +6,7 @@ var return_data = [];
 peptides.forEach(function(glycopep,i) {
 	var start;
 	var end;
-	if (! glycopep.peptide_start || ! glycopep.sequence ) {
+	if (! glycopep.peptide_start && ! glycopep.sequence ) {
 		intervals.push({ "index" : i, "start" : true,  "pep" : i });
 		intervals.push({ "index" : i, "start" : false , "pep" : i });
 		return;
