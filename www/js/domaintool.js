@@ -394,7 +394,35 @@
           return;
         }
         conf = json;
+        console.log(self.metadata);
+        var sets_by_cells = {};
+        var sets_by_tissue = {};
+        Object.keys(self.metadata || {}).forEach(function(set) {
+          if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
+            sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
+            sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
+          }
+        });
+        if ( ! MASCP.getGroup('cell_lines')) {
+          MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
+        }
+        Object.keys(sets_by_cells).forEach(function(cell) {
+          MASCP.registerLayer(cell.replace(/\s+/g,'_'), {'fullname' : cell, 'group' : 'cell_lines'});
+          conf.user_datasets[sets_by_cells[cell].concat(['']).join(',')] = {
+            "render_options":{
+                "track" : cell.replace(/\s+/g,'_'),
+                "renderer":"msdata:packed",
+                "icons" : {
+                  "namespace" : "sugar",
+                  "url" : "/sugars.svg"
+                }
+              },
+              "title":cell,
+              "type":"dataset"
+          };
+        });
         console.log(conf);
+        // DOI specific
         if (conf.specific) {
           conf.specific.splice(0,-1)
           var sets = {};
@@ -481,6 +509,17 @@
         delete datablock.title;
         return datablock.data;
       };
+      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+        var conf = {
+          'url' : url_base+'/metadata',
+          'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'async' : true,
+          'type' : 'GET'
+        };
+        MASCP.Service.request(conf,function(metadata) {
+          self.metadata = metadata;
+        });
+      });
 
       this.prefs_object = {
         "source" : domain,
@@ -665,7 +704,18 @@
           if ( ! handle_proteins) {
             handle_proteins = function() {};
           }
-          window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
+          bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+            var conf = {
+              'url' : url_base+'/metadata',
+              'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'async' : true,
+              'type' : 'GET'
+            };
+            MASCP.Service.request(conf,function(err,metadata) {
+              window.prefs.metadata = metadata;
+              window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
+            });
+          });
         });
       }
       return window.prefs;
@@ -2008,7 +2058,7 @@
             if (! MASCP.getLayer(track_name).group) {
               renderer.trackOrder = renderer.trackOrder.concat(track_name);
               renderer.showLayer(track_name);
-            } else if (MASCP.getLayer(track_name).group == MASCP.getGroup('datasets')) {
+            } else if (['datasets','cell_lines'].indexOf(MASCP.getLayer(track_name).group.name) >= 0) {
               if (renderer.trackOrder.indexOf(MASCP.getLayer(track_name).group.name) < 0 ){
                 renderer.trackOrder = renderer.trackOrder.concat([ 'combined', MASCP.getLayer(track_name).group.name ]);
               }
@@ -2016,7 +2066,7 @@
               layer_hidden = true;
             }
           } else {
-            if (MASCP.getLayer(track_name).group && MASCP.getLayer(track_name).group == MASCP.getGroup('datasets') && ! force ) {
+            if (MASCP.getLayer(track_name).group && ['datasets','cell_lines'].indexOf(MASCP.getLayer(track_name).group.name) >= 0 && ! force ) {
               renderer.hideLayer(track_name);
               layer_hidden = true;
             } else {
@@ -2028,7 +2078,7 @@
             console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
           }
           if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
-            renderer.createGroupController('combined','datasets');
+            renderer.createGroupController('combined',MASCP.getLayer(track_name).group.name);
           }
           var datas = this.result._raw_data.data;
           var render_tries = 0;
