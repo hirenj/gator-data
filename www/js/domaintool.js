@@ -567,6 +567,35 @@
                     delete temp_prefs[key];
                   }
                 });
+
+                console.log(self.metadata);
+                var sets_by_cells = {};
+                var sets_by_tissue = {};
+                Object.keys(self.metadata || {}).forEach(function(set) {
+                  if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
+                    sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
+                    sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
+                  }
+                });
+                if ( ! MASCP.getGroup('cell_lines')) {
+                  MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
+                }
+                Object.keys(sets_by_cells).forEach(function(cell) {
+                  MASCP.registerLayer(cell.replace(/\s+/g,'_'), {'fullname' : cell, 'group' : 'cell_lines'});
+                  temp_prefs[sets_by_cells[cell].concat(['']).join(',')] = {
+                    "render_options":{
+                        "track" : cell.replace(/\s+/g,'_'),
+                        "renderer":"msdata:packed",
+                        "icons" : {
+                          "namespace" : "sugar",
+                          "url" : "/sugars.svg"
+                        }
+                      },
+                      "title":cell,
+                      "type":"dataset"
+                  };
+                });
+
                 temp_prefs['combined'] = {
                   'type' : 'dataset',
                   'title' : 'Combined',
