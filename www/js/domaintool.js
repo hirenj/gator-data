@@ -1220,7 +1220,6 @@
         setup_renderer(renderer);
 
         scale_text_elements(renderer);
-        MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
         // domain_retriever = new MASCP.DomainRetriever(get_preferences(),renderer,function(editing,acc) {
         //   get_orthologs = _get_orthologs;
         //   get_orthologs(acc,renderer);
@@ -1787,7 +1786,6 @@
 
     var drive_install = function(callback) {
       var greader = new MASCP.GoogledataReader();
-      MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
       var datareader = greader.getDocument(null,null,function(err) {
         if (err && err.cause && err.cause == "No user event") {
           callback.call(null,null,err.authorize);
@@ -1820,7 +1818,6 @@
         }
         var doc_id = "spreadsheet:"+protein_doc;
         var greader = new MASCP.GoogledataReader();
-        MASCP.GOOGLE_CLIENT_ID="936144404055.apps.googleusercontent.com";
         var notification = window.notify.info("Loading protein list");
         var datareader = greader.createReader(doc_id,function(datas) {
           var dataset = {};
