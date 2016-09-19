@@ -1235,85 +1235,85 @@
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
 
-      wire_gatordisplay(renderer);
-      wire_websockets('localhost:8880',function(socket) {
-        socket.onmessage = function(ev) {
-          if (! ev.data) {
-            return;
-          }
-          var data = JSON.parse(ev.data);
-          if (data.message == "showProtein") {
-            if (Array.isArray(data.data)) {
-              update_protein_list(data.data.map(function(up) {
-                var dat = { "id" : up, "name" : up };
-                dat.toString = function() {
-                  return this.id;
-                };
-                return dat;
-              }),renderer);
-            } else {
-              show_protein(data.data,renderer);
-            }
-            return;
-          }
-          if (data.message == "compactRenderer") {
-            renderer.trackGap = -8;
-            var lay;
-            for (lay in MASCP.layers) {
-              if (lay.match("annotation")) {
-                renderer.hideLayer(lay);
-              }
-              renderer.refresh();
-            }
-          }
-          if (data.message == "upgradeConnection") {
-            get_preferences().getPreferences(function() {
-              if ( ! gapi || ! gapi.auth.getToken() ) {
-                console.log("No gapi");
-                return;
-              }
-              if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
-                var caller = arguments.callee;
-                window.notify.ask_permission("Allow connection to R",function(granted) {
-                  if (granted) {
-                    var key = Math.random().toString(36).slice(2);
-                    sessionStorage.setItem("RConnectionKey", key);
-                    data.data = key;
-                    caller();
-                  }
-                }).hideLater(30000);
-              } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-                window.notify.info("Connected to R on local machine").hideLater(5000);
-                socket.send(JSON.stringify({
-                  "message" : "token",
-                  "data" : {  "authtoken": gapi.auth.getToken().access_token ,
-                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
-                            }
-                            }));
-              }
-            });
-          }
-          if (data.message == "retrieveSession") {
-            get_preferences().getPreferences(function(err,prefs) {
-              if ( ! gapi || ! gapi.auth.getToken() ) {
-                console.log("No gapi");
-                return;
-              }
-              if (err) {
-                return;
-              }
-              if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-                socket.send(JSON.stringify({
-                  "message" : "preferences",
-                  "data" : {  "preferences": prefs ,
-                              "connectionkey" : sessionStorage.getItem("RConnectionKey")
-                            }
-                            }));
-              }
-            });
-          }
-        };
-      });
+      // wire_gatordisplay(renderer);
+      // wire_websockets('localhost:8880',function(socket) {
+      //   socket.onmessage = function(ev) {
+      //     if (! ev.data) {
+      //       return;
+      //     }
+      //     var data = JSON.parse(ev.data);
+      //     if (data.message == "showProtein") {
+      //       if (Array.isArray(data.data)) {
+      //         update_protein_list(data.data.map(function(up) {
+      //           var dat = { "id" : up, "name" : up };
+      //           dat.toString = function() {
+      //             return this.id;
+      //           };
+      //           return dat;
+      //         }),renderer);
+      //       } else {
+      //         show_protein(data.data,renderer);
+      //       }
+      //       return;
+      //     }
+      //     if (data.message == "compactRenderer") {
+      //       renderer.trackGap = -8;
+      //       var lay;
+      //       for (lay in MASCP.layers) {
+      //         if (lay.match("annotation")) {
+      //           renderer.hideLayer(lay);
+      //         }
+      //         renderer.refresh();
+      //       }
+      //     }
+      //     if (data.message == "upgradeConnection") {
+      //       get_preferences().getPreferences(function() {
+      //         if ( ! gapi || ! gapi.auth.getToken() ) {
+      //           console.log("No gapi");
+      //           return;
+      //         }
+      //         if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
+      //           var caller = arguments.callee;
+      //           window.notify.ask_permission("Allow connection to R",function(granted) {
+      //             if (granted) {
+      //               var key = Math.random().toString(36).slice(2);
+      //               sessionStorage.setItem("RConnectionKey", key);
+      //               data.data = key;
+      //               caller();
+      //             }
+      //           }).hideLater(30000);
+      //         } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+      //           window.notify.info("Connected to R on local machine").hideLater(5000);
+      //           socket.send(JSON.stringify({
+      //             "message" : "token",
+      //             "data" : {  "authtoken": gapi.auth.getToken().access_token ,
+      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
+      //                       }
+      //                       }));
+      //         }
+      //       });
+      //     }
+      //     if (data.message == "retrieveSession") {
+      //       get_preferences().getPreferences(function(err,prefs) {
+      //         if ( ! gapi || ! gapi.auth.getToken() ) {
+      //           console.log("No gapi");
+      //           return;
+      //         }
+      //         if (err) {
+      //           return;
+      //         }
+      //         if (data.data === sessionStorage.getItem("RConnectionKey") ) {
+      //           socket.send(JSON.stringify({
+      //             "message" : "preferences",
+      //             "data" : {  "preferences": prefs ,
+      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
+      //                       }
+      //                       }));
+      //         }
+      //       });
+      //     }
+      //   };
+      // });
     };
 
     var domain_retriever;
@@ -1440,7 +1440,7 @@
         document.getElementById('uniprot_id').textContent = ucacc;
         renderer.grow_container = true;
         renderer.setSequence(this.result.getSequence());
-        set_description(this.result.getDescription().replace(/_HUMAN.*GN=/,'/').replace(/\s.+/,''));
+        set_description(this.result.getDescription().replace(/OS=.*/,''));
         if (success) {
           success();
         }
