@@ -16,7 +16,7 @@
 		},
 		"combined":{
 			"render_options":{
-				"track" : "sites",
+				"track" : "combined",
 				"renderer":"msdata:packed",
 				"icons" : {
 					"namespace" : "sugar",

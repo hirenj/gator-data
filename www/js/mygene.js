@@ -55,7 +55,7 @@
   };
 
   var test_mygene = function(success,failure) {
-    do_http_request('http://mygene.info/v2/metadata',function(err,val) {
+    do_http_request('https://mygene.info/v2/metadata',function(err,val) {
       if (err) {
         failure();
         failure = function() {};
@@ -113,7 +113,7 @@
     show_persistent_message('Searching..');
     var done_alias = false;
 
-    do_http_request('http://mygene.info/v2/query?species=human&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
+    do_http_request('https://mygene.info/v2/query?species=human&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
       if (err) {
         flash_message('Error searching');
         return;
@@ -121,7 +121,7 @@
       clear_messages();
       if ( ! done_alias && val && val.hits && val.hits.length < 1 ) {
         done_alias = true;
-        do_http_request('http://mygene.info/v2/query?species=human&fields=symbol,name,alias,uniprot,accession.protein&q=alias:'+newValue,arguments.callee);
+        do_http_request('https://mygene.info/v2/query?species=human&fields=symbol,name,alias,uniprot,accession.protein&q=alias:'+newValue,arguments.callee);
         return;
       }
       var prots = [];
@@ -174,7 +174,7 @@
   };
 
   var get_mygene_uniprotid = function(id,callback) {
-    do_http_request('http://mygene.info/v2/gene/'+id,function(err,data) {
+    do_http_request('https://mygene.info/v2/gene/'+id,function(err,data) {
       if ( err || ! data.uniprot ) {
         flash_message('No matches');
         callback(err || { "error" : "No matches"});
