@@ -5,4 +5,4 @@
 
 // Beta scopes
 MASCP.GOOGLE_CLIENT_ID="979764834319-753mqsahj8kqu0qi61hhp5mu02f8br0v.apps.googleusercontent.com";
-MASCP.GOOGLE_SCOPES="openid profile email";
+MASCP.GOOGLE_SCOPES="openid profile email https://www.googleapis.com/auth/drive.appdata";
