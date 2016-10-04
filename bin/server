@@ -2,6 +2,8 @@ import os
 import posixpath
 import urllib
 import BaseHTTPServer
+import sys
+
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 # modify this to add additional routes
@@ -10,7 +12,32 @@ ROUTES = (
     ['',       'www']  # empty string for the 'default' match
 ) 
 
-print ROUTES
+def test(HandlerClass=SimpleHTTPRequestHandler,
+         ServerClass=BaseHTTPServer.HTTPServer):
+
+    protocol = "HTTP/1.0"
+    host = ''
+    port = 3000
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+        if ':' in arg:
+            host, port = arg.split(':')
+            port = int(port)
+        else:
+            try:
+                port = int(sys.argv[1])
+            except:
+                host = sys.argv[1]
+
+    server_address = (host, port)
+
+    HandlerClass.protocol_version = protocol
+    httpd = ServerClass(server_address, HandlerClass)
+
+    sa = httpd.socket.getsockname()
+    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    httpd.serve_forever()
+
 
 class RequestHandler(SimpleHTTPRequestHandler):
     
@@ -20,8 +47,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # set default root to cwd
         root = os.getcwd()
         
-        if path.startswith('uniprot'):
-            path = ''
+        if path.startswith('/uniprot'):
+            path = '/index.html'
 
         root = 'www'
 
@@ -51,4 +78,4 @@ class RequestHandler(SimpleHTTPRequestHandler):
         return path
 
 if __name__ == '__main__':
-    BaseHTTPServer.test(RequestHandler, BaseHTTPServer.HTTPServer)
+    test(RequestHandler, BaseHTTPServer.HTTPServer)
