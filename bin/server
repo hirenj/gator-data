@@ -50,6 +50,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if path.startswith('/uniprot'):
             path = '/index.html'
 
+        if path.startswith('/doi'):
+            path = '/index.html'
+
         root = 'www'
 
         # look up routes and set root directory accordingly
