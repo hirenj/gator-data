@@ -2355,6 +2355,9 @@
           window.notify.alert(err.message || "Error loading proteins");
           return;
         }
+        if ( ! prots ) {
+          prots = [];
+        }
         if (prots.length < 25) {
           document.getElementById('drive_install').style.display = 'none';
           document.getElementById('align').style.display = 'block';
