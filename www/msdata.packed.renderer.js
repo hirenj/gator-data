@@ -3,9 +3,12 @@ peptides = peptides['application/json+msdata'] || [];
 console.log(peptides);
 var intervals = [];
 
-var return_data = [];
+var return_data = {};
 
 peptides.forEach(function(glycopep,i) {
+	if ( ! return_data[glycopep.acc] ) {
+		return_data[glycopep.acc] = [];
+	}
 	if ( ! glycopep.peptide_start ) {
 		intervals.push({ "index" : i, "start" : true,  "pep" : i });
 		intervals.push({ "index" : i, "start" : false , "pep" : i });
@@ -41,7 +44,7 @@ var render_peptide = function(peptide) {
 
 	var pep_line = { "aa": peptide.start, "type" : "box" , "width" : (peptide.end - peptide.start), "options" : { "offset" : base_offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  }}
 
-	return_data = [pep_line].concat(return_data);
+	return_data[peptide.acc] = [pep_line].concat(return_data[peptide.acc]);
 
 	if ( ! peptide.sites ) {
 		// return_data.push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : peptide.composition[0], "stretch": true, "height" : 5, "fill" : "none", "text_fill" : "#555", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
@@ -74,9 +77,9 @@ var render_peptide = function(peptide) {
 		}
 
 		if (composition == 'galnac' || composition == 'man') {
-			return_data.push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }});
+			return_data[peptide.acc].push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }});
 		} else {
-			return_data.push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 10, "offset" : base_offset - 5, "bare_element" : true }});
+			return_data[peptide.acc].push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 10, "offset" : base_offset - 5, "bare_element" : true }});
 		}
 	});
 	// return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#ui_revealmore", "content" :  peptide.source.split('_'), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 3 }});
