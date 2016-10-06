@@ -29,7 +29,7 @@
 		"homology":{
 			"render_options":{
 				"track" : "homology",
-				"renderer":"msdata:packed",
+				"renderer":"msdata:packed_homology",
 				"icons" : {
 					"namespace" : "sugar",
 					"url" : "/sugars.svg"

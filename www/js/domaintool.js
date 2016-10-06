@@ -397,12 +397,17 @@
         console.log(self.metadata);
         var sets_by_cells = {};
         var sets_by_tissue = {};
+        var taxids = {};
         Object.keys(self.metadata || {}).forEach(function(set) {
           if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
+            if (self.metadata[set].sample.species) taxids[self.metadata[set].sample.species] = true;
             sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
             sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
           }
         });
+
+        taxids = Object.keys(taxids);
+
         if ( ! MASCP.getGroup('cell_lines')) {
           MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
         }
@@ -420,6 +425,14 @@
               "title":cell,
               "type":"dataset"
           };
+        });
+        if (! MASCP.getGroup('homology')) {
+          MASCP.registerGroup('homology', { 'fullname' : 'Homologous data'});
+        }
+        taxids.forEach(function(taxid) {
+          if (taxid) {
+            MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
+          }
         });
         console.log(conf);
         // DOI specific
@@ -572,12 +585,24 @@
                 console.log(self.metadata);
                 var sets_by_cells = {};
                 var sets_by_tissue = {};
+                var taxids = {};
                 Object.keys(self.metadata || {}).forEach(function(set) {
                   if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
+                    if (self.metadata[set].sample.species) taxids[self.metadata[set].sample.species] = true;
                     sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
                     sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
                   }
                 });
+                taxids = Object.keys(taxids);
+
+                if (! MASCP.getGroup('homology')) {
+                  MASCP.registerGroup('homology', { 'fullname' : 'Homologous data'});
+                }
+                taxids.forEach(function(taxid) {
+                  MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
+                });
+
+
                 if ( ! MASCP.getGroup('cell_lines')) {
                   MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
                 }
@@ -613,7 +638,7 @@
                   'parser_function' : parser_function.toString(),
                   'render_options' : {
                     'track' : 'homology',
-                    'renderer' : 'msdata:packed',
+                    'renderer' : 'msdata:packed_homology',
                     'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
                   }
                 };
@@ -1971,6 +1996,7 @@
 
     MASCP.msdata_default_url = '/msdata.renderer.js';
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
+    MASCP.msdata_packed_homology_url = '/msdata.packed_homology.renderer.js';
     MASCP.domains_packed_url = '/glycodomain.packed.renderer.js';
 
 
@@ -1980,8 +2006,11 @@
         renderer_url = MASCP.msdata_default_url;
       }
 
-      if (renderer_url.match(/^msdata:packed/)) {
+      if (renderer_url.match(/^msdata:packed$/)) {
         renderer_url = MASCP.msdata_packed_url;
+      }
+      if (renderer_url.match(/^msdata:packed_homology$/)) {
+        renderer_url = MASCP.msdata_packed_homology_url;
       }
 
       if (renderer_url.match(/^domains:packed/)) {
@@ -2121,6 +2150,10 @@
           if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
             renderer.createGroupController('combined',MASCP.getLayer(track_name).group.name);
           }
+          if (MASCP.getLayer(track_name) && MASCP.getGroup(track_name)) {
+            console.log("Creating group controller for ",track_name);
+            renderer.createGroupController(track_name,track_name);
+          }
           var render_tries = 0;
 
           if (force) {
@@ -2201,7 +2234,22 @@
                                       obj.options = { "offset" : offset };
                                     }
                                   });
-                                  renderer.renderObjects(track_name,r);
+                                  // Split by track here
+                                  renderer.renderObjects(track_name,r.filter( function(item) {
+                                    return ! item.track;
+                                  }));
+                                  var items_by_track = {};
+                                  r.filter( function(item) {
+                                    return item.track;
+                                  }).forEach(function(item) {
+                                    items_by_track[item.track] = items_by_track[item.track] || [];
+                                    items_by_track[item.track].push(item);
+                                  });
+                                  Object.keys(items_by_track).forEach(function(track) {
+                                    if (MASCP.getLayer(track)) {
+                                      renderer.renderObjects(track,items_by_track[track]);
+                                    }
+                                  });
                                   renderer.trigger('resultsRendered',[this]);
                                   renderer.refresh();
                                 }, "agi" : acc });
