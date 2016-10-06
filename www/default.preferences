@@ -25,6 +25,18 @@
 			},
 			"title":"Combined",
 			"type":"dataset"
+		},
+		"homology":{
+			"render_options":{
+				"track" : "homology",
+				"renderer":"msdata:packed",
+				"icons" : {
+					"namespace" : "sugar",
+					"url" : "/sugars.svg"
+				}
+			},
+			"title":"Homology",
+			"type":"dataset"
 		}
 	},
 	"accessions" : [

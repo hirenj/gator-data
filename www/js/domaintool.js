@@ -553,7 +553,7 @@
                 }
                 var temp_prefs = JSON.parse(JSON.stringify(prefs.user_datasets));
                 Object.keys(temp_prefs).forEach(function(key) {
-                  if (! key.indexOf('http') >= 0 && key !== 'combined' && key !== 'glycodomain') {
+                  if (! key.indexOf('http') >= 0 && key !== 'combined' && key !== 'homology' && key !== 'glycodomain') {
                     if (temp_prefs[key].type == 'dataset') {
                       if ( ! MASCP.getGroup('datasets')) {
                         MASCP.registerGroup('datasets', { 'fullname' : 'Combined'});
@@ -2069,6 +2069,9 @@
             }
           },"xml");
         }
+        if (reader.datasetname == 'homology') {
+          reader.registerSequenceRenderer(renderer);
+        }
 
         reader.retrieve(acc,function(force) {
           var layer_hidden = false;
@@ -2165,27 +2168,35 @@
                 this.eval({ "data" : "renderData(input.sequence,input.data,input.acc,input.track)",
                             "input" : { "sequence" : seq, "data" : datas, "acc" : acc, "track" : track_name },
                             "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
-                            "callback" : function(r) {
+                            "callback" : function(objects) {
                               sandbox.terminate();
-                              var obj = ({ "gotResult" : function() {
-                                r.forEach(function(obj) {
-                                  var offset = parseInt((pref.render_options || {}).offset || 0);
-                                  if (obj.options) {
-                                    if (obj.options.offset) {
-                                      obj.options.offset += offset;
-                                      return;
+                              if ( Array.isArray(objects) ) {
+                                var temp_objects = {}
+                                temp_objects[acc] = objects;
+                                objects = temp_objects;
+                              }
+                              Object.keys(objects).forEach(function(acc) {
+                                var r = objects[acc];
+                                var obj = ({ "gotResult" : function() {
+                                  r.forEach(function(obj) {
+                                    var offset = parseInt((pref.render_options || {}).offset || 0);
+                                    if (obj.options) {
+                                      if (obj.options.offset) {
+                                        obj.options.offset += offset;
+                                        return;
+                                      }
+                                      obj.options.offset = offset;
+                                    } else {
+                                      obj.options = { "offset" : offset };
                                     }
-                                    obj.options.offset = offset;
-                                  } else {
-                                    obj.options = { "offset" : offset };
-                                  }
-                                });
-                                renderer.renderObjects(track_name,r);
-                                renderer.trigger('resultsRendered',[this]);
-                                renderer.refresh();
-                              }, "agi" : acc });
-                              renderer.trigger('readerRegistered',[obj]);
-                              obj.gotResult();
+                                  });
+                                  renderer.renderObjects(track_name,r);
+                                  renderer.trigger('resultsRendered',[this]);
+                                  renderer.refresh();
+                                }, "agi" : acc });
+                                renderer.trigger('readerRegistered',[obj]);
+                                obj.gotResult();
+                              });
                             }
                           });
               });
