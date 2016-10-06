@@ -562,7 +562,7 @@
                         MASCP.registerLayer('combined', {'fullname' : 'Combined'});
                       }
                       console.log("Registering group for ",temp_prefs[key].title);
-                      MASCP.registerLayer(temp_prefs[key].title, {'fullname' : temp_prefs[key].title, 'group' : 'datasets'});
+                      MASCP.registerLayer(temp_prefs[key].title.replace(/\s+/g,'_'), {'fullname' : temp_prefs[key].title, 'group' : 'datasets'});
                       return;
                     }
                     delete temp_prefs[key];
