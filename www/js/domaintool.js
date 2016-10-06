@@ -607,6 +607,16 @@
                     'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
                   }
                 };
+                temp_prefs['homology'] = {
+                  'type' : 'dataset',
+                  'title' : 'Homology',
+                  'parser_function' : parser_function.toString(),
+                  'render_options' : {
+                    'track' : 'homology',
+                    'renderer' : 'msdata:packed',
+                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
+                  }
+                };
                 temp_prefs['glycodomain'] = {
                   'type' : 'dataset',
                   'inline' : 'true',
@@ -2130,7 +2140,8 @@
               if (visible) {
                 vis_change_func.call(renderer);
                 setTimeout(function() {
-                  self_func.call({'result': self_result},true);
+                  console.log("Setting visible for ",track_name,acc);
+                  self_func.call({'result': self_result, 'acc' : acc },true);
                 },0);
               }
             };
@@ -2138,7 +2149,7 @@
             renderer.bind('sequenceChange',vis_change_func);
           }
           if (! layer_hidden && pref.render_options["renderer"] && JSandbox) {
-            console.log("Rendering ",track_name);
+            console.log("Rendering ",track_name, acc);
             get_cached_renderer(pref.render_options["renderer"],function(err,doc) {
               render_tries += 1;
               if (err) {
@@ -2215,6 +2226,8 @@
       if ( ! acc ) {
         return;
       }
+      return;
+
       var orthos_parent =  document.getElementById('orthos');
       while (orthos_parent.firstChild) {
         orthos_parent.removeChild(orthos_parent.firstChild);
