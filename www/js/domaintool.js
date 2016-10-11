@@ -2247,6 +2247,7 @@
                                   });
                                   Object.keys(items_by_track).forEach(function(track) {
                                     if (MASCP.getLayer(track)) {
+                                      MASCP.registerLayer(track,{},[renderer]);
                                       renderer.renderObjects(track,items_by_track[track]);
                                     }
                                   });
