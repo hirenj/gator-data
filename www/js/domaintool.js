@@ -1625,56 +1625,42 @@
     };
 
     var wire_drive_button = function(renderer) {
-      drive_install(function(err,auth_func) {
-        var self_func = arguments.callee;
 
-        if (auth_func) {
-          MASCP.GatorDataReader.authenticate();
-          document.getElementById('drive_install').addEventListener('click',function() {
-            var this_ev = arguments.callee;
-            if (window.ga) {
-              setTimeout(function() {
-                window.ga('send','event','drive_install','click');
-              },0);
-            }
-            auth_func(function(err) {
-              if (err) {
-                return;
-              } else {
-                document.getElementById('drive_install').removeEventListener('click',this_ev);
-                if (document.getElementById('uniprot_id').textContent) {
-                  self_func();
-                  show_protein(document.getElementById('uniprot_id').textContent,renderer,function() { window.notify.info("Successfully connected to Google Drive ").hideLater(2000); },true);
-                } else {
-                  self_func();
-                }
-              }
-            });
-          },false);
-        } else if (err) {
-          if (err.cause == "Failed to return from auth") {
-            document.getElementById('drive_install').style.display = 'none';
-            window.notify.info("Could not establish connection to Google, trying again later").hideLater(1000);
-            gapi.auth.checkSessionState({'client_id' : MASCP.GOOGLE_CLIENT_ID, 'session_state' : null},function(loggedOut) {
-              if (loggedOut === false) {
-                setTimeout(function() {
-                  document.getElementById('drive_install').style.display = 'block';
-                  wire_drive_button(renderer);
-                },1000);
-              }
-            });
+      // Initiating our Auth0Lock
+      var lock = new Auth0Lock(
+        'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
+        'hirenj.auth0.com'
+      );
+      var show_lock = function() {
+        lock.show();
+      };
+      document.getElementById('drive_install').addEventListener('click', show_lock ,false);
+
+
+      // Listening for the authenticated event
+      lock.on("authenticated", function(authResult) {
+        // Use the token in authResult to getProfile() and save it to localStorage
+        lock.getProfile(authResult.idToken, function(error, profile) {
+          if (error) {
+            // Handle error
             return;
           }
-          document.getElementById('drive_install').style.display = 'none';
-          return;
-        } else {
-          MASCP.GatorDataReader.ID_TOKEN = gapi.auth.getToken().id_token;
-          MASCP.GatorDataReader.authenticate();
-          document.getElementById('drive_install').removeEventListener('click',arguments.callee);
-          var flipped;
-          document.getElementById('drive_install').classList.add("drive_preferences");
-          document.getElementById('drive_install').setAttribute('data-hint','Data set preferences');
-          document.getElementById('drive_install').addEventListener('click',function() {
+
+          localStorage.setItem('idToken', authResult.idToken);
+          localStorage.setItem('profile', JSON.stringify(profile));
+          authorised(authResult.idToken);
+        });
+      });
+      var authorised = function(token) {
+        var self_func = authorised;
+
+        MASCP.GatorDataReader.ID_TOKEN = token || gapi.auth.getToken().id_token;
+        MASCP.GatorDataReader.authenticate();
+        document.getElementById('drive_install').removeEventListener('click',show_lock);
+        var flipped;
+        document.getElementById('drive_install').classList.add("drive_preferences");
+        document.getElementById('drive_install').setAttribute('data-hint','Data set preferences');
+        document.getElementById('drive_install').addEventListener('click',function() {
             if (flipped) {
               if (flipped.close) {
                 flipped.close();
@@ -1705,77 +1691,20 @@
                   }
                 });
               };
-              var remove_customdoc = function() {
-                get_preferences().getPreferences(function(err,prefs) {
-                  if (err) {
-                    window.notify.alert("Could not perform operation, please reload page");
-                    return;
-                  }
-                  prefs.accepted_domains[0] = { "file" : "User specified domains", "type" : "googleFile" };
-                  get_preferences().sync(function() {
-                    flipped.close();
-                    flipped = false;
-                  });
-                });
-              };
-              var copy_to_customdoc =  function() {
-                get_preferences().getPreferences(function(err,prefs) {
-                  if (err) {
-                    flipped.close();
-                    flipped = false;
-                    window.notify.alert("Could not perform operation, please reload page");
-                    return;
-                  }
-                  MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat) {
-                    if (err) {
-                      flipped.close();
-                      flipped = false;
-                      window.notify.alert("Could not perform operation, please reload page");
-                      return;
-                    }
-                    (new MASCP.GoogledataReader()).createFile("root",dat,"Copied domains","application/json; data-type=domaintool-domains",function(err,content,id){
-                      if (err) {
-                        flipped.close();
-                        flipped = false;
-                        window.notify.alert("Could not perform operation, please reload page");
-                        return;
-                      }
 
-                      prefs.accepted_domains[0] = {"file" : { "file_id" : id }, "type" : "googleFile", "owner" : "Self", "title" : "Copied domains"};
-                      get_preferences().sync(function() {
-                        flipped.close();
-                        flipped = false;
-                      });
-                    });
-                  });
-                });
-              };
+
               var template_config = { "sets" : sets_array, "custom_accepted" : null };
-              if (prefs.accepted_domains[0].file !== "User specified domains") {
-                 template_config["custom_accepted"] = { "owner" : prefs.accepted_domains[0].owner, "title" : prefs.accepted_domains[0].title };
-              }
+
               renderer.fillTemplate("userset_tmpl",template_config,function(error,html) {
                 flipped = flippant.flip(document.getElementById('sequence_frame'), html);
                 var matches = flipped.querySelectorAll('ul.drive_preferences .remove');
                 for (var i = 0 ; i < matches.length; i++) {
                   matches[i].addEventListener('click',remover_func,false);
                 }
-                matches = flipped.querySelectorAll('.remove_accepted');
-                for (i = 0 ; i < matches.length; i++) {
-                  matches[i].addEventListener('click',remove_customdoc,false);
-                }
-                matches = flipped.querySelectorAll('.copy_accepted');
-                for (i = 0 ; i < matches.length; i++) {
-                  matches[i].addEventListener('click',copy_to_customdoc,false);
-                }
-
               });
             });
-          },false);
-          // document.getElementById('drive_install').style.display = 'none';
-        }
-
-      });
+        },false);
+      };
     };
 
     var wire_uniprot_id_changer = function(renderer,handle_proteins) {
@@ -1849,27 +1778,7 @@
     };
 
     var drive_install = function(callback) {
-      var greader = new MASCP.GoogledataReader();
-      var datareader = greader.getDocument(null,null,function(err) {
-        if (err && err.cause && err.cause == "No user event") {
-          callback.call(null,null,err.authorize);
-        } else if (err && err.cause && err.cause == "No google auth library") {
-          window.init = function() {
-            drive_install(callback);
-          };
-          setTimeout(function() {
-            if (gapi) {
-              drive_install(callback);
-            }
-          },0);
-          callback.call(null,err);
-        } else if (err && err.cause && err.cause == "Browser not supported" ) {
-          window.notify.info("Browser support for Google Drive not detected").hideLater(1000);
-          callback.call(null,err);
-        } else {
-          callback.call(null,err);
-        }
-      });
+      callback();
     };
 
     var get_proteins = function(protein_doc,callback) {
