@@ -1626,10 +1626,18 @@
 
     var wire_drive_button = function(renderer) {
 
+      var options = {
+        auth: {
+          responseType: 'token',
+          params: {scope: 'openid name email'}
+        }
+      };
+
       // Initiating our Auth0Lock
       var lock = new Auth0Lock(
         'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
-        'hirenj.auth0.com'
+        'hirenj.auth0.com',
+        options
       );
       var show_lock = function() {
         lock.show();
