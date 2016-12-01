@@ -1283,9 +1283,21 @@
     var wire_drive_button = function(renderer) {
 
       var options = {
+        allowedConnections: ['google-oauth2','AzureADv2'],
+        allowSignUp: false,
         auth: {
           responseType: 'token',
           params: {scope: 'openid name email'}
+        },
+        theme: {
+          logo: '/img/drive_icon.png',
+          authButtons: {
+            "AzureADv2": {
+              displayName: "KU login",
+              primaryColor: "#b7b7b7",
+              foregroundColor: "#000000"
+            }
+          }
         }
       };
 
