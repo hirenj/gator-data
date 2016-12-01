@@ -1713,6 +1713,9 @@
             });
         },false);
       };
+      if (localStorage.getItem('idToken')) {
+        authorised(localStorage.getItem('idToken'));
+      }
     };
 
     var wire_uniprot_id_changer = function(renderer,handle_proteins) {
