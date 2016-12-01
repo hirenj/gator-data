@@ -1,7 +1,7 @@
 {
 	"version" : "1.2",
-	"title" : "O-GalNAc Glycoproteome",
-	"doi" : "10.1038/emboj.2013.79",
+	"title" : "Glycodomain default sets",
+	"doi" : "",
 	"shortcut" : "ogalnac",
 	"user_datasets" : {
 		"glycodomain" : {
