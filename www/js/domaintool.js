@@ -11,347 +11,7 @@
           done();
         };
       }
-      MASCP.GoogledataReader.isLoggedOut(function(err,loggedOut) {
-        var skip_waiting = null;
-        if (! loggedOut) {
-          if (self.getActiveSession()) {
-            // We don't want to do an auto upgrade when using
-            // session files
-            default_method(function() {
-              skip_waiting = self.waiting;
-              self.waiting = [];
-              self.addRealtime(self.getActiveSession());
-              self.ifReady(function() {
-                skip_waiting.forEach(function(wait) {
-                  self.waiting.push(wait);
-                });
-              });
-            });
-          } else {
-            // Run the default method that sets the session so that
-            // we know where the prefs come from
-            default_method(function() {
-
-              skip_waiting = self.waiting;
-              self.waiting = [];
-
-              // Get the contents of the preferences of this original
-              // data
-              self.getPreferences(function(err,orig_prefs) {
-                if (err) {
-                  console.log("Didn't get prefs");
-                  default_method(function(){});
-                  return;
-                }
-
-                self.prefs_object = null;
-
-                // Switch to using the default preferences from the default
-                // prefs file
-
-                self.useDefaultPreferences(function(err,prots) {
-                  if (err) {
-                    console.log("Didn't get prefs");
-                    default_method(function(){});
-                    return;
-                  }
-
-                  self.ifReady(function() {
-                    skip_waiting.forEach(function(wait) {
-                      self.waiting.push(wait);
-                    });
-                  });
-
-                  var temp_prefs_obj = self.prefs_object;
-                  // Keep the prefs object handy so we know that we are
-                  // upgrading on the right preferences file
-
-                  self.getPreferences(function(err,new_prefs) {
-                    if ( err || ! new_prefs ) {
-                      self.prefs_object = null;
-                      temp_prefs_obj = null;
-                      console.log("Didn't get prefs");
-                      default_method(function(){});
-                      return;
-                    }
-
-                    if (self.prefs_object !== null && self.prefs_object !== temp_prefs_obj) {
-                      return;
-                    }
-
-                    self.prefs_object = temp_prefs_obj;
-                    if (self.waiting) {
-                      self.waiting.forEach(function(waiting) {
-                        self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
-                      });
-                      self.waiting = [];
-                    }
-
-                    if (orig_prefs.version && new_prefs.version !== orig_prefs.version) {
-                      if (DomaintoolPreferences.upgradePreferences) {
-                        DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
-                        self.sync(function() {
-                          //Hopefully this worked.
-                        });
-                      }
-                    }
-                  });
-                  self.prefs_object = null;
-                });
-              });
-            });
-          }
-        } else {
-          default_method(function() {});
-        }
-      });
-    };
-
-    DomaintoolPreferences.prototype.clearActiveSession = function(file,title) {
-      localStorage.removeItem("active_session");
-    };
-
-    DomaintoolPreferences.prototype.setActiveSession = function(file,title) {
-      if ( ! file ) {
-        localStorage.removeItem("active_session");
-      } else {
-        localStorage.setItem("active_session",file);
-        localStorage.setItem("active_session_title",title);
-      }
-    };
-
-    DomaintoolPreferences.prototype.getActiveSession = function() {
-      return localStorage.getItem("active_session");
-    };
-
-    DomaintoolPreferences.prototype.getActiveSessionTitle = function() {
-      return localStorage.getItem("active_session_title");
-    };
-
-    DomaintoolPreferences.prototype.watchFile = function(doc,callback) {
-      var preferences = this;
-      if (sessionStorage.getItem("update_timestamps")) {
-        var json = JSON.parse(sessionStorage.getItem("update_timestamps"));
-        delete json[doc];
-        sessionStorage.setItem("update_timestamps",JSON.stringify(json));
-      }
-      this.ifReady(function() {
-        MASCP.Service.ClearCache('MASCP.UserdataReader.'+doc,null,function(err) {
-          console.log("Cleared data");
-          preferences.addWatchedDocument(doc,null,function(err,docname) {
-            if (window.history && window.history.replaceState) {
-              window.history.replaceState({},"Loading of "+docname);
-              document.title = "Loading of "+docname;
-            }
-            if (err) {
-              if (err.status === "preferences") {
-                if (err.original_error.cause === "No user event") {
-                  err.message = "You have been logged out, please click the drive button to authorize again";
-                  callback.call(null,err);
-                  return;
-                }
-                err.message = "Error setting preferences - try opening document again";
-                callback.call(null,err);
-                return;
-              }
-              err.message = "Problem reading document, please try again";
-              callback.call(null,err);
-              return;
-            }
-            callback.call(null,null,docname);
-          });
-        });
-      });
-    };
-
-    DomaintoolPreferences.prototype.copyToRealtime = function(folder,callback) {
-      var self = this;
-      self.getPreferences(function(err,orig_prefs) {
-        if (err) {
-          callback.call(null,err);
-          return;
-        }
-        (new MASCP.GoogledataReader()).createPreferences(folder,function(err,content,doc_id,title) {
-          delete self.prefs_object;
-          self.setActiveSession(doc_id,title);
-          self.addRealtime(doc_id);
-          self.getPreferences(function(err,new_prefs) {
-            if (err) {
-              callback.call(null,err);
-              return;
-            }
-            if (DomaintoolPreferences.upgradePreferences) {
-              DomaintoolPreferences.upgradePreferences(new_prefs,orig_prefs);
-            }
-            self.sync(function(err) {
-              if (! err) {
-                console.log("Forcing a refresh of preferences");
-                self.getPreferences(function(err) {
-                  callback.call(null,err);
-                },true);
-              }
-            });
-          });
-        });
-      });
-    };
-
-    DomaintoolPreferences.prototype.addRealtime = function(file) {
-      var self = this;
-      gapi.load("drive-realtime", function() {
-        if (MASCP.AnnotationManager) {
-          MASCP.AnnotationManager.InitRealtime();
-        }
-        var callback = function(err) {
-          if (err) {
-            if (err.cause == "Failed to return from auth") {
-              window.notify.info("Could not contact servers, please wait").hideLater(1000);
-              setTimeout(function() {
-                self.addRealtime(file);
-              },1000);
-              return;
-            }
-            return;
-          }
-          self.usePreferenceFile(file);
-          self.getPreferences(function(err,prefs,etag) {
-            if (err) {
-              window.notify.alert("Could not get preferences, please reload page");
-              return;
-            }
-            gapi.drive.realtime.load(file, function(doc) {
-              console.log("Realtime ready");
-              self.realtime = doc;
-              bean.fire(self,'realtimeready');
-            }, function(model) {
-              console.log("Firing model init");
-              bean.fire(self,'modelinit',[model,prefs,etag]);
-              model.getRoot().set('doc-etag',model.createString('none'));
-            });
-          });
-        };
-        if ( ! self.prefs_object ) {
-          (new MASCP.GoogledataReader()).getDocument(null,null,callback);
-        } else {
-          self.getPreferences(callback);
-        }
-      });
-    };
-
-    DomaintoolPreferences.prototype.usePreferenceFile = function(file) {
-      var self = this;
-      var google_obj = new MASCP.GoogledataReader();
-      var prefs_data = {};
-
-      var file_obj = {"id" : file, "content" : prefs_data };
-      var old_get_preferences = google_obj.getPreferences;
-      var old_write_preferences = google_obj.writePreferences;
-      google_obj.getPreferences = function(dom,callback,force) {
-        if (force) {
-          delete file_obj.etag;
-        }
-        if ( file_obj.etag && file_obj.content ) {
-          callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified);
-          return;
-        }
-        old_get_preferences.call(google_obj,dom,function(err,prefs) {
-          if (err && err.cause && err.cause.status == 304) {
-            callback.call(null,null,file_obj.content,file_obj.etag,file_obj.modified);
-            return;
-          }
-          if (err) {
-            callback.call(null,err);
-            return;
-          }
-          var key;
-          for (key in (file_obj.content)) {
-            delete file_obj.content[key];
-          }
-          for (key in prefs) {
-            file_obj.content[key] = prefs[key];
-          }
-          callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
-        });
-      };
-
-      var send_etag = function() {};
-
-      google_obj.writePreferences = function(dom,callback) {
-        old_write_preferences.call(google_obj,file_obj,function(err,prefs) {
-          old_get_preferences.call(google_obj,file_obj,function(err,pr) {
-            send_etag(file_obj);
-            if (err && err.cause && err.cause.status == 304) {
-              err = null;
-            }
-            callback.call(null,err,file_obj.content,file_obj.etag,file_obj.modified);
-          });
-        });
-      };
-
-      bean.add(self,'realtimeready',function() {
-        var str = self.realtime.getModel().getRoot().get("doc-etag");
-        str.addEventListener(gapi.drive.realtime.EventType.OBJECT_CHANGED,function(ev) {
-          if (! ev.isLocal) {
-            if (str.toString() !== file_obj.etag) {
-              file_obj.etag = null;
-              console.log("Refreshing etag from server");
-              self.getPreferences(function() { window.notify.info("Synchronised changes").hideLater(500); });
-            }
-          }
-        });
-
-        send_etag = function(obj) {
-          if (obj.etag && self.realtime.getModel().getRoot().get("doc-etag").toString() !== obj.etag ) {
-            self.realtime.getModel().getRoot().get("doc-etag").setText(obj.etag);
-          }
-        };
-
-      });
-      this.prefs_object = {
-        "source" : file,
-        addWatchedDocument : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          google_obj.addWatchedDocument.apply(google_obj,args);
-        },
-        removeWatchedDocument : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          file_obj.etag = "force";
-          google_obj.removeWatchedDocument.apply(google_obj,args);
-        },
-        readWatchedDocuments : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          google_obj.readWatchedDocuments.apply(google_obj,args);
-        },
-        listWatchedDocuments : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          google_obj.listWatchedDocuments.apply(google_obj,args);
-        },
-        getPreferences : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          google_obj.getPreferences.apply(google_obj,args);
-        },
-        writePreferences : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(file_obj);
-          google_obj.writePreferences.apply(google_obj,args);
-        },
-        ifReady : function(callback) {
-          callback.call();
-        }
-      };
-      if (self.waiting) {
-        self.waiting.forEach(function(waiting) {
-          self.prefs_object[waiting.method].apply(self.prefs_object,waiting.args);
-        });
-        self.waiting = [];
-      }
-      bean.fire(self,'prefschange');
-      return;
+      default_method(function() {});
     };
 
     DomaintoolPreferences.prototype.getStaticConf = function(url,callback) {
@@ -394,7 +54,6 @@
           return;
         }
         conf = json;
-        console.log(self.metadata);
         var sets_by_cells = {};
         var sets_by_tissue = {};
         var taxids = {};
@@ -677,7 +336,6 @@
           callback.call();
         }
       };
-      delete self.realtime;
       callback.call(null,null,[]);
       bean.fire(self,'prefschange');
     };
@@ -877,7 +535,6 @@
       document.getElementById('clearsession').style.display = 'block';
       document.getElementById('clearsession').onclick = function() {
         console.log("Clearing session");
-        get_preferences().clearActiveSession();
         get_preferences().guessPreferenceSource(function(done) {
           get_preferences().useStaticPreferences('/default.preferences',function() {
             done();
@@ -1272,7 +929,6 @@
           'async' : true,
           'type' : 'GET'
         };
-        get_preferences().clearActiveSession();
         get_preferences().useStaticPreferences(conf,callback);
       });
     };
@@ -1715,6 +1371,8 @@
       };
       if (localStorage.getItem('idToken')) {
         authorised(localStorage.getItem('idToken'));
+      } else {
+        MASCP.GatorDataReader.authenticate();
       }
     };
 
@@ -2426,7 +2084,6 @@
         // Use a particular static conf, or something
         // as the template configuration for loading up
         // of session data
-        get_preferences().clearActiveSession();
         get_preferences().useStaticPreferences('/template.preferences',function() {});
         var not = window.notify.info("Creating new user session");
         get_preferences().copyToRealtime(state.folderId,function(err) {
@@ -2440,10 +2097,6 @@
           wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
         return;
-      }
-
-      if (get_preferences().getActiveSession()) {
-        wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
       }
 
       if (state.ids) {
