@@ -28,7 +28,7 @@
        } 
    ],
    "dependencies": {
-       "mascp-jstools" : "hirenj/mascp-jstools"
+       "mascp-jstools" : "hirenj/mascp-jstools#newbackend-master"
    },
    "private" : "true"
 }
