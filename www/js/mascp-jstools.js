@@ -1,0 +1,1 @@
+../../node_modules/mascp-jstools/dist/js/mascp-jstools.js
