@@ -106,14 +106,14 @@
     if (! newValue || newValue.length < 1) {
       return;
     }
-    if (search_cache[newValue]) {
+    var species = MyGeneCompleter.species || 'human';
+    if (search_cache[species+newValue]) {
       clear_messages();
-      return search_cache[newValue];
+      return search_cache[species+newValue];
     }
     show_persistent_message('Searching..');
     var done_alias = false;
-
-    do_http_request('https://mygene.info/v2/query?species=human&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
+    do_http_request('https://mygene.info/v2/query?species='+species+'&fields=symbol,name,uniprot,accession.protein&q='+newValue+'*',function(err,val) {
       if (err) {
         flash_message('Error searching');
         return;
@@ -121,7 +121,7 @@
       clear_messages();
       if ( ! done_alias && val && val.hits && val.hits.length < 1 ) {
         done_alias = true;
-        do_http_request('https://mygene.info/v2/query?species=human&fields=symbol,name,alias,uniprot,accession.protein&q=alias:'+newValue,arguments.callee);
+        do_http_request('https://mygene.info/v2/query?species='+species+'&fields=symbol,name,alias,uniprot,accession.protein&q=alias:'+newValue,arguments.callee);
         return;
       }
       var prots = [];
@@ -168,7 +168,7 @@
       } else {
         clear_messages();
       }
-      search_cache[newValue] = prots;
+      search_cache[species+newValue] = prots;
       autocomplete.addValues(prots);
     });
   };
