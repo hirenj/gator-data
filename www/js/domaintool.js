@@ -121,6 +121,45 @@
 
     MASCP.AnnotationManager.prototype.addSelector = function(callback) {
       var self = this;
+      var svgPosition = function(ev,svgel) {
+          var positions = mousePosition(ev.changedTouches ? ev.changedTouches[0] : ev);
+          var p = {};
+          if (svgel.nodeName == 'svg') {
+              p = svgel.createSVGPoint();
+              var rootCTM = svgel.getScreenCTM();
+              p.x = positions[0];
+              p.y = positions[1];
+
+              self.matrix = rootCTM.inverse();
+              p = p.matrixTransform(self.matrix);
+          } else {
+              p.x = positions[0];
+              p.y = positions[1];
+          }
+          return p;
+      };
+
+      var mousePosition = function(evt) {
+          var posx = 0;
+          var posy = 0;
+          if (!evt) {
+              evt = window.event;
+          }
+
+          if (evt.pageX || evt.pageY)     {
+              posx = evt.pageX - (document.body.scrollLeft + document.documentElement.scrollLeft);
+              posy = evt.pageY - (document.body.scrollTop + document.documentElement.scrollTop);
+          } else if (evt.clientX || evt.clientY)  {
+              posx = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+              posy = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+          }
+          if (self.targetElement) {
+              posx = evt.screenX;
+              posy = evt.screenY;
+          }
+          return [ posx, posy ];
+      };
+
       if ( ! self.renderer._canvas) {
         bean.add(renderer,'sequenceChange',function() {
           self.addSelector(callback);
@@ -166,14 +205,6 @@
         }
         self.renderer.select(local_start+1,local_end);
         selected = (self.renderer.sequence.substr(local_start,local_end - local_start ));
-        self.annotations['hover_targets'] = [];
-        if (! self.readonly ) {
-          if (Math.abs(local_start - local_end) <= 1) {
-              self.annotations['hover_targets'].push({"type" : "symbol", "class" : "potential", "index" : local_start+1, "acc" : self.acc });
-          } else {
-              self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
-          }
-        }
         if (self.redrawTimeout) {
           clearTimeout(self.redrawTimeout);
         }
