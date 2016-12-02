@@ -51,7 +51,7 @@
     <div id="page_canvas">
     <div id="protein_list"></div>
     <button id="help" class="hint--bottom hint--bottom-left" data-hint="About">?</button>
-    <button id="drive_install" class="hint--bottom hint--bottom-left" data-hint="Google Drive integration"></button>
+    <button id="drive_install" class="hint--bottom hint--bottom-left" data-hint="Log in"></button>
     <button id="align">&#8652;</button>
     <button id="clearsession" style="display: none" class="hint--left" data-hint="Unload current session"></button>
     <button id="find" class="hint--bottom hint--bottom-left" data-hint="Search sequence"></button>
@@ -59,7 +59,12 @@
     <div id="viewer">
         <input type="button" value="Copy" id="clipboarder" />
         <span id="search_container" class="hint--right hint--always">
-        <label for="searchGene" id="searchGeneLabel">Search</label><input id="searchGene" type="search"/>
+        <label for="searchGene" id="searchGeneLabel">Search</label><input id="searchGene" type="search"/><select id="searchGeneSpecies" name="select">
+              <option value="human" selected>Human</option>
+              <option value="mouse">Mouse</option>
+              <option value="rat">Rat</option>
+              <option value="10029">CHO</option>
+        </select>
         </span>
 
         <div class="hint--right" id="uniprot_container" data-hint="Click to type in new UniProt ID"><div contentEditable="true" id="uniprot_id"></div></div>

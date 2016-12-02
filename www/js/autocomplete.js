@@ -356,9 +356,10 @@
 		html[h++] = "</ul>";
 		
 		// Display and store list:
-		this.highlightIdx = -1;
 		this.shownValues = values.concat();
 		this.container.innerHTML = html.join("");
+		this.setHighlightedIndex(-1);
+		this.setHighlightedIndex(0);
 	};
 	
 	//////////////////////////////////////////////////////////////////////////////////
