@@ -1,5 +1,265 @@
     if (!(window.console && console.log)) { (function() { var noop = function() {}; var methods = ['assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error', 'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log', 'markTimeline', 'profile', 'profileEnd', 'markTimeline', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'warn']; var length = methods.length; var console = window.console = {}; while (length--) { console[methods[length]] = noop; } }()); }
 
+    MASCP.AnnotationManager = function(renderer,preferences) {
+      var self = this;
+      this.renderer = renderer;
+      return this;
+    };
+
+
+    MASCP.AnnotationManager.prototype.toggleSearchField = function() {
+      if (this.showingSearch == true) {
+        this.hideSearchField();
+        this.showingSearch = false;
+      } else {
+        this.showingSearch = true;
+        this.showSearchField();
+      }
+    }
+
+    MASCP.AnnotationManager.prototype.showSearchField = function() {
+      var self = this;
+      if ( ! this.search_field ) {
+        this.search_field = document.createElement('div');
+        var search_el = document.createElement('input');
+        search_el.setAttribute('type','text');
+        search_el.onblur = function() {
+          if (! search_el.value || search_el.value.length < 1 || search_el.value.match(/^\||\|$/) ) {
+            self.renderer.select();
+            return;
+          }
+          var search_re;
+          try {
+            search_re = new RegExp(search_el.value, "gi");
+          } catch (e) {
+            return;
+          }
+          var match;
+          var positions = [];
+          while (match=search_re.exec(self.renderer.sequence)) {
+            positions.push(match.index+1);
+            positions.push(match[0].length+match.index);
+          }
+          self.renderer.select.apply(self.renderer,positions);
+        };
+        search_el.addEventListener('focus',search_el.onblur,false);
+        search_el.addEventListener('keyup',search_el.onblur,false);
+        this.search_field.appendChild(search_el);
+        self.renderer._container.appendChild(this.search_field);
+        this.search_field.className = 'search_field hidden';
+        search_el.setAttribute('value','');
+      };
+      setTimeout(function() {
+        self.search_field.className = 'search_field';
+      },0);
+      return self.search_field;
+    };
+
+    MASCP.AnnotationManager.prototype.hideSearchField = function() {
+      if ( ! this.search_field ) {
+        return;
+      }
+      this.renderer.select();
+      this.search_field.className = 'search_field hidden';
+    };
+
+    MASCP.AnnotationManager.prototype.initialiseAnnotations = function(prefs) {
+      var self = this;
+
+      self.renderer.showAnnotation = function() {};
+
+      var callback = function() {
+        self.renderer.showAnnotation  = function (acc) {
+          self.acc = acc;
+        };
+
+        var in_text;
+        self.renderer.bind('zoomChange',function() {
+          if (self.renderer.zoom > 3.5) {
+            if ( ! in_text ) {
+              in_text = true;
+            }
+          } else {
+            if ( in_text ) {
+              in_text = false;
+            }
+          }
+        });
+      };
+      callback();
+    };
+
+    MASCP.AnnotationManager.prototype.bindClick = function(element,handler) {
+      if ("ontouchstart" in window) {
+        element.addEventListener('touchstart',function(ev) {
+          var startX = ev.touches[0].clientX;
+          var startY = ev.touches[0].clientY;
+          var reset = function() {
+            document.body.removeEventListener('touchmove',move);
+            element.removeEventListener('touchend',end);
+          };
+          var end = function(ev) {
+            reset();
+            ev.stopPropagation();
+            ev.preventDefault();
+            if (handler) {
+              handler.call(null,ev);
+            }
+          };
+          var move = function(ev) {
+            if (Math.abs(ev.touches[0].clientX - startX) > 10 || Math.abs(ev.touches[0].clientY - startY) > 10) {
+              reset();
+            }
+          };
+          document.body.addEventListener('touchmove', move , false);
+          element.addEventListener('touchend',end,false);
+        },false);
+      } else {
+        element.addEventListener('click',handler,false);
+      }
+    };
+
+    MASCP.AnnotationManager.prototype.addSelector = function(callback) {
+      var self = this;
+      if ( ! self.renderer._canvas) {
+        bean.add(renderer,'sequenceChange',function() {
+          self.addSelector(callback);
+        });
+        return;
+      }
+
+      var canvas = self.renderer._canvas;
+      var start;
+      var end;
+      var end_func;
+      var selected;
+
+      if (typeof canvas.supports_use == 'undefined') {
+        (function() {
+          var use = canvas.use('/icons.svg#trash',-1000,-1000,100,100);
+          setTimeout(function() {
+            if (use.instanceRoot) {
+              canvas.supports_use = true;
+            } else {
+              canvas.supports_use = false;
+            }
+            use.parentNode.removeChild(use);
+          },1000);
+        })();
+      }
+
+
+      var moving_func = function(evt) {
+        evt.preventDefault();
+
+        var p = svgPosition(evt,canvas);
+        end = p.x;
+
+        var local_start;
+        var local_end;
+        if (start > end) {
+          local_end = parseInt(start / 50);
+          local_start = parseInt(end / 50);
+        } else {
+          local_end = parseInt(end/50);
+          local_start = parseInt(start/50);
+        }
+        self.renderer.select(local_start+1,local_end);
+        selected = (self.renderer.sequence.substr(local_start,local_end - local_start ));
+        self.annotations['hover_targets'] = [];
+        if (! self.readonly ) {
+          if (Math.abs(local_start - local_end) <= 1) {
+              self.annotations['hover_targets'].push({"type" : "symbol", "class" : "potential", "index" : local_start+1, "acc" : self.acc });
+          } else {
+              self.annotations['hover_targets'].push({"type" : "box", "class" : "potential", "index" : local_start+1 , "acc" : self.acc, "length" : Math.abs(local_start - local_end) });
+          }
+        }
+        if (self.redrawTimeout) {
+          clearTimeout(self.redrawTimeout);
+        }
+
+        self.redrawTimeout = setTimeout(function() {
+          delete self.redrawTimeout;
+        },100);
+      };
+
+
+      self.bindClick(canvas,function(evt) {
+        if (! self.selecting && self.annotations && self.annotations['hover_targets']) {
+          self.annotations['hover_targets'] = [];
+          self.renderer.select();
+        }
+      });
+
+      canvas.addEventListener('mousedown',function(evt) {
+        if (! self.selecting ) {
+          return;
+        }
+        var positions = mousePosition(evt);
+        var p = {};
+        if (canvas.nodeName == 'svg') {
+            p = canvas.createSVGPoint();
+            var rootCTM = this.getScreenCTM();
+            p.x = positions[0];
+            p.y = positions[1];
+
+            self.matrix = rootCTM.inverse();
+            p = p.matrixTransform(self.matrix);
+        } else {
+            p.x = positions[0];
+            p.y = positions[1];
+        }
+        start = p.x;
+        end = p.x;
+        canvas.addEventListener('mousemove',moving_func,false);
+
+        evt.preventDefault();
+      },false);
+
+      canvas.addEventListener('mouseup',function(evt) {
+        if (self.selecting && callback) {
+          callback(selected);
+        }
+        canvas.removeEventListener('mousemove',moving_func);
+        evt.preventDefault();
+      });
+
+      canvas.addEventListener('touchend',function() {
+        if (self.selecting && callback) {
+          setTimeout(function() {
+            callback(selected);
+          },500);
+        }
+        canvas.removeEventListener('touchmove',moving_func);
+      });
+
+      canvas.addEventListener('touchstart',function(evt) {
+          if (! self.selecting ) {
+            return;
+          }
+          if (evt.changedTouches.length == 1) {
+              evt.preventDefault();
+              var positions = mousePosition(evt.changedTouches[0]);
+              var p = {};
+              if (canvas.nodeName == 'svg') {
+                  p = canvas.createSVGPoint();
+                  var rootCTM = this.getScreenCTM();
+                  p.x = positions[0];
+                  p.y = positions[1];
+
+                  self.matrix = rootCTM.inverse();
+                  p = p.matrixTransform(self.matrix);
+              } else {
+                  p.x = positions[0];
+                  p.y = positions[1];
+              }
+              start = p.x;
+              end = p.x;
+              canvas.addEventListener('touchmove',moving_func,false);
+          }
+      },false);
+    };
+
     var DomaintoolPreferences = function() {
       this.waiting = [];
     };
@@ -482,6 +742,10 @@
       MyGeneCompleter.ready(function(working) {
         if (working) {
           document.getElementById('searchGeneLabel').textContent = 'Search by NCBI gene name';
+          document.getElementById('searchGeneSpecies').onchange = function() {
+            console.log(this.value);
+            MyGeneCompleter.species = this.value;
+          }
           MyGeneCompleter(document.getElementById('searchGene'),function(err,uniprot) {
             if ( ! uniprot ) {
               MyGeneCompleter.flash_message("No UniProt entry found");
@@ -498,7 +762,6 @@
                 selected.setAttribute('class',clazz.replace(/selected\s/,''));
               }
             }
-            MyGeneCompleter.flash_message("Not in SimpleCell",2000);
             show_protein(uniprot,renderer);
           });
         } else {
