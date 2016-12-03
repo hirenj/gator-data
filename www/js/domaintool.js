@@ -1623,9 +1623,22 @@
       });
       var authorised = function(token) {
         var self_func = authorised;
-
         MASCP.GatorDataReader.ID_TOKEN = token || gapi.auth.getToken().id_token;
-        MASCP.GatorDataReader.authenticate();
+        MASCP.GatorDataReader.authenticate().catch(function(err) {
+          if (err) {
+            delete localStorage.idToken;
+            // Initiating our Auth0Lock
+            var auth0 = new Auth0({
+              clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
+              domain: 'hirenj.auth0.com',
+              callbackURL: window.location.origin,
+              scope: 'openid name email',
+              responseType: 'token'
+            });
+            auth0.silentAuthentication({scope: 'openid name email'},function() {
+            });
+          }
+        });
         document.getElementById('drive_install').removeEventListener('click',show_lock);
         var flipped;
         document.getElementById('drive_install').classList.add("drive_preferences");
@@ -1678,6 +1691,10 @@
       if (localStorage.getItem('idToken')) {
         authorised(localStorage.getItem('idToken'));
       } else {
+        if (window.location.hash && window.location.hash.indexOf('id_token') >= 0) {
+          return;
+        }
+        console.log("Doing an anonymous login");
         MASCP.GatorDataReader.authenticate();
       }
     };
