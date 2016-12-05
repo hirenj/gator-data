@@ -15,10 +15,13 @@ var COLOUR_LOOKUP = {
   'Inhibitor' : 'red',
   'Protein' : 'orange',
   'Lipid' : '#fee',
+  'Sugar' : '#6f6',
   'topo' : '#999'
 };
 
 var min_offset = -4;
+var domain_height = 4;
+var domain_gap = 5;
 
 
 var overlap = function(a,b) {
@@ -43,9 +46,9 @@ var render_cluster = function(offset,cluster) {
   }).filter(function(item,idx,self) {
     return self.indexOf(item) === idx;
   });
-  var dom = { "aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : offset, "height" : 3, "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
+  var dom = { "aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : offset, "height" : domain_height, "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
   if (cluster.doms[0].class.indexOf('topo') >= 0) {
-    dom = {"aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : min_offset, "height" : ((names.indexOf('SIGNAL') >= 0) ? 3 : (offset-min_offset)), "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
+    dom = {"aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : min_offset, "height" : ((names.indexOf('SIGNAL') >= 0) ? domain_height : (offset-min_offset)), "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
     offset = min_offset;
   }
   return_data.push(dom);
@@ -212,7 +215,7 @@ Object.keys(groups_by_shape).sort(function(a,b) {
     return;
   }
   groups_by_shape[shape].forEach(render_cluster.bind(null,offset));
-  offset += 10;
+  offset += domain_gap;
 });
 
 
