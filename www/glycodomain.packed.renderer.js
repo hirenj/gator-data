@@ -6,14 +6,20 @@ var SHAPE_LOOKUP = {
   'IG-like' : 'ellipse',
   'Transferase' : 'pentagon',
   'Factor' : 'hexagon',
-  'Kinase' : 'pentagon'
+  'Kinase' : 'pentagon',
+  'SIGNAL'  : 'roundrect',
+  'TMhelix' : 'hexagon'
 };
 
 var COLOUR_LOOKUP = {
   'Inhibitor' : 'red',
   'Protein' : 'orange',
   'Lipid' : '#fee',
+  'topo' : '#999'
 };
+
+var min_offset = -4;
+
 
 var overlap = function(a,b) {
   var overlap = Math.min(a.end,b.end) - Math.max(a.start,b.start)
@@ -38,6 +44,10 @@ var render_cluster = function(offset,cluster) {
     return self.indexOf(item) === idx;
   });
   var dom = { "aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : offset, "height" : 3, "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
+  if (cluster.doms[0].class.indexOf('topo') >= 0) {
+    dom = {"aa": cluster.start, "type" : "shape" , "width" : (cluster.end - cluster.start), "options" : { "offset" : min_offset, "height" : ((names.indexOf('SIGNAL') >= 0) ? 3 : (offset-min_offset)), "fill" : cluster.doms[0].colour, "shape" : cluster.doms[0].shape , "stroke" : "#000", "stroke_width" : "0.2"  }};
+    offset = min_offset;
+  }
   return_data.push(dom);
   dom = {"aa": cluster.start, "type" : "marker", "options" : { "content" : names.join(','), stretch: "right", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
   labels.push(dom);
@@ -62,8 +72,8 @@ var classify = function(domain) {
     var colour;
     classes.forEach(function(classname) {
       var class_parts = classname.split('/').map(function(clazz) { return clazz.trim(); });
-      shape = shape ? shape : SHAPE_LOOKUP[class_parts[0]];
-      colour = colour ? colour : COLOUR_LOOKUP[class_parts[1]];
+      shape = shape ? shape : SHAPE_LOOKUP[class_parts[0] !== 'topo' ? class_parts[0] : domain.dom ];
+      colour = colour ? colour : COLOUR_LOOKUP[class_parts[1] || class_parts[0]];
     });
     if ( ! shape ) {
       shape = 'rectangle';
@@ -71,10 +81,16 @@ var classify = function(domain) {
     if ( ! colour ) {
       colour = generic_colour;
     }
-    groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '') ] = groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '')] || [];
+    var shape_key = shape + " " + colour + (is_repeat ? ' REPEAT' : '');
+
+    if (classes.indexOf('topo') >= 0) {
+      shape_key = 'topology';
+    }
+
+    groups_by_shape[shape_key] = groups_by_shape[shape_key] || [];
     domain.shape = shape;
     domain.colour = colour;
-    groups_by_shape[shape + " " + colour + (is_repeat ? ' REPEAT' : '')].push(domain);
+    groups_by_shape[shape_key].push(domain);
 };
 
 var cluster = function(doms) {
@@ -181,8 +197,17 @@ Object.keys(groups_by_shape).filter(function(shape) {
 
 console.log(groups_by_shape);
 
-var offset = -4;
-Object.keys(groups_by_shape).forEach(function(shape) {
+var offset = min_offset;
+
+Object.keys(groups_by_shape).sort(function(a,b) {
+  if (a == 'topology') {
+    return 1;
+  }
+  if (b == 'topology') {
+    return -1;
+  }
+  return (a < b) ? -1 : ((a > b) ? 1 : 0);
+}).forEach(function(shape) {
   if (groups_by_shape[shape].length < 1) {
     return;
   }
