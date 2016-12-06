@@ -111,9 +111,11 @@
               reset();
             }
           };
-          document.body.addEventListener('touchmove', move , false);
+          //FIXME - PASSIVE
+          document.body.addEventListener('touchmove', move , {passive:true});
           element.addEventListener('touchend',end,false);
-        },false);
+        },{passive:true});
+        //FIXME - PASSIVE
       } else {
         element.addEventListener('click',handler,false);
       }
@@ -286,7 +288,8 @@
               }
               start = p.x;
               end = p.x;
-              canvas.addEventListener('touchmove',moving_func,false);
+              canvas.addEventListener('touchmove',moving_func,{passive:true});
+              //FIXME - PASSIVE
           }
       },false);
     };
@@ -726,6 +729,7 @@
             };
             MASCP.Service.request(conf,function(err,metadata) {
               window.prefs.metadata = metadata;
+              console.log("Authed static preferences");
               window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
             });
           });
@@ -1156,6 +1160,7 @@
     };
 
     var update_protein_list = function(prots,renderer,auth_func) {
+        console.log("Updating protein list ",prots.length);
         var list = document.getElementById("protein_list");
         while (list.childNodes.length > 0) {
           list.removeChild(list.firstChild);
@@ -2044,10 +2049,9 @@
               renderer.showLayer(track_name);
             }
           }
-          console.log(track_name," is active? ",renderer.isLayerActive(track_name));
-          if ( ! renderer.isLayerActive(track_name) ) {
-            console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
-          }
+          // if ( ! renderer.isLayerActive(track_name) ) {
+          //   console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
+          // }
           if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
             renderer.createGroupController('combined',MASCP.getLayer(track_name).group.name);
           }
