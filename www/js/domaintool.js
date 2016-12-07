@@ -1240,8 +1240,6 @@
 
         scale_text_elements(renderer);
         // domain_retriever = new MASCP.DomainRetriever(get_preferences(),renderer,function(editing,acc) {
-        //   get_orthologs = _get_orthologs;
-        //   get_orthologs(acc,renderer);
         //   show_protein(acc,renderer);
         //   if (editing && renderer.navigation) {
         //     renderer.navigation.show();
@@ -1407,7 +1405,6 @@
       window.showing_clustal = false;
 
       setup_renderer(renderer);
-      get_orthologs(ucacc,renderer);
 
 
       var a_reader = new MASCP.UniprotReader();
@@ -2172,61 +2169,6 @@
       });
     };
 
-
-    var get_orthologs = function(acc,renderer) {
-      if ( ! gapi || ! gapi.auth.getToken() ) {
-        return;
-      }
-      if ( ! acc ) {
-        return;
-      }
-      return;
-
-      var orthos_parent =  document.getElementById('orthos');
-      while (orthos_parent.firstChild) {
-        orthos_parent.removeChild(orthos_parent.firstChild);
-      }
-      var datareader = new MASCP.UserdataReader(null,'http://glycodomain-data.glycocode.com/data/latest/homologene/');
-      datareader.requestData = function() {
-          var agi = this.agi.toLowerCase();
-          var gatorURL = this._endpointURL.slice(-1) == '/' ? this._endpointURL+agi : this._endpointURL+'/'+agi;
-          return {
-              type: "GET",
-              dataType: "json",
-              url : gatorURL,
-              data: { 'agi'       : agi,
-                      'service'   : this.datasetname
-              }
-          };
-      };
-
-      datareader.datasetname = "homologene";
-      datareader.retrieve(acc,function(err) {
-        if ( ! err ) {
-          var orthos = this.result._raw_data.data.orthologs;
-          var ids=[10029,10090,10116,9606];
-          var labels={ 10029 : "CHO", 10090 : "Mouse", 10116 : "Rat ", 9606: "Human"};
-          ids.forEach(function(id) {
-            var accession = orthos[id];
-            if (accession && accession !== acc) {
-              var button = document.createElement('button');
-              button.setAttribute('class','ortho_button ortho_'+id);
-              button.textContent = labels[id];
-              button.addEventListener('click',function(evt) {
-                if (evt.metaKey) {
-                  window.open(window.location + '+' + accession.toUpperCase() ,'_blank');
-                  return;
-                }
-                window.location += '+'+accession.toUpperCase();
-                // show_protein(accession,renderer);
-              },false);
-              orthos_parent.appendChild(button);
-            }
-          });
-        }
-      });
-    };
-
     var get_passed_in_state = function() {
       return JSON.parse((function getParameterByName(name) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -2423,94 +2365,6 @@
           window.notify.info("Created new session").hideLater(1000);
           wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
         });
-        return;
-      }
-
-      if (state.ids) {
-        var watching = [];
-        var last_notification = null;
-        state.ids.forEach(function(doc_id) {
-          (new MASCP.GoogledataReader()).getMimetype(doc_id,function(err,type,title,extension) {
-            if ( ! err ) {
-              if (title.match(/\.msdata\.json$/) || type === 'application/json; data-type=msdata') {
-                watching.unshift(JSON.stringify({'doc' : doc_id, 'title' : title }));
-                var run_watch = function() {
-                  var remove_string = watching[0];
-                  var remove_block = JSON.parse(remove_string);
-                  var to_remove = remove_block.doc;
-                  if (last_notification !== null) {
-                    last_notification.hide();
-                  }
-                  last_notification = window.notify.info("Attempting to load "+remove_block.title);
-                  get_preferences().watchFile(to_remove,function(err,loaded) {
-                    if (err) {
-                      if (last_notification !== null) {
-                        last_notification.hide();
-                      }
-                      last_notification = window.notify.alert(err.message);
-                      setTimeout( run_watch, 500);
-                      return;
-                    }
-                    var watch_idx = watching.indexOf(remove_string);
-                    if (watch_idx > -1) {
-                      watching.splice(watch_idx,1);
-                    }
-                    if (last_notification !== null) {
-                      last_notification.hide();
-                    }
-                    last_notification = window.notify.info("Successfully loaded "+(remove_block.title || ""));
-                    if (watching.length > 0) {
-                      setTimeout( run_watch, 100);
-                    } else {
-                      if (last_notification !== null) {
-                        last_notification.hide();
-                      }
-                      window.notify.info("Successfully loaded all data");
-                    }
-                  });
-                };
-                if (watching.length  == 1) {
-                  run_watch();
-                }
-              }
-              if (extension == 'domaintoolsession' || type === 'application/json+domaintool-session') {
-                get_preferences().addRealtime(doc_id);
-                get_preferences().setActiveSession(doc_id,title);
-                wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
-              }
-              if (type == 'application/json; data-type=domaintool-domains') {
-                get_preferences().ifReady(function() {
-                  get_preferences().getPreferences(function(err,prefs) {
-                  if (err) {
-                    window.notify.alert("Error loading preferences, please reload page");
-                    return;
-                  }
-                  prefs.accepted_domains[0] = {"type" : "googleFile" , "file" : { "file_id" : doc_id }, "title" : title };
-                  MASCP.DomainRetriever.getRawData(prefs.accepted_domains[0],function(err,dat,permissions,owner) {
-                    prefs.accepted_domains[0].owner = owner;
-                    get_preferences().sync(function(err) {
-                      if (err) {
-                        window.notify.alert("Error loading domain file");
-                        return;
-                      }
-                      window.notify.info("Successfully switched to using "+title+" as domains").hideLater(500);
-                    });
-                  });
-                });
-                });
-              }
-            }
-          });
-        });
-        return;
-      }
-
-
-
-      if (state.exportIds && state.exportIds.length > 0) {
-        protein_doc_id = state.exportIds[0];
-        document.getElementById('drive_install').style.display = 'none';
-        get_proteins(protein_doc_id,handle_proteins);
         return;
       }
 
