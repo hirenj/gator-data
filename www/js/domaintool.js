@@ -720,7 +720,9 @@
           if ( ! handle_proteins) {
             handle_proteins = function() {};
           }
-          bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+          var authhandler = function(url_base) {
+            bean.remove(MASCP.GatorDataReader,'auth',authhandler);
+            console.log("Auth event triggered");
             var conf = {
               'url' : url_base+'/metadata',
               'auth' : MASCP.GATOR_AUTH_TOKEN,
@@ -732,7 +734,8 @@
               console.log("Authed static preferences");
               window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
             });
-          });
+          };
+          bean.add(MASCP.GatorDataReader,'auth',authhandler);
         });
       }
       return window.prefs;
@@ -1379,10 +1382,10 @@
       if ( ! acc ) {
         return;
       }
-      if (document.getElementById('drive_install').classList.contains('drive_preferences') && ! MASCP["GOOGLE_AUTH_TOKEN"] ) {
-        document.getElementById('drive_install').classList.remove('drive_preferences');
-        wire_drive_button(renderer);
-      }
+      // if (document.getElementById('drive_install').classList.contains('drive_preferences')) {
+      //   document.getElementById('drive_install').classList.remove('drive_preferences');
+      //   wire_drive_button(renderer);
+      // }
       var ucacc = acc.toString().toUpperCase();
       if (! force && document.getElementById('uniprot_id').textContent == ucacc) {
         return;
@@ -1623,11 +1626,31 @@
           authorised(authResult.idToken);
         });
       });
+      bean.add(MASCP.GatorDataReader,'unauthorized', function() {
+        if (localStorage.idToken) {
+            console.log("Logging out before silent reauth on unauthorized");
+            delete localStorage.idToken;
+            // Initiating our Auth0Lock
+            var auth0 = new Auth0({
+              clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
+              domain: 'hirenj.auth0.com',
+              callbackURL: window.location.origin,
+              scope: 'openid name email',
+              responseType: 'token'
+            });
+            auth0.silentAuthentication({scope: 'openid name email'},function() {
+            });
+        } else {
+          show_lock();
+        }
+      });
       var authorised = function(token) {
+        console.log("Trying to get a new auth token");
         var self_func = authorised;
         MASCP.GatorDataReader.ID_TOKEN = token || gapi.auth.getToken().id_token;
         MASCP.GatorDataReader.authenticate().catch(function(err) {
-          if (err) {
+          if (err.message == 'Unauthorized') {
+            console.log("Logging out before silent reauth");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
             var auth0 = new Auth0({
@@ -1691,12 +1714,14 @@
         },false);
       };
       if (localStorage.getItem('idToken')) {
+        MASCP.GatorDataReader.anonymous = false;
         authorised(localStorage.getItem('idToken'));
       } else {
         if (window.location.hash && window.location.hash.indexOf('id_token') >= 0) {
           return;
         }
         console.log("Doing an anonymous login");
+        MASCP.GatorDataReader.anonymous = true;
         MASCP.GatorDataReader.authenticate();
       }
     };
