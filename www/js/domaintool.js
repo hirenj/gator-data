@@ -1597,6 +1597,9 @@
               foregroundColor: "#000000"
             }
           }
+        },
+        languageDictionary: {
+          title: "GlycoDomainViewer"
         }
       };
 
