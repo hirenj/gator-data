@@ -1225,6 +1225,9 @@
         }
       }
       bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+        get_preferences().getStaticConf('/doi/'+encodeURIComponent(doc),function(err,conf) {
+          // Somehow merge in the conf here with the other conf?
+        });
         var conf = {
           'url' : url_base+'/doi/'+encodeURIComponent(doc),
           'auth' : MASCP.GATOR_AUTH_TOKEN,
