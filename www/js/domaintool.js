@@ -351,13 +351,30 @@
         var sets_by_cells = {};
         var sets_by_tissue = {};
         var taxids = {};
+
+        var autopopulate_ids = [];
         Object.keys(self.metadata || {}).forEach(function(set) {
+
           if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
+
+            if (! conf.user_datasets['combined'] || (! conf.user_datasets['combined'].autopopulate && ! conf.user_datasets[set] )) {
+              return;
+            }
+
+            delete conf.user_datasets[set];
+
+            autopopulate_ids.push(set);
+
             if (self.metadata[set].sample.species) taxids[self.metadata[set].sample.species] = true;
             sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
             sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
           }
         });
+
+        if (conf.user_datasets['combined'] && autopopulate_ids.length > 0) {
+          conf.user_datasets[autopopulate_ids.join(',')] = conf.user_datasets['combined'];
+          delete conf.user_datasets['combined'];
+        }
 
         taxids = Object.keys(taxids);
 
@@ -535,7 +552,6 @@
                   }
                 });
 
-                console.log(self.metadata);
                 var sets_by_cells = {};
                 var sets_by_tissue = {};
                 var taxids = {};
@@ -1224,7 +1240,20 @@
           return;
         }
       }
-      get_preferences().getStaticConf('/doi/'+encodeURIComponent(doc),function(err,conf) {
+      console.log("Binding auth event in doi conf");
+      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+        var conf = {
+          'url' : url_base+'/metadata',
+          'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'async' : true,
+          'type' : 'GET'
+        };
+        MASCP.Service.request(conf,function(err,metadata) {
+          get_preferences().metadata = metadata;
+          use_doi_conf(doc,callback);
+        });
+      });
+      get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doc)),function(err,conf) {
         if (err) {
           bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
             var conf = {
@@ -1236,7 +1265,8 @@
             get_preferences().useStaticPreferences(conf,callback);
           });
         } else {
-          get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(doc),callback);
+          console.log("Getting data from static conf file");
+          get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(encodeURIComponent(doc)),callback);
         }
       });
     };

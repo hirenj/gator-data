@@ -23,6 +23,7 @@
 					"url" : "/sugars.svg"
 				}
 			},
+			"autopopulate" : "true",
 			"title":"Combined",
 			"type":"dataset"
 		},
