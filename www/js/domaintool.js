@@ -357,7 +357,7 @@
 
           if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
 
-            if (! conf.user_datasets['combined'] || (! conf.user_datasets['combined'].autopopulate && ! conf.user_datasets[set] )) {
+            if (! conf.user_datasets || ! conf.user_datasets['combined'] || (! conf.user_datasets['combined'].autopopulate && ! conf.user_datasets[set] )) {
               return;
             }
 
@@ -371,7 +371,7 @@
           }
         });
 
-        if (conf.user_datasets['combined'] && autopopulate_ids.length > 0) {
+        if (conf.user_datasets && conf.user_datasets['combined'] && autopopulate_ids.length > 0) {
           conf.user_datasets[autopopulate_ids.join(',')] = conf.user_datasets['combined'];
           delete conf.user_datasets['combined'];
         }
