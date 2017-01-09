@@ -1224,17 +1224,20 @@
           return;
         }
       }
-      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
-        get_preferences().getStaticConf('/doi/'+encodeURIComponent(doc),function(err,conf) {
-          // Somehow merge in the conf here with the other conf?
-        });
-        var conf = {
-          'url' : url_base+'/doi/'+encodeURIComponent(doc),
-          'auth' : MASCP.GATOR_AUTH_TOKEN,
-          'async' : true,
-          'type' : 'GET'
-        };
-        get_preferences().useStaticPreferences(conf,callback);
+      get_preferences().getStaticConf('/doi/'+encodeURIComponent(doc),function(err,conf) {
+        if (err) {
+          bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+            var conf = {
+              'url' : url_base+'/doi/'+encodeURIComponent(doc),
+              'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'async' : true,
+              'type' : 'GET'
+            };
+            get_preferences().useStaticPreferences(conf,callback);
+          });
+        } else {
+          get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(doc),callback);
+        }
       });
     };
 
