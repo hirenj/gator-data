@@ -352,6 +352,29 @@
         var sets_by_tissue = {};
         var taxids = {};
 
+        if (conf.specific) {
+          conf.specific.splice(0,-1);
+          conf.user_datasets = {
+            'combined' : {
+              "render_options":{
+                "track" : "combined",
+                "renderer":"msdata:packed",
+                "icons" : {
+                  "namespace" : "sugar",
+                  "url" : "/sugars.svg"
+                }
+              },
+              "title":"Combined",
+              "type":"dataset",
+              'autopopulate' : false
+            }
+          };
+          conf.specific.forEach(function(set) {
+            conf.user_datasets[set] = true;
+          });
+          conf.version = 1.2;
+          conf.title = 'Autogen DOI';
+        }
         var autopopulate_ids = [];
         Object.keys(self.metadata || {}).forEach(function(set) {
 
@@ -404,30 +427,7 @@
             MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
           }
         });
-        console.log(conf);
-        // DOI specific
-        if (conf.specific) {
-          conf.specific.splice(0,-1)
-          var sets = {};
-          conf.specific.forEach(function(set) {
-            sets[set] = { type: "dataset", render_options: { renderer: 'msdata:default', track: "Data", offset: 10 }, parser_function: "function (datablock){\n            for (var key in datablock.data) {\n              if (key == \"\" || key.match(/\\s/)) {\n                delete datablock.data[key];\n              } else {\n                var dat = datablock.data[key];\n                delete datablock.data[key];\n                datablock.data[key.toLowerCase()] = {\n                  \"data\" : dat,\n                  \"retrieved\" : datablock.retrieved,\n                  \"etag\" : datablock.etag,\n                  \"title\" : datablock.title\n                };\n              }\n            }\n            delete datablock.retrieved;\n            delete datablock.etag;\n            delete datablock.title;\n            return datablock.data;\n        }" };
-          });
-          sets['glycodomain'] = {
-                  'type' : 'dataset',
-                  'inline' : 'true',
-                  'parser_function' : parser_function.toString(),
-                  'render_options' : {
-                    'offset' : 0,
-                    'renderer' : 'domains:packed',
-                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
-                  }
-          };
-          conf = {
-            "version" : "1.2",
-            "title" : "Someset",
-            "user_datasets" : sets
-          };
-        }
+        console.log("CONF DATA IS ",conf);
 
         var accs = conf.accessions || [];
         self.prefs_object = {
@@ -1241,27 +1241,38 @@
         }
       }
       console.log("Binding auth event in doi conf");
-      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
-        var conf = {
-          'url' : url_base+'/metadata',
-          'auth' : MASCP.GATOR_AUTH_TOKEN,
-          'async' : true,
-          'type' : 'GET'
-        };
-        MASCP.Service.request(conf,function(err,metadata) {
-          get_preferences().metadata = metadata;
-          use_doi_conf(doc,callback);
+      if ( ! get_preferences().metadata ) {
+        MASCP.GatorDataReader.authenticate().then(function(url_base) {
+          var conf = {
+            'url' : url_base+'/metadata',
+            'auth' : MASCP.GATOR_AUTH_TOKEN,
+            'async' : true,
+            'type' : 'GET'
+          };
+          MASCP.Service.request(conf,function(err,metadata) {
+            console.log("Populated metadata");
+            get_preferences().metadata = metadata;
+            console.log("Re-running doi_conf");
+            use_doi_conf(doc,callback);
+          });
         });
-      });
+        return;
+      }
+      console.log("Checking for static file");
       get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doc)),function(err,conf) {
+        console.log("Checked for static file");
         if (err) {
-          bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
+          console.log("Waiting for an auth event for getting the doi conf");
+          MASCP.GatorDataReader.authenticate().then(function(url_base) {
             var conf = {
               'url' : url_base+'/doi/'+encodeURIComponent(doc),
               'auth' : MASCP.GATOR_AUTH_TOKEN,
               'async' : true,
               'type' : 'GET'
             };
+            if ( ! get_preferences().metadata ) {
+              debugger;
+            }
             get_preferences().useStaticPreferences(conf,callback);
           });
         } else {
@@ -2384,6 +2395,7 @@
         add_keyboard_navigation();
       };
 
+      wire_drive_button(renderer);
 
       if (window.location.toString().match(/doi/)) {
         var match = /doi\/(.*)\//.exec(window.location);
@@ -2422,7 +2434,6 @@
         document.getElementById('page_canvas').scrollIntoView();
       },false);
 
-      wire_drive_button(renderer);
       wire_uniprot_id_changer(renderer,handle_proteins);
       wire_clipboarder();
       wire_genesearch(renderer);
