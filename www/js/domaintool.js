@@ -1241,20 +1241,23 @@
         }
       }
       console.log("Binding auth event in doi conf");
-      MASCP.GatorDataReader.authenticate().then(function(url_base) {
-        var conf = {
-          'url' : url_base+'/metadata',
-          'auth' : MASCP.GATOR_AUTH_TOKEN,
-          'async' : true,
-          'type' : 'GET'
-        };
-        MASCP.Service.request(conf,function(err,metadata) {
-          console.log("Populated metadata");
-          get_preferences().metadata = metadata;
-          console.log("Re-running doi_conf");
-          use_doi_conf(doc,callback);
+      if ( ! get_preferences().metadata ) {
+        MASCP.GatorDataReader.authenticate().then(function(url_base) {
+          var conf = {
+            'url' : url_base+'/metadata',
+            'auth' : MASCP.GATOR_AUTH_TOKEN,
+            'async' : true,
+            'type' : 'GET'
+          };
+          MASCP.Service.request(conf,function(err,metadata) {
+            console.log("Populated metadata");
+            get_preferences().metadata = metadata;
+            console.log("Re-running doi_conf");
+            use_doi_conf(doc,callback);
+          });
         });
-      });
+        return;
+      }
       console.log("Checking for static file");
       get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doc)),function(err,conf) {
         console.log("Checked for static file");
@@ -2369,6 +2372,7 @@
         add_keyboard_navigation();
       };
 
+      wire_drive_button(renderer);
 
       if (window.location.toString().match(/doi/)) {
         var match = /doi\/(.*)\//.exec(window.location);
@@ -2407,7 +2411,6 @@
         document.getElementById('page_canvas').scrollIntoView();
       },false);
 
-      wire_drive_button(renderer);
       wire_uniprot_id_changer(renderer,handle_proteins);
       wire_clipboarder();
       wire_genesearch(renderer);
