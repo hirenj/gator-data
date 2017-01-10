@@ -1622,7 +1622,11 @@
         allowSignUp: false,
         auth: {
           responseType: 'token',
-          params: {scope: 'openid name email'}
+          redirectUrl: window.location.origin,
+          params: {
+            scope: 'openid name email',
+            login_hint : 'abc123@ku.dk'
+          }
         },
         theme: {
           logo: '/img/drive_icon.png',
@@ -1653,8 +1657,7 @@
 
       // Listening for the authenticated event
       lock.on("authenticated", function(authResult) {
-        // Use the token in authResult to getProfile() and save it to localStorage
-        lock.getProfile(authResult.idToken, function(error, profile) {
+        lock.getUserInfo(authResult.accessToken, function(error, profile) {
           if (error) {
             // Handle error
             return;
@@ -1667,17 +1670,27 @@
       });
       bean.add(MASCP.GatorDataReader,'unauthorized', function() {
         if (localStorage.idToken) {
-            console.log("Logging out before silent reauth on unauthorized");
+            console.log("Logging out before silent reauth after unauthorized event");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var auth0 = new Auth0({
+            var webauth = new Auth0({
               clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
               domain: 'hirenj.auth0.com',
-              callbackURL: window.location.origin,
+              callbackURL: window.location.origin+"/silent-callback.html",
               scope: 'openid name email',
               responseType: 'token'
             });
-            auth0.silentAuthentication({scope: 'openid name email'},function() {
+            webauth.silentAuthentication({scope: 'openid name email'},function(err,authResult) {
+              lock.getUserInfo(authResult.accessToken, function(error, profile) {
+                if (error) {
+                  // Handle error
+                  return;
+                }
+
+                localStorage.setItem('idToken', authResult.idToken);
+                localStorage.setItem('profile', JSON.stringify(profile));
+                authorised(authResult.idToken);
+              });
             });
         } else {
           show_lock();
@@ -1692,14 +1705,24 @@
             console.log("Logging out before silent reauth");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var auth0 = new Auth0({
+            var webauth = new Auth0({
               clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
               domain: 'hirenj.auth0.com',
-              callbackURL: window.location.origin,
+              callbackURL: window.location.origin+"/silent-callback.html",
               scope: 'openid name email',
               responseType: 'token'
             });
-            auth0.silentAuthentication({scope: 'openid name email'},function() {
+            webauth.silentAuthentication({scope: 'openid name email'},function(err,authResult) {
+              lock.getUserInfo(authResult.accessToken, function(error, profile) {
+                if (error) {
+                  // Handle error
+                  return;
+                }
+
+                localStorage.setItem('idToken', authResult.idToken);
+                localStorage.setItem('profile', JSON.stringify(profile));
+                authorised(authResult.idToken);
+              });
             });
           }
         });
