@@ -426,6 +426,7 @@
           if (taxid) {
             MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
             MASCP.getLayer('tax'+taxid).disabled = true;
+            MASCP.getLayer('tax'+taxid).href = load_homology.bind(null,taxid);
           }
         });
         console.log("CONF DATA IS ",conf);
@@ -1627,6 +1628,16 @@
       });
     };
 
+    var load_homology = function(taxid,data) {
+      if ( data ) {
+        load_homology.data = data;
+      }
+      if (taxid && load_homology.data) {
+        var wanted_ids = load_homology.data.filter(function(align) { return align.taxonomy == taxid; }).map(function(align) { return align.uniprot });
+        window.location = '/uniprot/'+wanted_ids.join('+');
+      }
+    };
+
     var wire_drive_button = function(renderer) {
 
       var options = {
@@ -2112,6 +2123,9 @@
         }
         if (reader.datasetname == 'homology') {
           reader.registerSequenceRenderer(renderer);
+          reader.bind('resultReceived',function() {
+            load_homology(null,this.result ? this.result._raw_data.alignments : []);
+          });
         }
 
         reader.retrieve(acc,function(force) {
