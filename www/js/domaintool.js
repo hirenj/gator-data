@@ -1638,7 +1638,8 @@
       }
       if (taxid && load_homology.data) {
         var wanted_ids = load_homology.data.filter(function(align) { return align.taxonomy == taxid; }).map(function(align) { return align.uniprot });
-        window.location = [window.location].concat(wanted_ids).join('+');
+        var new_window = window.open([window.location].concat(wanted_ids).join('+'));
+        new_window.opener = null;
       }
     };
 
