@@ -431,6 +431,10 @@
         });
         console.log("CONF DATA IS ",conf);
 
+        if (window.location.pathname.indexOf('+') >= 0) {
+          delete conf.user_datasets['homology'];
+        }
+
         var accs = conf.accessions || [];
         self.prefs_object = {
           "source" : doc,
@@ -1634,7 +1638,7 @@
       }
       if (taxid && load_homology.data) {
         var wanted_ids = load_homology.data.filter(function(align) { return align.taxonomy == taxid; }).map(function(align) { return align.uniprot });
-        window.location = '/uniprot/'+wanted_ids.join('+');
+        window.location = [window.location].concat(wanted_ids).join('+');
       }
     };
 
