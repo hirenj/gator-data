@@ -2248,6 +2248,9 @@
                                   Object.keys(items_by_track).forEach(function(track) {
                                     if (MASCP.getLayer(track)) {
                                       MASCP.registerLayer(track,{},[renderer]);
+                                      // We force a refresh of the track order
+                                      // to pick up any layers that have been re-enabled
+                                      renderer.trackOrder = renderer.trackOrder;
                                       renderer.renderObjects(track,items_by_track[track]);
                                     }
                                   });
