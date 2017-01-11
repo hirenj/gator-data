@@ -70,6 +70,11 @@ var render_peptide = function(peptide) {
 		if (composition === 'Hex') {
 			composition = 'man';
 		}
+
+		if (composition === 'Phospho') {
+			composition = 'phospho';
+		}
+
 		if (composition.toLowerCase() == 'glcnac(b1-4)glcnac') {
 			composition = composition.toLowerCase();
 		}

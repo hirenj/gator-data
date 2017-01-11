@@ -55,6 +55,10 @@
 			<rect x="27" y="0" fill="#67a2fc" width="46" height="46" stroke-width="0" stroke="#000"/>
 			<rect x="27" y="54" fill="#67a2fc" width="46" height="46" stroke-width="0" stroke="#000"/>
         </g>
+        <g id="phospho">
+			<circle cx="50" cy="50" fill="#fff" r="48" stroke-width="3" stroke="#000"/>
+			<text x="50" y="50" text-anchor="middle" stroke="#000" stroke-width="2px" dy=".35em" dx="0.05em" font-size="50" font-family="sans-serif">P</text>
+        </g>
 	</defs>
 	<g>
 		<rect x="0" y="0" width="100" height="100" stroke-width="0.1" stroke="#000" fill="none"/>
@@ -77,4 +81,5 @@
 	<use xlink:href="#glcnac(b1-4)glcnac.potential" x="1200" y="100" width="100" height="100"/>
 	<use xlink:href="#neuac(a2-3)gal(b1-3)galnac" x="1300" y="100" width="100" height="100"/>
 	<use xlink:href="#man(a1-2)man" x="1400" y="100" width="100" height="100"/>
+	<use xlink:href="#phospho" x="1500" y="100" width="100" height="100"/>
 </svg>
