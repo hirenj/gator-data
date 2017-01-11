@@ -424,7 +424,7 @@
         }
         taxids.forEach(function(taxid) {
           if (taxid) {
-            MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
+            MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology', 'disabled' : true });
           }
         });
         console.log("CONF DATA IS ",conf);
