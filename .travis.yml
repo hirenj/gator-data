@@ -36,4 +36,4 @@ deploy:
     on:
       branch: newbackend
       repo: hirenj/gator-data
-      condition: ! -z $TRAVIS_TAG
+      condition: -n "$TRAVIS_TAG"
