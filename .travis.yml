@@ -3,6 +3,7 @@ node_js:
 - '4.3'
 script:
 - echo "No compilation needed"
+- if [ -n "$TRAVIS_TAG" ]; then cp credentials-prod.js www/credentials.js; fi
 deploy:
   - provider: s3
     local-dir: www
