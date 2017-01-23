@@ -1652,7 +1652,7 @@
           responseType: 'token',
           redirectUrl: window.location.origin,
           params: {
-            scope: 'openid name email',
+            scope: MASCP.AUTH0_SCOPES,
             login_hint : 'abc123@ku.dk'
           }
         },
@@ -1673,8 +1673,8 @@
 
       // Initiating our Auth0Lock
       var lock = new Auth0Lock(
-        'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
-        'hirenj.auth0.com',
+        MASCP.AUTH0_CLIENT_ID,
+        MASCP.AUTH0_DOMAIN,
         options
       );
       var show_lock = function() {
@@ -1702,13 +1702,13 @@
             delete localStorage.idToken;
             // Initiating our Auth0Lock
             var webauth = new Auth0({
-              clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
-              domain: 'hirenj.auth0.com',
+              clientID: MASCP.AUTH0_CLIENT_ID,
+              domain: MASCP.AUTH0_DOMAIN,
               callbackURL: window.location.origin+"/silent-callback.html",
-              scope: 'openid name email',
+              scope: MASCP.AUTH0_SCOPES,
               responseType: 'token'
             });
-            webauth.silentAuthentication({scope: 'openid name email'},function(err,authResult) {
+            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
                 if (error) {
                   // Handle error
@@ -1734,13 +1734,13 @@
             delete localStorage.idToken;
             // Initiating our Auth0Lock
             var webauth = new Auth0({
-              clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
-              domain: 'hirenj.auth0.com',
+              clientID: MASCP.AUTH0_CLIENT_ID,
+              domain: MASCP.AUTH0_DOMAIN,
               callbackURL: window.location.origin+"/silent-callback.html",
-              scope: 'openid name email',
+              scope: MASCP.AUTH0_SCOPES,
               responseType: 'token'
             });
-            webauth.silentAuthentication({scope: 'openid name email'},function(err,authResult) {
+            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
                 if (error) {
                   // Handle error

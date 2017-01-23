@@ -2,10 +2,11 @@
 <html>
   <head>
     <script src="https://cdn.auth0.com/w2/auth0-7.6.0.min.js"></script>
+    <script src="/credentials.js"/></script>
     <script type="text/javascript">
       var webAuth = new Auth0({
-        clientID: 'c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp',
-        domain: 'hirenj.auth0.com',
+        clientID: MASCP.AUTH0_CLIENT_ID,
+        domain: MASCP.AUTH0_DOMAIN,
       });
       var result = webAuth.parseHash(window.location.hash);
       if (result) {
