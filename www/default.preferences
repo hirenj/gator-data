@@ -39,6 +39,18 @@
 			"title":"Predictions",
 			"type":"dataset"
 		},
+		"topfind":{
+			"render_options":{
+				"track" : "combined",
+				"renderer":"cleavage:full",
+				"icons" : {
+					"namespace" : "sugar",
+					"url" : "/sugars.svg"
+				}
+			},
+			"title":"Combined",
+			"type":"dataset"
+		},
 		"homology":{
 			"render_options":{
 				"track" : "homology",

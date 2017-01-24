@@ -17,18 +17,15 @@
 			<path fill="#FF99B1" stroke="#C1272D" stroke-width="6" d="M50,23.333C50,23.333,1.333-9,12,37c4.283,18.472,35,55,35,55
 	s40.521-15.887,40.667-55.667C87.825-7,50,23.333,50,23.333z"/>
         </g>
-        <g id="galnac">
-			<rect x="0" y="0" fill="#ff0" width="100" height="100" stroke-width="6" stroke="#990"/>
+        <g id="nterminus">
+            <path fill="none" stroke="#f88" stroke-width="6" d="M50,20 l30,0" />
+            <path fill="none" stroke="#f88" stroke-width="6" d="M60,0 l0,0 20,20 -20,20" />
+            <path fill="none" stroke="#999" stroke-width="6" d="M50,0 l0,100" />
         </g>
-        <g id="light_galnac">
-			<rect x="0" y="0" fill="#ffffB3" width="100" height="100" stroke-width="10" stroke="#a6a635"/>
-        </g>
-        <g id="galgalnac">
-			<circle cx="50" cy="25" fill="#ff0" r="25" stroke-width="6" stroke="#990"/>
-			<rect x="25" y="50" fill="#ff0" width="50" height="50" stroke-width="6" stroke="#990"/>
-        </g>
-        <g id="mannose">
-			<circle cx="50" cy="50" fill="#0f0" r="50" stroke-width="6" stroke="#990"/>
+        <g id="cterminus">
+            <path fill="none" stroke="#f88" stroke-width="6" d="M50,80 l-30,0" />
+            <path fill="none" stroke="#f88" stroke-width="6" d="M40,60 l0,0 -20,20 20,20" />
+            <path fill="none" stroke="#999" stroke-width="6" d="M50,0 l0,100" />
         </g>
         <g id="revealmore">
 			<path fill="#fff" fill-opacity="0.5" stroke="#000000" stroke-width="10" stroke-miterlimit="10" d="M92.5,80.217C92.5,87,87,92.5,80.217,92.5
@@ -83,11 +80,10 @@
 	</g>
 	<use xlink:href="#kidneys" x="100" y="100" width="100" height="100"/>
 	<use xlink:href="#heart" x="200" y="100" width="100" height="100"/>
-	<use xlink:href="#galnac" x="300" y="100" width="100" height="100"/>
-	<use xlink:href="#mannose" x="400" y="100" width="100" height="100"/>
+	<use xlink:href="#nterminus" x="300" y="100" width="100" height="100"/>
+	<use xlink:href="#cterminus" x="400" y="100" width="100" height="100"/>
 	<use xlink:href="#trash" x="500" y="100" width="100" height="100"/>
 	<use xlink:href="#prefs" x="600" y="100" width="100" height="100"/>
-	<use xlink:href="#galgalnac" x="700" y="100" width="100" height="100"/>
 	<use xlink:href="#revealmore" x="800" y="100" width="100" height="100"/>
 
 </svg>
