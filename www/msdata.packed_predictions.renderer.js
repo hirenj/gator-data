@@ -53,7 +53,7 @@ var render_sites = function(peptide) {
 var current = [];
 
 prediction_sets.forEach( set => {
-	return_data[set.acc] = [];
+	return_data[set.acc] = return_data[set.acc] || [];
 	render_sites(set);
 	if (return_data[set.acc].length > 0) {
 		return_data[set.acc][0].coalesce = { 'fill' : '#ffffb3','stroke' : '#a6a635', 'stroke_width' : 0.5 };

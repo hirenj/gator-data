@@ -2017,6 +2017,7 @@
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
     MASCP.msdata_packed_homology_url = '/msdata.packed_homology.renderer.js';
     MASCP.msdata_packed_predictions_url = '/msdata.packed_predictions.renderer.js';
+    MASCP.msdata_cleavage_url = '/cleavage.renderer.js';
     MASCP.domains_packed_url = '/glycodomain.packed.renderer.js';
 
 
@@ -2034,6 +2035,9 @@
       }
       if (renderer_url.match(/^msdata:packed_predictions$/)) {
         renderer_url = MASCP.msdata_packed_predictions_url;
+      }
+      if (renderer_url.match(/^cleavage:full$/)) {
+        renderer_url = MASCP.msdata_cleavage_url;
       }
 
       if (renderer_url.match(/^domains:packed/)) {
