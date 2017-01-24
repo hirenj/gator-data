@@ -475,6 +475,7 @@
     };
 
     DomaintoolPreferences.prototype.useDefaultPreferences = function(callback) {
+      throw new Error("I am not called");
       var self = this;
       var google_obj = new MASCP.GoogledataReader();
       var domain = "Domaintool preferences";
@@ -2015,6 +2016,7 @@
     MASCP.msdata_default_url = '/msdata.renderer.js';
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
     MASCP.msdata_packed_homology_url = '/msdata.packed_homology.renderer.js';
+    MASCP.msdata_packed_predictions_url = '/msdata.packed_predictions.renderer.js';
     MASCP.domains_packed_url = '/glycodomain.packed.renderer.js';
 
 
@@ -2029,6 +2031,9 @@
       }
       if (renderer_url.match(/^msdata:packed_homology$/)) {
         renderer_url = MASCP.msdata_packed_homology_url;
+      }
+      if (renderer_url.match(/^msdata:packed_predictions$/)) {
+        renderer_url = MASCP.msdata_packed_predictions_url;
       }
 
       if (renderer_url.match(/^domains:packed/)) {

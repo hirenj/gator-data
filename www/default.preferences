@@ -27,6 +27,18 @@
 			"title":"Combined",
 			"type":"dataset"
 		},
+		"predictions":{
+			"render_options":{
+				"track" : "predictions",
+				"renderer":"msdata:packed_predictions",
+				"icons" : {
+					"namespace" : "sugar",
+					"url" : "/sugars.svg"
+				}
+			},
+			"title":"Predictions",
+			"type":"dataset"
+		},
 		"homology":{
 			"render_options":{
 				"track" : "homology",
