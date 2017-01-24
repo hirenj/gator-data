@@ -20,8 +20,8 @@ var COLOUR_LOOKUP = {
 };
 
 var min_offset = -4;
-var domain_height = 4;
-var domain_gap = 5;
+var domain_height = 6;
+var domain_gap = 7;
 
 
 var overlap = function(a,b) {
