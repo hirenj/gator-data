@@ -7,7 +7,7 @@ return_data = {};
 var seen_sites = {};
 
 var render_sites = function(peptide) {
-	var depth = 0;
+	var depth = 1;
 	var base_offset = 6+4*(-2+depth);
 	var has_site = false;
 	(peptide.sites || []).forEach(function renderSite(site_block) {
