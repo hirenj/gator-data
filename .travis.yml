@@ -36,4 +36,5 @@ deploy:
       secure: UsHIPSwWgNlobPIPxc5c5KxJtdPa4V3wXjZJ/2Gg3eJlO90H5vfSDFFa+u5sAhAHH8NAIkoCInKuwgeZ2DEHmiIQdbdyOBDqpuJF464TG7Ce2rkukHr3LiRIuwCM/zEFX0H0YiQH+OM7GxS669AzQWdDijzX1Sxw6FdO8Ucs0R6Bvnu2eWWjsQHa2oatJOQrvPzHwe+nV1huZX62NAl9/1UA1LyI9Mx+J/ktUKHpDCzxh/HLKhG3SSlkwNUTOfI+rA9eCb6p8WEbTwJbJWxWVR1yNpxHSIJZOmtp8X6BqzjIc5wMpHn30ZMLYyA9tJ9/wU3ly7IowGlFNY4ynzKG/TMbjrv+7z1ZKlwCUdSrFHlZJnTxDX18ycPeG/exIeE1Ow5o9proguBBt6AIdj7EmUDgxvvBwsZgZbyZgo/sl0i7tt1hRD6xQ1WHuylW1m8TvQdKZqwAPDTrjoNDbHRWhQfM3tDVIrctbj/3GOmIiaD+6c7bhC73MzUQCKpRj1GdHhu2D4L29UV1mlnRW4gnQGNtAXr1fCtimg0g1W+nbIuBZSKpFsH1/q6HLcMRqAPJny1x7DeLmc6ht1OxI/QZ9enzZBbhA4IP1WS5afxLVXdcvPkfxAPxz6Y8Y2hohKG7vTvq/yssiFFPiaRAvN/M096rTlC6ssSnl3Mvz85i3EM=
     on:
       repo: hirenj/gator-data
+      tags: true
       condition: -n "$TRAVIS_TAG"
