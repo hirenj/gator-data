@@ -416,6 +416,7 @@
                 }
               },
               "title":cell,
+              "generated" : true,
               "type":"dataset"
           };
         });
@@ -1944,75 +1945,6 @@
 
     };
 
-    var get_generic_data = function(acc,renderer,datareader,options,done) {
-      // Not sure we need to set the endpointURL
-      if ( ! options.url ) {
-        datareader._endpointURL = '/data/latest/gator';
-      }
-      var track = acc;
-
-      if ((options || {})["icons"]) {
-        MASCP.Service.request(options["icons"].url,function(err,doc) {
-          if (doc) {
-            renderer.importIcons(options["icons"].namespace,doc.documentElement);
-          }
-        },"xml");
-      }
-
-      if (! options.inline) {
-        if ( ! MASCP.getGroup('extra_data')) {
-          MASCP.registerGroup('extra_data', { 'fullname' : 'Extra data'});
-          bean.add(MASCP.getGroup('extra_data'),'visibilityChange',function(rend,visible) {
-            if (rend.navigation.getController(this)) {
-              window.extra_shown = visible;
-            }
-          });
-        }
-        MASCP.registerLayer('extra_data_controller',{ 'fullname' : 'Extra data'});
-        renderer.createGroupController('extra_data_controller','extra_data');
-        renderer.showLayer('extra_data_controller');
-        if (renderer.trackOrder.indexOf('extra_data_controller') < 0) {
-          renderer.trackOrder.push('extra_data_controller');
-        }
-        MASCP.registerLayer(datareader.toString(),{"fullname" : options.title || datareader.toString(), "group" : "extra_data"});
-        track = datareader.toString();
-        if (renderer.trackOrder.indexOf(datareader.toString()) < 0) {
-          renderer.trackOrder.push(datareader.toString());
-        }
-      } else {
-        if (renderer.trackOrder.indexOf(track) < 0) {
-          renderer.trackOrder.unshift(track);
-          renderer.showLayer(track);
-        }
-      }
-      datareader.registerSequenceRenderer(renderer,{"track" : options.track || track, "offset" : parseInt((options.render_options || {}).offset || 0), "icons" : options.icons });
-
-      renderer.bind('resultsRendered',function(reader) {
-        if (reader == datareader) {
-          renderer.refresh();
-          renderer.unbind('resultsRendered',arguments.callee);
-        }
-      });
-      datareader.retrieve(acc,function(err) {
-        if (this.result) {
-          window.notify.info("Retrieved data for "+(options.name || datareader.toString()) ).hideLater(1000);
-          if (! this.result._raw_data.data || this.result._raw_data.data.length < 1 ) {
-            window.notify.info("No data for "+(options.name || datareader.toString())+" accession " +acc).hideLater(1000);
-          }
-        } else {
-            window.notify.info("No data found for "+(options.name || datareader.toString())+" "+acc.toUpperCase()).hideLater(2000);
-        }
-        if (err) {
-          if (err !== "No data") {
-            window.notify.warn("Could not retrieve data for "+(options.name || datareader.toString()));
-          }
-        }
-        if (done) {
-          done();
-        }
-      });
-    };
-
     MASCP.msdata_default_url = '/msdata.renderer.js';
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
     MASCP.msdata_packed_homology_url = '/msdata.packed_homology.renderer.js';
@@ -2079,6 +2011,16 @@
       });
     };
 
+    var maintain_track_order = function(current_order,desired) {
+      desired = desired.filter( function(track) {
+        return (current_order.indexOf(track) >= 0) || MASCP.getGroup(track);
+      });
+      desired.forEach( function(track) {
+        current_order.splice(current_order.indexOf(track),1);
+      });
+      current_order = current_order.concat(desired);
+      return current_order;
+    };
 
     var get_usersets = function(acc,renderer) {
 
@@ -2089,6 +2031,7 @@
 
       var allowed = { "MASCP.DomainRetriever" : 1, "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
       console.log("About to get watched docs");
+      var desired_track_order = [];
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
           // Errs if : No user event / getting preferences
@@ -2110,22 +2053,12 @@
           console.log(err);
         }
 
-        if (pref.type == "liveClass") {
-          if (! allowed[reader.toString()]) {
-            return;
-          }
-          reader.preferences = get_preferences();
-          get_generic_data(acc,renderer,reader,pref,function() {
-            if (typeof (window.extra_shown) !== 'undefined' && window.extra_shown) {
-              renderer.showGroup('extra_data');
-            }
-            renderer.refresh();
-          });
-          return;
-        }
-
         var method = pref["sites"] || pref.render_options["sites"];
+
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
+        if (desired_track_order.indexOf(track_name) < 0 && ! pref.generated) {
+          desired_track_order.push(track_name);
+        }
         if (pref && pref.icons || (pref.render_options || {}).icons ) {
           var icon_block = pref.icons || (pref.render_options || {}).icons;
           MASCP.Service.request(icon_block.url,function(err,doc) {
@@ -2159,6 +2092,14 @@
               renderer.trackOrder = renderer.trackOrder.concat(track_name);
               renderer.showLayer(track_name);
             } else if (['datasets','cell_lines'].indexOf(MASCP.getLayer(track_name).group.name) >= 0) {
+
+              // The combined track is a defined track from our preferences
+              // but we don't have the group track in there
+              // We need to add in the group to make sure that the ordering is ok
+              if (desired_track_order.indexOf(MASCP.getLayer(track_name).group.name) < 0) {
+                desired_track_order.splice(desired_track_order.indexOf('combined')+1,0, MASCP.getLayer(track_name).group.name);
+              }
+
               if (renderer.trackOrder.indexOf(MASCP.getLayer(track_name).group.name) < 0 ){
                 renderer.trackOrder = renderer.trackOrder.concat([ 'combined', MASCP.getLayer(track_name).group.name ]);
               }
@@ -2173,6 +2114,8 @@
               renderer.showLayer(track_name);
             }
           }
+          renderer.trackOrder = maintain_track_order(renderer.trackOrder,desired_track_order);
+
           // if ( ! renderer.isLayerActive(track_name) ) {
           //   console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
           // }
