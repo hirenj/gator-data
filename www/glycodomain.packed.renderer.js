@@ -52,17 +52,22 @@ var render_cluster = function(offset,cluster) {
     offset = min_offset;
   }
   return_data.push(dom);
-  dom = {"aa": cluster.start, "type" : "marker", "options" : { "content" : names.join(','), stretch: "right", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
-  labels.push(dom);
-
-  if ((cluster.end - cluster.start) > 50) {
-    dom = {"aa": cluster.end - 10, "type" : "marker", "options" : { "content" : names.join(','), angle: 0, stretch: "left", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
-    labels.push(dom);
-    if ((cluster.end - cluster.start) > 100) {
-      dom = {"aa": parseInt(0.5*(cluster.start + cluster.end)), "type" : "marker", "options" : { "content" : names.join(','), stretch: true, "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
-      labels.push(dom);
-    }
+  if (cluster.doms[0].class.indexOf('topo') < 0) {
+    return_data.push({"aa" : cluster.start, "type" : "text", "width" : (cluster.end - cluster.start), "options" : {"content" : names.join(','), "offset" : offset + 0.125*domain_height, "height" : 0.75*domain_height, "fill" : "#000", "stroke_width" : "0" }});
   }
+
+
+  // dom = {"aa": cluster.start, "type" : "marker", "options" : { "content" : names.join(','), stretch: "right", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+  // labels.push(dom);
+
+  // if ((cluster.end - cluster.start) > 50) {
+  //   dom = {"aa": cluster.end - 10, "type" : "marker", "options" : { "content" : names.join(','), angle: 0, stretch: "left", "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+  //   labels.push(dom);
+  //   if ((cluster.end - cluster.start) > 100) {
+  //     dom = {"aa": parseInt(0.5*(cluster.start + cluster.end)), "type" : "marker", "options" : { "content" : names.join(','), stretch: true, "offset" : offset + 10, "bare_element" : true, "fill" : "#000", "height" : 5, no_tracer: true, "zoom_level" : "text", "align": "left" }};
+  //     labels.push(dom);
+  //   }
+  // }
 };
 
 var classify = function(domain) {
