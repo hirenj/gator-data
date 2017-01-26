@@ -2058,7 +2058,7 @@
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
         if (  desired_track_order.indexOf(track_name) < 0 &&
             ! pref.generated &&
-            (! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).group.name !== 'isoforms')
+            (! MASCP.getLayer(track_name) || ! MASCP.getLayer(track_name).group || MASCP.getLayer(track_name).group.name !== 'isoforms')
         ) {
           desired_track_order.push(track_name);
         }
