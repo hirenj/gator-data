@@ -2056,7 +2056,10 @@
         var method = pref["sites"] || pref.render_options["sites"];
 
         var track_name = (pref.render_options || {})["track"] ? pref.render_options["track"] : (renderer.acc ? "all_domains" : acc);
-        if (desired_track_order.indexOf(track_name) < 0 && ! pref.generated) {
+        if (  desired_track_order.indexOf(track_name) < 0 &&
+            ! pref.generated &&
+            (! MASCP.getLayer(track_name) || MASCP.getLayer(track_name).group.name !== 'isoforms')
+        ) {
           desired_track_order.push(track_name);
         }
         if (pref && pref.icons || (pref.render_options || {}).icons ) {
@@ -2170,7 +2173,12 @@
                 window.notify.alert("Could not render "+pref.title);
                 return;
               }
-              var sandbox = new JSandbox();
+              // var sandbox = new JSandbox();
+              if (! window.sandboxes ) {
+                window.sandboxes = {};
+              }
+              var sandbox = window.sandboxes[pref.render_options["renderer"]] || (new JSandbox());
+              window.sandboxes[pref.render_options["renderer"]] = sandbox;
               var seq = renderer.sequence;
               (function() {
                 var obj = ({ "gotResult" : function() {
@@ -2185,7 +2193,7 @@
                             "input" : { "sequence" : seq, "data" : datas, "acc" : acc, "track" : track_name },
                             "onerror" : function(message) { console.log(pref.title); console.log("Errored out"); console.log(message); },
                             "callback" : function(objects) {
-                              sandbox.terminate();
+                              // sandbox.terminate();
                               if ( Array.isArray(objects) ) {
                                 var temp_objects = {}
                                 temp_objects[acc] = objects;
