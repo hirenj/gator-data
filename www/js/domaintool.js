@@ -2122,7 +2122,7 @@
           // if ( ! renderer.isLayerActive(track_name) ) {
           //   console.log( track_name, [ MASCP.getGroup('datasets'), MASCP.getLayer(track_name) ]);
           // }
-          if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group) {
+          if (MASCP.getLayer(track_name) && MASCP.getLayer(track_name).group && ['datasets','cell_lines'].indexOf(MASCP.getLayer(track_name).group.name) >= 0 ) {
             renderer.createGroupController('combined',MASCP.getLayer(track_name).group.name);
           }
           if (MASCP.getLayer(track_name) && MASCP.getGroup(track_name)) {
