@@ -22,6 +22,10 @@
         display: none;
       }
 
+      #uniprot_id {
+        border: 0px;
+      }
+
       @page {
         size: landscape;
       }
@@ -387,6 +391,8 @@
             top: 0em;
             font-size: 2.5em;
             z-index: 100;
+            border: solid #ddd 1px;
+            margin-top: 4px;
         }
         #description {
             position: absolute;
