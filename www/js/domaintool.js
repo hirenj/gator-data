@@ -1681,6 +1681,7 @@
       );
       var show_lock = function() {
         lock.show();
+        document.getElementById('drive_install').classList.remove("drive_preferences");
       };
       document.getElementById('drive_install').addEventListener('click', show_lock ,false);
 
@@ -1711,6 +1712,10 @@
               responseType: 'token'
             });
             webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+              if (err && err.error === 'login_required') {
+                show_lock();
+                return;
+              }
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
                 if (error) {
                   // Handle error
@@ -1743,6 +1748,10 @@
               responseType: 'token'
             });
             webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+              if (err && err.error === 'login_required') {
+                show_lock();
+                return;
+              }
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
                 if (error) {
                   // Handle error
