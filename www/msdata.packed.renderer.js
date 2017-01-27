@@ -36,6 +36,20 @@ intervals.sort(function(a,b) {
 	}
 });
 
+var guess_composition = function(composition) {
+	var comp_string = composition.replace(/\d+x/,'').toLowerCase();
+	if (comp_string == 'hexnac') {
+		return '#sugar_galnac';
+	}
+	if (comp_string == 'hex') {
+		return '#sugar_man';
+	}
+	if (comp_string == 'phospho') {
+		return '#sugar_phospho';
+	}
+	return comp_string;
+};
+
 var seen_sites = {};
 
 var render_peptide = function(peptide) {
@@ -46,8 +60,8 @@ var render_peptide = function(peptide) {
 
 	return_data[peptide.acc] = [pep_line].concat(return_data[peptide.acc]);
 
-	if ( ! peptide.sites ) {
-		// return_data.push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : peptide.composition[0], "stretch": true, "height" : 5, "fill" : "none", "text_fill" : "#555", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
+	if ( ! peptide.sites || peptide.sites.length == 0) {
+		return_data[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition[0]), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
 	(peptide.sites || []).forEach(function renderSite(site_block) {
