@@ -1461,6 +1461,12 @@
       end_clustal();
       end_clustal = function() {};
       window.showing_clustal = false;
+      get_preferences().getPreferences(function(err,prefs) {
+        if ( ! err && prefs.user_datasets.glycodomain) {
+          prefs.user_datasets.glycodomain.render_options.offset = 0;
+        }
+      });
+
 
       setup_renderer(renderer);
 
@@ -2320,16 +2326,18 @@
           renderer.sequence = "";
           do_clustal(sequences,renderer,function() {
             document.getElementById('align').setAttribute('class','ready');
-            sequences.forEach(function(seq) {
-              retrieve_data(seq.agi.toUpperCase(),renderer);
+            get_preferences().getPreferences(function(err,prefs) {
+              if (! err && prefs.user_datasets.glycodomain) {
+                prefs.user_datasets.glycodomain.render_options.offset = 10;
+              }
+              window.showing_clustal = true;
+              sequences.forEach(function(seq) {
+                retrieve_data(seq.agi.toUpperCase(),renderer);
+              });
             });
-            window.showing_clustal = true;
-            set_description("ClustalW alignment");
+
+            set_description("Clustal Omega alignment");
             document.getElementById('uniprot_id').textContent = "";
-            var orthos_parent =  document.getElementById('orthos');
-            while (orthos_parent.firstChild) {
-              orthos_parent.removeChild(orthos_parent.firstChild);
-            }
           });
         }
       });
