@@ -71,6 +71,9 @@ var render_peptide = function(peptide) {
 		if (composition === "HexNAc") {
 			composition = 'galnac';
 		}
+		if (composition == 'GlcNAc') {
+			composition = 'glcnac';
+		}
 		if (composition === "HexHexNAc") {
 			composition = 'gal(b1-3)galnac';
 		}
