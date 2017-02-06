@@ -39,10 +39,10 @@ intervals.sort(function(a,b) {
 var guess_composition = function(composition) {
 	var comp_string = composition.replace(/\d+x/,'').toLowerCase();
 	if (comp_string == 'hexnac') {
-		return '#sugar_galnac';
+		return '#sugar_hexnac';
 	}
 	if (comp_string == 'hex') {
-		return '#sugar_man';
+		return '#sugar_hex';
 	}
 	if (comp_string == 'phospho') {
 		return '#sugar_phospho';
