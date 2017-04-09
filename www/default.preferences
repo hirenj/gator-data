@@ -60,6 +60,7 @@
 					"url" : "/sugars.svg"
 				}
 			},
+			"data-feature" : true,
 			"title":"Homology",
 			"type":"dataset"
 		}

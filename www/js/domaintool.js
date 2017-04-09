@@ -399,6 +399,12 @@
           delete conf.user_datasets['combined'];
         }
 
+        Object.keys(conf.user_datasets).forEach( set => {
+          if ( conf.user_datasets[set]['data-feature'] && (! self.metadata[set] || self.metadata[set].type !== 'data-feature' ) ) {
+            delete conf.user_datasets[set];
+          }
+        });
+
         taxids = Object.keys(taxids);
 
         if ( ! MASCP.getGroup('cell_lines')) {
@@ -420,7 +426,7 @@
               "type":"dataset"
           };
         });
-        if (! MASCP.getGroup('homology')) {
+        if (conf.user_datasets['homology'] && ! MASCP.getGroup('homology')) {
           MASCP.registerGroup('homology', { 'fullname' : 'Homologous data'});
         }
         taxids.forEach(function(taxid) {
