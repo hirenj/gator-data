@@ -428,14 +428,15 @@
         });
         if (conf.user_datasets['homology'] && ! MASCP.getGroup('homology')) {
           MASCP.registerGroup('homology', { 'fullname' : 'Homologous data'});
+          taxids.forEach(function(taxid) {
+            if (taxid) {
+              MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
+              MASCP.getLayer('tax'+taxid).disabled = true;
+              MASCP.getLayer('tax'+taxid).href = load_homology.bind(null,taxid);
+            }
+          });
         }
-        taxids.forEach(function(taxid) {
-          if (taxid) {
-            MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
-            MASCP.getLayer('tax'+taxid).disabled = true;
-            MASCP.getLayer('tax'+taxid).href = load_homology.bind(null,taxid);
-          }
-        });
+
         console.log("CONF DATA IS ",conf);
 
         if (window.location.pathname.indexOf('+') >= 0) {
