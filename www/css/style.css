@@ -692,6 +692,17 @@
             transition: 0.5s;
             display: block;
         }
+
+        #drive_install {
+            top: 10px;
+            right: 10px;
+        }
+
+        #find {
+            top: 30px;
+            right: 10px;
+        }
+
         .hidden_controls {
             height: 0px !important;
             box-shadow: none !important;
