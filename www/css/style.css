@@ -699,8 +699,57 @@
         }
 
         #find {
-            top: 30px;
+            top: 50px;
             right: 10px;
+        }
+
+        #searchGeneLabel {
+            display: block;
+        }
+
+        #searchGene {
+            display: block;
+            width: 80%;
+        }
+
+        #zoomframe {
+            display: none;
+        }
+
+        #description {
+            position: relative;
+            padding-top: 15px;
+            padding-bottom: 10px;
+            top: auto;
+            left: auto;
+        }
+
+        #searchGeneSpecies {
+            display: block;
+            position: absolute;
+            top: 0px;
+            right: 20%;
+            height: 1em;
+            font-size: 1em;
+        }
+
+        #viewer .hint--right:before {
+            display: none;
+            left: 0px;
+        }
+        #viewer .hint--right:after {
+            display: none;
+            left: 0px;
+        }
+
+
+        .aCon {
+            width: 80%;
+        }
+        .aLim {
+            overflow: hidden;
+            font-size: 15px;
+            line-height: 2em;
         }
 
         .hidden_controls {
