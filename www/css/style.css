@@ -724,6 +724,13 @@
             left: auto;
         }
 
+        #description.hidden_controls {
+            position: absolute;
+        }
+        .hidden_controls #searchGeneSpecies {
+            display: none;
+        }
+
         #searchGeneSpecies {
             display: block;
             position: absolute;
