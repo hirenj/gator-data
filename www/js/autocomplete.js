@@ -431,9 +431,7 @@
 			this.clearValues();
 		}
 		var ev = document.createEvent('Event');
-		ev.initEvent('autcompleteChange', true, false);
-		this.element.dispatchEvent(ev);
-		ev = document.createEvent('Event');
+		ev.autocomplete = true;
 		ev.initEvent('change', true, false);
 		this.element.dispatchEvent(ev);
 

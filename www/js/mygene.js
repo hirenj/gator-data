@@ -207,7 +207,10 @@
       ev.stopPropagation();
     },false);
 
-    autocomplete.element.addEventListener('autocompleteChange',function() {
+    autocomplete.element.addEventListener('change',function(ev) {
+      if ( ! ev.autocomplete ) {
+        return;
+      }
       if (! this.rawValue ) {
         return;
       }
