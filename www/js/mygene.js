@@ -207,7 +207,7 @@
       ev.stopPropagation();
     },false);
 
-    autocomplete.element.addEventListener('change',function() {
+    autocomplete.element.addEventListener('autocompleteChange',function() {
       if (! this.rawValue ) {
         return;
       }
