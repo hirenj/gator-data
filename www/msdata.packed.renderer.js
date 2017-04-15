@@ -1,6 +1,6 @@
 function renderData(seq,peptides) {
 peptides = peptides['application/json+msdata'] || [];
-console.log(peptides);
+console.log("We have "+peptides.length+" peptides ");
 var intervals = [];
 
 var return_data = {};
@@ -44,23 +44,38 @@ var guess_composition = function(composition) {
 	if (comp_string == 'hex') {
 		return '#sugar_hex';
 	}
+	if (comp_string == 'hexhexnac') {
+		return '#sugar_gal(b1-3)galnac';
+	}
 	if (comp_string == 'phospho') {
 		return '#sugar_phospho';
 	}
+	console.log(composition);
+	console.log(comp_string);
 	return comp_string;
 };
 
 var seen_sites = {};
+var seen_peps = {};
 
 var render_peptide = function(peptide) {
 	var depth = 0;
 	var base_offset = 6+4*(-2+depth);
 
 	var pep_line = { "aa": peptide.start, "type" : "box" , "width" : (peptide.end - peptide.start), "options" : { "offset" : base_offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  }}
+	if ( ! seen_peps[peptide.start+'-'+peptide.end]) {
+		return_data[peptide.acc] = [pep_line].concat(return_data[peptide.acc]);
+	}
+	seen_peps[peptide.start+'-'+peptide.end] = true;
 
-	return_data[peptide.acc] = [pep_line].concat(return_data[peptide.acc]);
+	if (! Array.isArray(peptide.composition) && peptide.composition ) {
+		peptide.composition = [ peptide.composition ];
+	}
+	if ( peptide.composition && peptide.composition[0].indexOf('undefined') >= 0 ) {
+		console.log(peptide.dataset);
+	}
 
-	if ( ! peptide.sites || peptide.sites.length == 0) {
+	if ( ! peptide.sites || peptide.sites.length == 0 && peptide.composition ) {
 		return_data[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition[0]), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
@@ -121,6 +136,8 @@ intervals.forEach(function(interval) {
 		}
 	}
 });
+
+console.log("Returning "+return_data[Object.keys(return_data)[0]].length+" objects to render");
 
 return return_data;
 }
