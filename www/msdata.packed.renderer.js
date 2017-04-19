@@ -45,6 +45,9 @@ intervals.sort(function(a,b) {
 
 var guess_composition = function(composition) {
 	var comp_string = composition.replace(/\d+x/,'').toLowerCase();
+	if (comp_string == 'hexhexnac') {
+		return '#sugar_gal(b1-3)galnac';
+	}
 	if (comp_string == 'hexnac') {
 		return '#sugar_hexnac';
 	}
