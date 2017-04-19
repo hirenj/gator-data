@@ -17,7 +17,14 @@ peptides.forEach(function(glycopep,i) {
 	var start;
 	var end;
 	start = glycopep.peptide_start;
-	end = glycopep.peptide_end ?  glycopep.peptide_end : start + glycopep.sequence.length - 1;
+	if (glycopep.peptide_end) {
+		end = glycopep.peptide_end;
+	} else if (glycopep.sequence) {
+		end = start + glycopep.sequence.length - 1;
+	} else {
+		console.log("Missing data to get peptide end position, using start");
+		end = start;
+	}
 	glycopep.start = start;
 	glycopep.end = end;
 	intervals.push({ "index" : start, "start" : true,  "pep" : i });
