@@ -4,10 +4,14 @@ console.log(peptides);
 var intervals = [];
 
 var return_data = {};
+var peptide_lines = [];
+var ambiguous_shapes = [];
 
 peptides.forEach(function(glycopep,i) {
 	if ( ! return_data[glycopep.acc] ) {
 		return_data[glycopep.acc] = [];
+		peptide_lines[glycopep.acc] = [];
+		ambiguous_shapes[glycopep.acc] = [];
 	}
 	if ( ! glycopep.peptide_start ) {
 		intervals.push({ "index" : i, "start" : true,  "pep" : i });
@@ -71,10 +75,10 @@ var render_peptide = function(peptide) {
 
 	var pep_line = { "aa": peptide.start, "type" : "box" , "width" : (peptide.end - peptide.start), "options" : { "offset" : base_offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  }}
 
-	return_data[peptide.acc] = [pep_line].concat(return_data[peptide.acc]);
+	peptide_lines[peptide.acc].push(pep_line);
 
 	if ( ! peptide.sites || peptide.sites.length == 0) {
-		return_data[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
+		ambiguous_shapes[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
 	(peptide.sites || []).forEach(function renderSite(site_block) {
@@ -135,6 +139,11 @@ intervals.forEach(function(interval) {
 			current.splice(current.length - 1,1);
 		}
 	}
+});
+
+
+Object.keys(return_data).forEach( function(acc) {
+	return_data[acc] = peptide_lines[acc].concat(ambiguous_shapes[acc]).concat(return_data[acc]);
 });
 
 return return_data;
