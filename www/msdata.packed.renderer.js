@@ -92,6 +92,8 @@ var render_peptide = function(peptide) {
 			composition = composition.toLowerCase();
 		}
 
+		composition = composition.toLowerCase();
+
 		if ( seen_sites[site+composition]  ) {
 			return;
 		} else {
