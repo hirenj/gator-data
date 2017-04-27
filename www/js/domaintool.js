@@ -1,6 +1,6 @@
     if (!(window.console && console.log)) { (function() { var noop = function() {}; var methods = ['assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error', 'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log', 'markTimeline', 'profile', 'profileEnd', 'markTimeline', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'warn']; var length = methods.length; var console = window.console = {}; while (length--) { console[methods[length]] = noop; } }()); }
 
-    MASCP.AnnotationManager = function(renderer,preferences) {
+    MASCP.AnnotationManager = function(renderer) {
       var self = this;
       this.renderer = renderer;
       return this;
@@ -61,237 +61,6 @@
       }
       this.renderer.select();
       this.search_field.className = 'search_field hidden';
-    };
-
-    MASCP.AnnotationManager.prototype.initialiseAnnotations = function(prefs) {
-      var self = this;
-
-      self.renderer.showAnnotation = function() {};
-
-      var callback = function() {
-        self.renderer.showAnnotation  = function (acc) {
-          self.acc = acc;
-        };
-
-        var in_text;
-        self.renderer.bind('zoomChange',function() {
-          if (self.renderer.zoom > 3.5) {
-            if ( ! in_text ) {
-              in_text = true;
-            }
-          } else {
-            if ( in_text ) {
-              in_text = false;
-            }
-          }
-        });
-      };
-      callback();
-    };
-
-    MASCP.AnnotationManager.prototype.bindClick = function(element,handler) {
-      if ("ontouchstart" in window) {
-        element.addEventListener('touchstart',function(ev) {
-          var startX = ev.touches[0].clientX;
-          var startY = ev.touches[0].clientY;
-          var reset = function() {
-            document.body.removeEventListener('touchmove',move);
-            element.removeEventListener('touchend',end);
-          };
-          var end = function(ev) {
-            reset();
-            ev.stopPropagation();
-            ev.preventDefault();
-            if (handler) {
-              handler.call(null,ev);
-            }
-          };
-          var move = function(ev) {
-            if (Math.abs(ev.touches[0].clientX - startX) > 10 || Math.abs(ev.touches[0].clientY - startY) > 10) {
-              reset();
-            }
-          };
-          //FIXME - PASSIVE
-          document.body.addEventListener('touchmove', move , {passive:true});
-          element.addEventListener('touchend',end,false);
-        },{passive:true});
-        //FIXME - PASSIVE
-      } else {
-        element.addEventListener('click',handler,false);
-      }
-    };
-
-    MASCP.AnnotationManager.prototype.addSelector = function(callback) {
-      var self = this;
-      var svgPosition = function(ev,svgel) {
-          var positions = mousePosition(ev.changedTouches ? ev.changedTouches[0] : ev);
-          var p = {};
-          if (svgel.nodeName == 'svg') {
-              p = svgel.createSVGPoint();
-              var rootCTM = svgel.getScreenCTM();
-              p.x = positions[0];
-              p.y = positions[1];
-
-              self.matrix = rootCTM.inverse();
-              p = p.matrixTransform(self.matrix);
-          } else {
-              p.x = positions[0];
-              p.y = positions[1];
-          }
-          return p;
-      };
-
-      var mousePosition = function(evt) {
-          var posx = 0;
-          var posy = 0;
-          if (!evt) {
-              evt = window.event;
-          }
-
-          if (evt.pageX || evt.pageY)     {
-              posx = evt.pageX - (document.body.scrollLeft + document.documentElement.scrollLeft);
-              posy = evt.pageY - (document.body.scrollTop + document.documentElement.scrollTop);
-          } else if (evt.clientX || evt.clientY)  {
-              posx = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-              posy = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-          }
-          if (self.targetElement) {
-              posx = evt.screenX;
-              posy = evt.screenY;
-          }
-          return [ posx, posy ];
-      };
-
-      if ( ! self.renderer._canvas) {
-        bean.add(renderer,'sequenceChange',function() {
-          self.addSelector(callback);
-        });
-        return;
-      }
-
-      var canvas = self.renderer._canvas;
-      var start;
-      var end;
-      var end_func;
-      var selected;
-
-      if (typeof canvas.supports_use == 'undefined') {
-        (function() {
-          var use = canvas.use('/icons.svg#trash',-1000,-1000,100,100);
-          setTimeout(function() {
-            if (use.instanceRoot) {
-              canvas.supports_use = true;
-            } else {
-              canvas.supports_use = false;
-            }
-            use.parentNode.removeChild(use);
-          },1000);
-        })();
-      }
-
-
-      var moving_func = function(evt) {
-        evt.preventDefault();
-
-        var p = svgPosition(evt,canvas);
-        end = p.x;
-
-        var local_start;
-        var local_end;
-        if (start > end) {
-          local_end = parseInt(start / 50);
-          local_start = parseInt(end / 50);
-        } else {
-          local_end = parseInt(end/50);
-          local_start = parseInt(start/50);
-        }
-        self.renderer.select(local_start+1,local_end);
-        selected = (self.renderer.sequence.substr(local_start,local_end - local_start ));
-        if (self.redrawTimeout) {
-          clearTimeout(self.redrawTimeout);
-        }
-
-        self.redrawTimeout = setTimeout(function() {
-          delete self.redrawTimeout;
-        },100);
-      };
-
-
-      self.bindClick(canvas,function(evt) {
-        if (! self.selecting && self.annotations && self.annotations['hover_targets']) {
-          self.annotations['hover_targets'] = [];
-          self.renderer.select();
-        }
-      });
-
-      canvas.addEventListener('mousedown',function(evt) {
-        if (! self.selecting ) {
-          return;
-        }
-        var positions = mousePosition(evt);
-        var p = {};
-        if (canvas.nodeName == 'svg') {
-            p = canvas.createSVGPoint();
-            var rootCTM = this.getScreenCTM();
-            p.x = positions[0];
-            p.y = positions[1];
-
-            self.matrix = rootCTM.inverse();
-            p = p.matrixTransform(self.matrix);
-        } else {
-            p.x = positions[0];
-            p.y = positions[1];
-        }
-        start = p.x;
-        end = p.x;
-        canvas.addEventListener('mousemove',moving_func,false);
-
-        evt.preventDefault();
-      },false);
-
-      canvas.addEventListener('mouseup',function(evt) {
-        if (self.selecting && callback) {
-          callback(selected);
-        }
-        canvas.removeEventListener('mousemove',moving_func);
-        evt.preventDefault();
-      });
-
-      canvas.addEventListener('touchend',function() {
-        if (self.selecting && callback) {
-          setTimeout(function() {
-            callback(selected);
-          },500);
-        }
-        canvas.removeEventListener('touchmove',moving_func);
-      });
-
-      canvas.addEventListener('touchstart',function(evt) {
-          if (! self.selecting ) {
-            return;
-          }
-          if (evt.changedTouches.length == 1) {
-              evt.preventDefault();
-              var positions = mousePosition(evt.changedTouches[0]);
-              var p = {};
-              if (canvas.nodeName == 'svg') {
-                  p = canvas.createSVGPoint();
-                  var rootCTM = this.getScreenCTM();
-                  p.x = positions[0];
-                  p.y = positions[1];
-
-                  self.matrix = rootCTM.inverse();
-                  p = p.matrixTransform(self.matrix);
-              } else {
-                  p.x = positions[0];
-                  p.y = positions[1];
-              }
-              start = p.x;
-              end = p.x;
-              canvas.addEventListener('touchmove',moving_func,{passive:true});
-              //FIXME - PASSIVE
-          }
-      },false);
     };
 
     var DomaintoolPreferences = function() {
@@ -883,31 +652,16 @@
       if (MASCP.AnnotationManager) {
         var annotation_manager = new MASCP.AnnotationManager(renderer,get_preferences());
         wire_find(annotation_manager);
-        wire_dragging_disable(renderer,annotation_manager);
-        wire_tag_edit(annotation_manager);
-        var selector_callback = function() {
-          annotation_manager.addSelector(function(text) {
-            if ( ! text ) {
-              return;
-            }
-            document.getElementById('selecttoggle').firstChild.setAttribute('value',text);
-          });
-        };
-        if (renderer.sequence) {
-          selector_callback();
-        }
-        bean.add(renderer,'sequenceChange',selector_callback);
-        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
-          evt.preventDefault();
-        });
-
-        get_preferences().getPreferences(function(err,prefs) {
-          if ( err || ! prefs ) {
+        wire_dragging_disable(renderer);
+        bean.add(MASCP.getLayer('primarySequence'),'selection',function(start,end) {
+          if (! start && ! end ) {
+            document.getElementById('selecttoggle').firstChild.removeAttribute('value');
             return;
           }
-          bean.add(get_preferences(),'prefschange',function() {
-            annotation_manager.initialiseAnnotations();
-          });
+          document.getElementById('selecttoggle').firstChild.setAttribute('value',renderer.sequence.substr(start-1,end-start+1));
+        });
+        document.getElementById('selecttoggle').firstChild.addEventListener('onfocus',function(evt) {
+          evt.preventDefault();
         });
       }
     };
@@ -961,24 +715,24 @@
       });
     };
 
-    var wire_dragging_disable = function(renderer,manager) {
+    var wire_dragging_disable = function(renderer) {
       var toggler = document.getElementById('selecttoggle');
-      manager.selecting = false;
+      renderer.selecting = false;
       bean.add(document.body,'keydown',function(evt) {
         if (evt.keyCode == 16) {
-          manager.selecting = true;
+          renderer.selecting = true;
           toggler.firstChild.removeAttribute('value');
           var curr_classname = toggler.className.replace('selecting','');
-          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
-          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+          toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! renderer.selecting ]);
         }
       });
       bean.add(document.body,'keyup',function(evt) {
-        if (evt.keyCode == 16 && manager.selecting) {
-          manager.selecting = false;
+        if (evt.keyCode == 16 && renderer.selecting) {
+          renderer.selecting = false;
           var curr_classname = toggler.className.replace('selecting','');
-          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
-          bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+          toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[ ! renderer.selecting ]);
         }
       });
 
@@ -986,13 +740,13 @@
         if (evt.target != toggler) {
           return;
         }
-        manager.selecting = ! manager.selecting;
-        if (manager.selecting) {
+        renderer.selecting = ! renderer.selecting;
+        if (renderer.selecting) {
           toggler.firstChild.removeAttribute('value');
         }
         var curr_classname = toggler.className.replace('selecting','');
-        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
-        bean.fire(renderer,'draggingtoggle',[ ! manager.selecting ]);
+        toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
+        bean.fire(renderer,'draggingtoggle',[ ! renderer.selecting ]);
       });
       var is_toggle_action = false;
 
@@ -1002,11 +756,11 @@
         }
         toggler.firstChild.blur();
         toggler.firstChild.removeAttribute('value');
-        manager.selecting = ! manager.selecting;
-        bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+        renderer.selecting = ! renderer.selecting;
+        bean.fire(renderer,'draggingtoggle',[! renderer.selecting]);
         is_toggle_action = true;
         var curr_classname = toggler.className.replace('selecting','');
-        toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
+        toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
         setTimeout(function() {
           is_toggle_action = false;
         },500);
@@ -1020,15 +774,15 @@
         if ( ! is_toggle_action ) {
           // Android chrome does not handle concurrent touch events
           // http://jsfiddle.net/Darbicus/z3Xdx/10/
-          manager.selecting = ! manager.selecting;
+          renderer.selecting = ! renderer.selecting;
           curr_classname = toggler.className.replace('selecting','');
-          toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
-          bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+          toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
+          bean.fire(renderer,'draggingtoggle',[! renderer.selecting]);
         } else {
           if ( ! toggler.firstChild.getAttribute('value') ) {
             curr_classname = toggler.className.replace('selecting','');
-            toggler.className = curr_classname+" "+(manager.selecting ? "selecting" : "");
-            bean.fire(renderer,'draggingtoggle',[! manager.selecting]);
+            toggler.className = curr_classname+" "+(renderer.selecting ? "selecting" : "");
+            bean.fire(renderer,'draggingtoggle',[! renderer.selecting]);
           }
         }
         evt.preventDefault();
@@ -1578,73 +1332,6 @@
           }
         }
       },false);
-    };
-
-    var wire_tag_edit = function(annotation_manager) {
-      var flipped;
-      bean.add(annotation_manager,'editclick',function() {
-        if (flipped) {
-          if (flipped.close) {
-            flipped.close();
-          }
-          flipped = null;
-          return;
-        }
-        flipped = true;
-        annotation_manager.getTags(function(err,tags) {
-          if (err) {
-            return;
-          }
-          if (flipped !== true) {
-            return;
-          }
-          annotation_manager.renderer.fillTemplate("tags_tmpl",{ "tags" : tags },function(error,html) {
-            flipped = flippant.flip(document.getElementById('sequence_frame'), html);
-            var matches = flipped.querySelectorAll('ul .remove');
-            var i;
-            for (i = 0 ; i < matches.length; i++) {
-              matches[i].addEventListener('click',function() {
-                var self = this;
-                var wanted_tag = self.parentNode.getAttribute('data-tag');
-                annotation_manager.removeTag(wanted_tag);
-                self.parentNode.parentNode.removeChild(self.parentNode);
-              },false);
-            }
-            matches = flipped.querySelectorAll('ul *[contentEditable]');
-            for (i = 0 ; i < matches.length; i++) {
-              matches[i].addEventListener('input',function() {
-                var self = this;
-                var wanted_tag = self.parentNode.getAttribute('data-tag');
-                if (self.timeout) {
-                  clearTimeout(self.timeout);
-                }
-                self.timeout = setTimeout(function() {
-                  var new_name = annotation_manager.renameTag(wanted_tag,self.textContent);
-                  var range = document.createRange();
-                  var sel = window.getSelection();
-                  var last_offset = sel.focusOffset;
-                  self.textContent = new_name;
-                  sel.removeAllRanges();
-                  range.setStart(self.childNodes[0], last_offset);
-                  range.collapse(true);
-                  sel.addRange(range);
-                  self.timeout = null;
-                },300);
-              },false);
-            }
-            var new_tag = flipped.querySelector('button.new');
-            new_tag.addEventListener('click',function() {
-              annotation_manager.createTag("New tag");
-              bean.fire(annotation_manager,'editclick');
-              bean.fire(annotation_manager,'editclick');
-            });
-            var close = flipped.querySelector('button.close');
-            close.addEventListener('click',function() {
-              bean.fire(annotation_manager,'editclick');
-            });
-          });
-        });
-      });
     };
 
     var load_homology = function(taxid,data) {
