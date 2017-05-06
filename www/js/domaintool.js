@@ -102,6 +102,22 @@
       return datablock.data;
     };
 
+    var get_tissue_identifier = function(sample) {
+      var key = '';
+      if (sample.description) {
+        key = sample.description;
+      }
+      if (key && sample.cell_type) {
+        key = key + ' : ' + sample.cell_type;
+      } else if (sample.cell_type) {
+        key = sample.cell_type;
+      }
+      if ( ! key ) {
+        key = 'Unspecified';
+      }
+      return key;
+    };
+
 
     DomaintoolPreferences.prototype.useStaticPreferences = function(doc,handle_proteins) {
       var self = this;
@@ -157,9 +173,12 @@
 
             autopopulate_ids.push(set);
 
-            if (self.metadata[set].sample.species) taxids[self.metadata[set].sample.species] = true;
-            sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
-            sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
+            var tissue_identifier = get_tissue_identifier(self.metadata[set].sample);
+            console.log(tissue_identifier,set,self.metadata[set].sample);
+            if (self.metadata[set].sample.species) {
+              taxids[self.metadata[set].sample.species] = true;
+            }
+            sets_by_cells[tissue_identifier] = (sets_by_cells[tissue_identifier] || []).concat(set);
           }
         });
 
@@ -179,7 +198,7 @@
         if ( ! MASCP.getGroup('cell_lines')) {
           MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
         }
-        Object.keys(sets_by_cells).forEach(function(cell) {
+        Object.keys(sets_by_cells).sort().reverse().forEach(function(cell) {
           MASCP.registerLayer(cell.replace(/\s+/g,'_'), {'fullname' : cell, 'group' : 'cell_lines'});
           conf.user_datasets[sets_by_cells[cell].concat(['']).join(',')] = {
             "render_options":{
