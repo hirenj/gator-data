@@ -610,7 +610,8 @@
             }
             if (document.getElementById('prot_'+uniprot.toLowerCase())) {
               document.getElementById('prot_'+uniprot.toLowerCase()).click();
-              document.getElementById('prot_'+uniprot.toLowerCase()).scrollIntoView(true);
+              var selected = document.getElementById('prot_'+uniprot.toLowerCase());
+              selected.parentNode.scrollTop = selected.offsetTop;
               return;
             } else {
               var selected = (document.getElementsByClassName('selected') || [])[0];
@@ -897,7 +898,7 @@
         }
         if (to_select) {
           to_select.click();
-          to_select.scrollIntoView(true);
+          to_select.parentNode.scrollTop = to_select.offsetTop;
         }
       },false);
     };
@@ -1010,7 +1011,8 @@
 
         });
         if (window.document.getElementsByClassName('selected').length > 0) {
-          window.document.getElementsByClassName('selected')[0].scrollIntoView(true);
+          var selected = window.document.getElementsByClassName('selected')[0];
+          selected.parentNode.scrollTop = selected.offsetTop;
         }
     };
 
@@ -1573,7 +1575,7 @@
           selected = document.getElementById('prot_'+text_content.toLowerCase());
           if (selected) {
             bean.fire(selected,'click');
-            selected.scrollIntoView(true);
+            selected.parentNode.scrollTop = selected.offsetTop;
           } else {
             selected = (document.getElementsByClassName('selected') || [])[0];
             if (selected) {
