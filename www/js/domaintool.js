@@ -1415,9 +1415,9 @@
             // Handle error
             return;
           }
-          localStorage.setItem('idToken', authResult.idToken);
+          localStorage.setItem('idToken', authResult.accessToken);
           localStorage.setItem('profile', JSON.stringify(profile));
-          authorised(authResult.idToken);
+          authorised(authResult.accessToken);
         });
       });
       bean.add(MASCP.GatorDataReader,'unauthorized', function() {
@@ -1481,9 +1481,9 @@
                   return;
                 }
 
-                localStorage.setItem('idToken', authResult.idToken);
+                localStorage.setItem('idToken', authResult.accessToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
-                authorised(authResult.idToken);
+                authorised(authResult.accessToken);
               });
             });
           }
