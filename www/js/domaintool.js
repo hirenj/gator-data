@@ -1372,9 +1372,10 @@
         allowedConnections: ['google-oauth2','AzureADv2'],
         allowSignUp: false,
         auth: {
-          responseType: 'token',
+          responseType: 'token id_token',
           redirectUrl: window.location.origin,
           params: {
+            audience: MASCP.AUTH0_AUDIENCE,
             scope: MASCP.AUTH0_SCOPES,
             login_hint : 'abc123@ku.dk'
           }
@@ -1414,7 +1415,6 @@
             // Handle error
             return;
           }
-
           localStorage.setItem('idToken', authResult.idToken);
           localStorage.setItem('profile', JSON.stringify(profile));
           authorised(authResult.idToken);
@@ -1425,14 +1425,15 @@
             console.log("Logging out before silent reauth after unauthorized event");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var webauth = new Auth0({
+            var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
               domain: MASCP.AUTH0_DOMAIN,
-              callbackURL: window.location.origin+"/silent-callback.html",
+              redirectUri: window.location.origin+"/silent-callback.html",
+              audience: MASCP.AUTH0_AUDIENCE,
               scope: MASCP.AUTH0_SCOPES,
-              responseType: 'token'
+              responseType: 'token id_token'
             });
-            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+            webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if (err && err.error === 'login_required') {
                 show_lock();
                 return;
@@ -1461,14 +1462,15 @@
             console.log("Logging out before silent reauth");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var webauth = new Auth0({
+            var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
               domain: MASCP.AUTH0_DOMAIN,
-              callbackURL: window.location.origin+"/silent-callback.html",
+              redirectUri: window.location.origin+"/silent-callback.html",
+              audience: MASCP.AUTH0_AUDIENCE,
               scope: MASCP.AUTH0_SCOPES,
-              responseType: 'token'
+              responseType: 'token id_token'
             });
-            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+            webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if (err && err.error === 'login_required') {
                 show_lock();
                 return;

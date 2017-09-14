@@ -12,4 +12,5 @@ if ( ! window.MASCP ) {
 
 MASCP.AUTH0_CLIENT_ID='c836UTr1RTWn3qxGNm5QiuP7ogSlGNrp';
 MASCP.AUTH0_DOMAIN='hirenj.auth0.com';
-MASCP.AUTH0_SCOPES='openid name email';
+MASCP.AUTH0_SCOPES='openid profile email query:all';
+MASCP.AUTH0_AUDIENCE='https://test.glycocode.com';
