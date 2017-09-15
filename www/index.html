@@ -39,16 +39,6 @@
         <% } %>
         </ul>
     </script>
-    <script type="text/html" id="tags_tmpl">
-        <h3>Tags</h3>
-        <ul class="drive_preferences">
-        <% for (var i = 0; i < tags.length; i++ ) { %>
-            <li data-tag="<%= tags[i].id %>" ><span contentEditable><%= tags[i].name %></span><div class="remove">Remove</div></li>
-        <% } %>
-        </ul>
-        <button class="new">New</button>
-        <button class="close">OK</button>
-    </script>
     <div id="page_canvas">
     <div id="protein_list"></div>
     <button id="help" class="hint--bottom hint--bottom-left" data-hint="About">?</button>
@@ -58,7 +48,6 @@
     <button id="find" class="hint--bottom hint--bottom-left" data-hint="Search sequence"></button>
     <div id="selecttoggle" class="hint--left" data-hint="Click to enable drag selection"><input type="text"></input></div>
     <div id="viewer">
-        <input type="button" value="Copy" id="clipboarder" />
         <span id="search_container" class="hint--right hint--always">
         <label for="searchGene" id="searchGeneLabel">Search</label><input id="searchGene" type="search"/><select id="searchGeneSpecies" name="select">
               <option value="human" selected>Human</option>
