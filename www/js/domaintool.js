@@ -299,6 +299,7 @@
         var conf = {
           'url' : url_base+'/metadata',
           'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'api_key' : MASCP.GATOR_CLIENT_ID,
           'async' : true,
           'type' : 'GET'
         };
@@ -545,6 +546,7 @@
             var conf = {
               'url' : url_base+'/metadata',
               'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'api_key' : MASCP.GATOR_CLIENT_ID,
               'async' : true,
               'type' : 'GET'
             };
@@ -1036,6 +1038,7 @@
           var conf = {
             'url' : url_base+'/metadata',
             'auth' : MASCP.GATOR_AUTH_TOKEN,
+            'api_key' : MASCP.GATOR_CLIENT_ID,
             'async' : true,
             'type' : 'GET'
           };
@@ -1057,6 +1060,7 @@
             var conf = {
               'url' : url_base+'/doi/'+encodeURIComponent(doc),
               'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'api_key' : MASCP.GATOR_CLIENT_ID,
               'async' : true,
               'type' : 'GET'
             };
