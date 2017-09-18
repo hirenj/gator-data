@@ -305,7 +305,6 @@
         };
         MASCP.Service.request(conf,function(metadata,err) {
           if (err && err.status == 401) {
-            debugger;
             bean.fire(MASCP.GatorDataReader,'unauthorized');
             return;
           }
