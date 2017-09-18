@@ -303,7 +303,12 @@
           'async' : true,
           'type' : 'GET'
         };
-        MASCP.Service.request(conf,function(metadata) {
+        MASCP.Service.request(conf,function(metadata,err) {
+          if (err && err.status == 401) {
+            debugger;
+            bean.fire(MASCP.GatorDataReader,'unauthorized');
+            return;
+          }
           self.metadata = metadata;
         });
       });
@@ -551,6 +556,11 @@
               'type' : 'GET'
             };
             MASCP.Service.request(conf,function(err,metadata) {
+              if (err && err.status == 401) {
+                bean.add(MASCP.GatorDataReader,'auth',authhandler);
+                bean.fire(MASCP.GatorDataReader,'unauthorized');
+                return;
+              }
               window.prefs.metadata = metadata;
               console.log("Authed static preferences");
               window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
@@ -1433,7 +1443,7 @@
             var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
               domain: MASCP.AUTH0_DOMAIN,
-              redirectUri: window.location.origin+"/silent-callback.html",
+              redirectUri: window.location.origin +"/silent-callback.html",
               audience: MASCP.AUTH0_AUDIENCE,
               scope: MASCP.AUTH0_SCOPES,
               responseType: 'token id_token'
@@ -1451,7 +1461,7 @@
 
                 localStorage.setItem('idToken', authResult.idToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
-                authorised(authResult.idToken);
+                authorised(authResult.accessToken);
               });
             });
         } else {
@@ -2075,12 +2085,9 @@
       }
     };
 
-
+    window.addEventListener("DOMContentLoaded", init);
 
     var ready_func = function() {
-      if ( typeof gapi === 'undefined' || ! gapi.auth ) {
-        return;
-      }
       window.svgns = 'http://www.w3.org/2000/svg';
 
       var renderer = create_renderer(document.getElementById('condensed_container'));
