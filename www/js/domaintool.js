@@ -1373,7 +1373,7 @@
     var wire_drive_button = function(renderer) {
 
       var options = {
-        allowedConnections: ['google-oauth2','AzureADv2'],
+        allowedConnections: ['AzureADv2','google-oauth2'],
         allowSignUp: false,
         auth: {
           responseType: 'token id_token',
@@ -1385,12 +1385,13 @@
           }
         },
         theme: {
-          logo: '/img/drive_icon.png',
+          logo: '/img/gdv_logo.svg',
           authButtons: {
             "AzureADv2": {
               displayName: "KU login",
               primaryColor: "#b7b7b7",
-              foregroundColor: "#000000"
+              foregroundColor: "#000000",
+              icon: '/img/ku_seal.svg'
             }
           }
         },

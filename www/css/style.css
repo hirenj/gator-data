@@ -1,5 +1,23 @@
 @import url(https://fonts.googleapis.com/css?family=Quicksand:700|Sorts+Mill+Goudy:400italic);
 
+.auth0-lock.auth0-lock img.auth0-lock-header-logo {
+    height: 140px;
+}
+
+.auth0-lock.auth0-lock .auth0-lock-name {
+    display: none;
+}
+
+.auth0-lock.auth0-lock div.auth0-lock-header {
+    overflow: visible;
+}
+.auth0-lock.auth0-lock .auth0-lock-social-button.auth0-lock-social-big-button[data-provider="auth0"] div.auth0-lock-social-button-icon {
+    background-size: 90%;
+}
+.auth0-lock.auth0-lock .auth0-lock-social-button.auth0-lock-social-big-button[data-provider="oauth2"] div.auth0-lock-social-button-icon {
+    background-size: 90%;
+}
+
    @media print {
 
       .notification_container {
