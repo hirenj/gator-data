@@ -393,7 +393,7 @@
             left: 0px;
             top: 0px;
         }
-        #condensed_container[class*='_active'], #condensed_container[class*='Sequence_active'] {
+        #condensed_container:not([class*='primarySequence_inactive']) {
             margin: 15px 5px 30px 5px;
         }
         #uniprot_container {
