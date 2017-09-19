@@ -327,6 +327,7 @@
             display: block;
             position: absolute;
             background: none;
+            background-color: #fff;
             background-image: url("/img/anon_user.svg");
             background-position: 4px 3px;
             background-size: 26px 26px;
