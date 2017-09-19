@@ -299,10 +299,15 @@
         var conf = {
           'url' : url_base+'/metadata',
           'auth' : MASCP.GATOR_AUTH_TOKEN,
+          'api_key' : MASCP.GATOR_CLIENT_ID,
           'async' : true,
           'type' : 'GET'
         };
-        MASCP.Service.request(conf,function(metadata) {
+        MASCP.Service.request(conf,function(metadata,err) {
+          if (err && err.status == 401) {
+            bean.fire(MASCP.GatorDataReader,'unauthorized');
+            return;
+          }
           self.metadata = metadata;
         });
       });
@@ -545,10 +550,16 @@
             var conf = {
               'url' : url_base+'/metadata',
               'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'api_key' : MASCP.GATOR_CLIENT_ID,
               'async' : true,
               'type' : 'GET'
             };
             MASCP.Service.request(conf,function(err,metadata) {
+              if (err && err.status == 401) {
+                bean.add(MASCP.GatorDataReader,'auth',authhandler);
+                bean.fire(MASCP.GatorDataReader,'unauthorized');
+                return;
+              }
               window.prefs.metadata = metadata;
               console.log("Authed static preferences");
               window.prefs.useStaticPreferences('/default.preferences',function(err,prots) { done(); handle_proteins(err,prots); });
@@ -1036,6 +1047,7 @@
           var conf = {
             'url' : url_base+'/metadata',
             'auth' : MASCP.GATOR_AUTH_TOKEN,
+            'api_key' : MASCP.GATOR_CLIENT_ID,
             'async' : true,
             'type' : 'GET'
           };
@@ -1057,6 +1069,7 @@
             var conf = {
               'url' : url_base+'/doi/'+encodeURIComponent(doc),
               'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'api_key' : MASCP.GATOR_CLIENT_ID,
               'async' : true,
               'type' : 'GET'
             };
@@ -1369,23 +1382,25 @@
     var wire_drive_button = function(renderer) {
 
       var options = {
-        allowedConnections: ['google-oauth2','AzureADv2'],
+        allowedConnections: ['AzureADv2','google-oauth2'],
         allowSignUp: false,
         auth: {
-          responseType: 'token',
+          responseType: 'token id_token',
           redirectUrl: window.location.origin,
           params: {
+            audience: MASCP.AUTH0_AUDIENCE,
             scope: MASCP.AUTH0_SCOPES,
             login_hint : 'abc123@ku.dk'
           }
         },
         theme: {
-          logo: '/img/drive_icon.png',
+          logo: '/img/gdv_logo.svg',
           authButtons: {
             "AzureADv2": {
               displayName: "KU login",
               primaryColor: "#b7b7b7",
-              foregroundColor: "#000000"
+              foregroundColor: "#000000",
+              icon: '/img/ku_seal.svg'
             }
           }
         },
@@ -1414,10 +1429,9 @@
             // Handle error
             return;
           }
-
-          localStorage.setItem('idToken', authResult.idToken);
+          localStorage.setItem('idToken', authResult.accessToken);
           localStorage.setItem('profile', JSON.stringify(profile));
-          authorised(authResult.idToken);
+          authorised(authResult.accessToken);
         });
       });
       bean.add(MASCP.GatorDataReader,'unauthorized', function() {
@@ -1425,14 +1439,15 @@
             console.log("Logging out before silent reauth after unauthorized event");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var webauth = new Auth0({
+            var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
               domain: MASCP.AUTH0_DOMAIN,
-              callbackURL: window.location.origin+"/silent-callback.html",
+              redirectUri: window.location.origin +"/silent-callback.html",
+              audience: MASCP.AUTH0_AUDIENCE,
               scope: MASCP.AUTH0_SCOPES,
-              responseType: 'token'
+              responseType: 'token id_token'
             });
-            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+            webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if (err && err.error === 'login_required') {
                 show_lock();
                 return;
@@ -1445,7 +1460,7 @@
 
                 localStorage.setItem('idToken', authResult.idToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
-                authorised(authResult.idToken);
+                authorised(authResult.accessToken);
               });
             });
         } else {
@@ -1461,14 +1476,15 @@
             console.log("Logging out before silent reauth");
             delete localStorage.idToken;
             // Initiating our Auth0Lock
-            var webauth = new Auth0({
+            var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
               domain: MASCP.AUTH0_DOMAIN,
-              callbackURL: window.location.origin+"/silent-callback.html",
+              redirectUri: window.location.origin+"/silent-callback.html",
+              audience: MASCP.AUTH0_AUDIENCE,
               scope: MASCP.AUTH0_SCOPES,
-              responseType: 'token'
+              responseType: 'token id_token'
             });
-            webauth.silentAuthentication({scope: MASCP.AUTH0_SCOPES},function(err,authResult) {
+            webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if (err && err.error === 'login_required') {
                 show_lock();
                 return;
@@ -1479,9 +1495,9 @@
                   return;
                 }
 
-                localStorage.setItem('idToken', authResult.idToken);
+                localStorage.setItem('idToken', authResult.accessToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
-                authorised(authResult.idToken);
+                authorised(authResult.accessToken);
               });
             });
           }
@@ -2068,12 +2084,9 @@
       }
     };
 
-
+    window.addEventListener("DOMContentLoaded", init);
 
     var ready_func = function() {
-      if ( typeof gapi === 'undefined' || ! gapi.auth ) {
-        return;
-      }
       window.svgns = 'http://www.w3.org/2000/svg';
 
       var renderer = create_renderer(document.getElementById('condensed_container'));

@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.auth0.com/w2/auth0-7.6.0.min.js"></script>
+    <script src="https://cdn.auth0.com/js/auth0/8.9.3/auth0.min.js"></script>
     <script src="/credentials.js"/></script>
     <script type="text/javascript">
-      var webAuth = new Auth0({
+      var webAuth = new auth0.WebAuth({
         clientID: MASCP.AUTH0_CLIENT_ID,
         domain: MASCP.AUTH0_DOMAIN,
       });
-      var result = webAuth.parseHash(window.location.hash);
-      if (result) {
-        parent.postMessage(result, window.location.origin ); //The second parameter should be your domain
-      }
+      var result = webAuth.parseHash(window.location.hash,function(err,result) {
+        if (result) {
+          parent.postMessage(result, window.location.origin ); //The second parameter should be your domain
+        }
+      });
     </script>
   </head>
   <body></body>
