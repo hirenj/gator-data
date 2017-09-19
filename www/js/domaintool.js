@@ -1604,35 +1604,6 @@
         }
       },false);
     };
-    var wire_clipboarder = function() {
-      document.getElementById('clipboarder').addEventListener('click',function() {
-        var other_win = window.open('');
-        var bits  = this.sequence.split('');
-        var parent = other_win.document.createElement('pre');
-        parent.style.width = '300px';
-        if ( ! other_win.document.body ) {
-          other_win.document.appendChild(other_win.document.createElement('body'));
-        }
-        other_win.document.body.appendChild(parent);
-        var i = 0;
-        bits.forEach(function(aa) {
-          if ( i > 0 && (i % 10) === 0) {
-            parent.appendChild(other_win.document.createTextNode(' '));
-            if ( (i % 50) === 0) {
-              parent.appendChild(other_win.document.createElement('br'));
-            }
-          }
-          if (aa.match(/[ST]/)) {
-            var bold = other_win.document.createElement('b');
-            bold.appendChild(other_win.document.createTextNode(aa));
-            parent.appendChild(bold);
-          } else {
-            parent.appendChild(other_win.document.createTextNode(aa.toUpperCase()));
-          }
-          i++;
-        });
-      },false);
-    };
 
     var drive_install = function(callback) {
       callback();
@@ -2163,7 +2134,6 @@
       },false);
 
       wire_uniprot_id_changer(renderer,handle_proteins);
-      wire_clipboarder();
       wire_genesearch(renderer);
       wire_history(renderer,handle_proteins);
       if (window.matchMedia && window.matchMedia('screen and (max-device-width: 760px)').matches) {
