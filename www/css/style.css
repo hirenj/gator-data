@@ -429,7 +429,7 @@
             z-index: 101;
         }
         #sequence_frame {
-            box-shadow: inset 2px 2px 10px #999;
+            box-shadow: inset 1px 1px 6px #999;
             border-radius: 4px;
             overflow: hidden;
         }
