@@ -56,15 +56,15 @@
               <option value="10029">CHO</option>
         </select>
         </span>
-
+        <div style="position: relative; margin-bottom: 1em;">
         <div class="hint--right" id="uniprot_container" data-hint="Click to type in new UniProt ID"><div contentEditable="true" id="uniprot_id"></div></div>
-        <div id="orthos"></div>
         <div id="description"></div>
-        <div id="zoomframe" style="position: relative; height: 1em;">
+        </div>
+        <div id="sequence_frame">
+        <div id="zoomframe" style="position: relative; height: 0em; width: 100%;">
             <div id="zoomlabel" class="hint--always hint--left">Zoom</div>
             <input id="zoomout" value="&#8211;" type="button"/><input id="zoomin" value="+" type="button"/>
         </div>
-        <div id="sequence_frame">
         <div style="overflow: hidden; width: auto; left: 0px; top: 0px; bottom: 0px;">
             <div id="condensed_container"></div>
         </div>
@@ -76,8 +76,8 @@
     </div>
     <div id="information">
             <header>
-            <div class="title">G<span style="letter-spacing: 0.14em;">l</span>ycoDomain Viewer</div>
-            <div class="sub_heading"><em><a href="http://glycomics.ku.dk">The Copenhagen Center for Glycomics</a></em> and <em><a href="http://cbs.dtu.dk">Center for Biological Sequence Analysis</a></em></div>
+            <div class="title">GlycoDomainViewer</div>
+            <div class="sub_heading"><a href="http://glycomics.ku.dk">Copenhagen Center for Glycomics</a></div>
             <button id="top">&#x21A9;</button>
             </header>
             <div class="body">
@@ -87,11 +87,10 @@
             <h3>Usage</h3>
             <p>The following key can be used to interpret the symbols used in the GlycoDomain Viewer. Symbol notation follows the Consortium for Functional Glycomics scheme. Predictions from <a href="http://www.cbs.dtu.dk/services/NetOGlyc-4.0/">NetOGlyc4.0</a> have been pre-calculated for all Human
                 proteins, and are shown whenever data is available.</p>
-            <img src="/img/tool_diagram.svg" style="width: 75%; border-radius: 25px;"/>
-            <h3>Google Drive</h3>
-            <p>Experimental support for Google Drive is present in the software. If you'd like to test this functionality, please get in contact with <a href="http://icmm.ku.dk/english/icmm-staff/hiren_joshi/">Hiren Joshi</a> at the Copenhagen Center for Glycomics.
+            <img src="/img/tool_diagram.svg" style="width: 80vw; border-radius: 25px;"/>
             <h3>Source Code</h3>
-            <p>As usual, all source code for this site is available, with the main repository running at <a href="https://github.com/hirenj/gator-data">GitHub</a>. If you're interested in using this software for your own purposes, get in contact with Hiren Joshi (hirenj) at GitHub. The software is an extension of software developed at the <a href="http://jbei.org">Joint BioEnergy Institute</a>. You can learn more about some of Hiren's other projects at <a href="http://code.glycocode.com">GlycoCode Code</a></p>
+            <p>As usual, all source code for this site is available, with the main repository running at <a href="https://github.com/hirenj/gator-data">GitHub</a>. If you're interested in using this software for your own purposes, get in contact with Hiren Joshi (hirenj) at GitHub.
+            </p>
             </div>
         </div>
     </div>
@@ -101,6 +100,5 @@
     <script type="text/javascript" src="/credentials.js"></script>
     <script type="text/javascript" src="/js/domaintool.js"></script>
     <script type="text/javascript" src="/js/flippant.js"></script>
-    <!-- <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=init"></script> -->
 </body>
 </html>
