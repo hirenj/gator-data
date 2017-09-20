@@ -266,7 +266,10 @@
             background: #EBE375;
         }
         #information > div.body {
-            margin: 50px;
+            margin-top: 50px;
+            margin-left: 50px;
+            margin-right: 50px;
+            margin-bottom: 20vw;
         }
         #information .title {
             background-color: #fff;
@@ -280,6 +283,11 @@
             margin-bottom: -1vw;
 */        }
 
+        #information .sub_heading {
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+        }
         #information .sub_heading a {
             background-color: #000;
             background-image: url('/img/ccg_logo.svg');
@@ -294,6 +302,7 @@
             font-family: 'Montserrat', Helvetica, Arial, sans-serif;
             letter-spacing: 0.5vw;
             font-size: 3vw;
+            height: 4vw;
             text-align: left;
             display: block;
         }
