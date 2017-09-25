@@ -1390,7 +1390,7 @@
           params: {
             audience: MASCP.AUTH0_AUDIENCE,
             scope: MASCP.AUTH0_SCOPES,
-            login_hint : 'abc123@ku.dk'
+            login_hint : localStorage.userName ? localStorage.userName : 'abc123@ku.dk'
           }
         },
         theme: {
@@ -1429,6 +1429,8 @@
             // Handle error
             return;
           }
+
+          localStorage.setItem('userName',profile['http://glycocode/userName']);
           localStorage.setItem('idToken', authResult.accessToken);
           localStorage.setItem('profile', JSON.stringify(profile));
           authorised(authResult.accessToken);
@@ -1457,7 +1459,7 @@
                   // Handle error
                   return;
                 }
-
+                localStorage.setItem('userName',profile['http://glycocode/userName']);
                 localStorage.setItem('idToken', authResult.idToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
                 authorised(authResult.accessToken);
@@ -1475,6 +1477,7 @@
           if (err.message == 'Unauthorized') {
             console.log("Logging out before silent reauth");
             delete localStorage.idToken;
+            delete localStorage.profile;
             // Initiating our Auth0Lock
             var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
@@ -1495,6 +1498,7 @@
                   return;
                 }
 
+                localStorage.setItem('userName',profile['http://glycocode/userName']);
                 localStorage.setItem('idToken', authResult.accessToken);
                 localStorage.setItem('profile', JSON.stringify(profile));
                 authorised(authResult.accessToken);
@@ -2093,8 +2097,13 @@
 
         add_keyboard_navigation();
       };
-
-      wire_drive_button(renderer);
+      fetch(window.location.hostname == 'localhost' ? 'https://test.glycocode.com/api/login/config' : '/api/login/config').then(function(response) {
+        return response.json();
+      }).then(function(config) {
+        MASCP.AUTH0_AUDIENCE = config.API_AUDIENCE;
+        MASCP.AUTH0_DOMAIN = config.AUTH0_DOMAIN + ".auth0.com";
+        wire_drive_button(renderer);
+      });
 
       if (window.location.toString().match(/doi/)) {
         var match = /doi\/(.*)\//.exec(window.location);
