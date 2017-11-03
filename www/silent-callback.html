@@ -14,10 +14,7 @@
           domain: MASCP.AUTH0_DOMAIN,
         });
         var result = webAuth.parseHash(window.location.hash,function(err,result) {
-          console.log(err,result);
-          if (result) {
-            parent.postMessage(result, window.location.origin ); //The second parameter should be your domain
-          }
+          parent.postMessage(err || result || { error: "No response" }, window.location.origin );
         });
       });
     </script>
