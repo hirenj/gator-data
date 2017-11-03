@@ -1450,7 +1450,7 @@
               responseType: 'token id_token'
             });
             webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
-              if (err && err.error === 'login_required') {
+              if ((err && err.error === 'login_required') || (authResult.error && authResult.error === 'login_required')) {
                 show_lock();
                 return;
               }
