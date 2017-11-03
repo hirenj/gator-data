@@ -9,12 +9,12 @@ var return_data = {};
 var peptide_lines = [];
 var ambiguous_shapes = [];
 
-let form_stack = function(site_block) {
+let form_stack = function(site_block,base_offset) {
 	site_block.options.content = [site_block.options.content ];
 	site_block.options.alt_content = '#ui_revealmore';
 	site_block.is_stack = true;
 	site_block.options.height = 10;
-	site_block.options.offset = -6;
+	site_block.options.offset = base_offset-10;
 	site_block.options.fill = '#000';
 	return site_block;
 };
@@ -88,7 +88,7 @@ var seen_sites = {};
 
 var render_peptide = function(peptide) {
 	var depth = 0;
-	var base_offset = 6+4*(-2+depth);
+	var base_offset = 25+4*(-2+depth);
 
 	var pep_line = { "aa": peptide.start, "type" : "box" , "width" : (peptide.end - peptide.start), "options" : { "offset" : base_offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  }}
 
@@ -128,7 +128,7 @@ var render_peptide = function(peptide) {
 		}
 
 		if (composition.toLowerCase() == 'glcnac(b1-4)glcnac') {
-			composition = composition.toLowerCase();
+			composition = 'man(a1-3)[man(a1-6)]man(b1-4)glcnac(b1-4)glcnac';
 		}
 
 		composition = composition.toLowerCase();
@@ -142,18 +142,22 @@ var render_peptide = function(peptide) {
 		let rendered_block = { "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }};
 
 
-		if (composition == 'galnac' || composition == 'man') {
+		if (composition.indexOf(')') < 0 && (composition.match(/\d/) || []).length < 1) {
 			rendered_block.options.offset = base_offset - 2.5;
 			rendered_block.options.height = 8;
 		} else {
-			rendered_block.options.offset = base_offset - 5;
-			rendered_block.options.height = 10;
+			rendered_block.options.offset = base_offset - 9;
+			rendered_block.options.height = 16;
+			if (composition.indexOf(']') >= 0) {
+				rendered_block.options.offset = base_offset - 22;
+				rendered_block.options.height = 32;
+			}
 		}
 
 		if (glyphs_at_site[site]) {
 			let current_glyph = glyphs_at_site[site];
 			if ( ! current_glyph.is_stack) {
-				let stack_el = form_stack(current_glyph);
+				let stack_el = form_stack(current_glyph,base_offset);
 				return_data[peptide.acc].splice(return_data[peptide.acc].indexOf(current_glyph),1, stack_el );
 				current_glyph = glyphs_at_site[site] = stack_el;
 			}

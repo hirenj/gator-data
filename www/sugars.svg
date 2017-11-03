@@ -128,6 +128,23 @@ Red  #ed1c24
         <rect x="10" y="10" width="80" height="80" fill="#0090bc" stroke-width="1" stroke="#000"/>
       </svg>
     </symbol>
+    <symbol id="man(a1-3)[man(a1-6)]man(b1-4)glcnac(b1-4)glcnac" viewBox="0 0 100 100">
+      <svg viewBox="0 0 100 100" x="50" y="0" width="25" height="25">
+        <circle cx="50" cy="50" fill="#00a651" r="40" stroke-width="1" stroke="#000"/>
+      </svg>
+      <svg viewBox="0 0 100 100" x="25" y="0" width="25" height="25">
+        <circle cx="50" cy="50" fill="#00a651" r="40" stroke-width="1" stroke="#000"/>
+      </svg>
+      <svg viewBox="0 0 100 100" x="37.5" y="25" width="25" height="25">
+        <circle cx="50" cy="50" fill="#00a651" r="40" stroke-width="1" stroke="#000"/>
+      </svg>
+      <svg viewBox="0 0 100 100" x="37.5" y="50" width="25" height="25">
+        <rect x="10" y="10" width="80" height="80" fill="#0090bc" stroke-width="1" stroke="#000"/>
+      </svg>
+      <svg viewBox="0 0 100 100" x="37.5" y="75" width="25" height="25">
+        <rect x="10" y="10" width="80" height="80" fill="#0090bc" stroke-width="1" stroke="#000"/>
+      </svg>
+    </symbol>
     <symbol id="glcnac(b1-4)glcnac.potential" viewBox="0 0 100 100">
       <svg viewBox="0 0 100 100" x="0" y="0" width="100" height="50">
         <rect x="10" y="10" width="80" height="80" fill="#67a2fc" stroke-width="0" stroke="#000"/>
