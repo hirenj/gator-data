@@ -32,6 +32,10 @@ Red  #ed1c24
     <symbol id="man" viewBox="0 0 100 100">
       <circle cx="50" cy="50" fill="#00a651" r="40" stroke-width="1" stroke="#000"/>
     </symbol>
+    <symbol id="man6p" viewBox="0 0 100 100">
+      <circle cx="50" cy="75" fill="#00a651" r="20" stroke-width="1" stroke="#000"/>
+      <text x="50" y="25" text-anchor="middle" stroke="#000" stroke-width="2" dy=".35em" dx="0.05em" font-size="25">P</text>
+    </symbol>
     <symbol id="glc" viewBox="0 0 100 100">
       <circle cx="50" cy="50" fill="#0090bc" r="40" stroke-width="0" stroke="#000"/>
     </symbol>

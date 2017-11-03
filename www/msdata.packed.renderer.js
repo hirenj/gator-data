@@ -3,9 +3,26 @@ peptides = peptides['application/json+msdata'] || [];
 console.log(peptides);
 var intervals = [];
 
+let glyphs_at_site = {};
+
 var return_data = {};
 var peptide_lines = [];
 var ambiguous_shapes = [];
+
+let form_stack = function(site_block) {
+	site_block.options.content = [site_block.options.content ];
+	site_block.options.alt_content = '#ui_revealmore';
+	site_block.is_stack = true;
+	site_block.options.height = 10;
+	site_block.options.offset = -6;
+	site_block.options.fill = '#000';
+	return site_block;
+};
+
+let push_stack = function(stack,site_block) {
+	stack.options.content.push(site_block.options.content);
+	console.log(stack.options.content.join(','));
+}
 
 peptides.forEach(function(glycopep,i) {
 	if ( ! return_data[glycopep.acc] ) {
@@ -122,10 +139,28 @@ var render_peptide = function(peptide) {
 			seen_sites[site+composition] = true;
 		}
 
+		let rendered_block = { "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }};
+
+
 		if (composition == 'galnac' || composition == 'man') {
-			return_data[peptide.acc].push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 8, "offset" : base_offset - 2.5, "bare_element" : true }});
+			rendered_block.options.offset = base_offset - 2.5;
+			rendered_block.options.height = 8;
 		} else {
-			return_data[peptide.acc].push({ "aa" : site, "type" : "marker" , "options" : { "content" :  '#sugar_'+composition , "fill" : "none", "text_fill" : "#f00", "border" : "none", "height": 10, "offset" : base_offset - 5, "bare_element" : true }});
+			rendered_block.options.offset = base_offset - 5;
+			rendered_block.options.height = 10;
+		}
+
+		if (glyphs_at_site[site]) {
+			let current_glyph = glyphs_at_site[site];
+			if ( ! current_glyph.is_stack) {
+				let stack_el = form_stack(current_glyph);
+				return_data[peptide.acc].splice(return_data[peptide.acc].indexOf(current_glyph),1, stack_el );
+				current_glyph = glyphs_at_site[site] = stack_el;
+			}
+			push_stack(current_glyph,rendered_block);
+		} else {
+			return_data[peptide.acc].push(rendered_block);
+			glyphs_at_site[site] = rendered_block;
 		}
 	});
 	// return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#ui_revealmore", "content" :  peptide.source.split('_'), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 3 }});
