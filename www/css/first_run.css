@@ -17,32 +17,20 @@
             justify-content: space-evenly;
             align-items: center;
         }
-        body.firstrun #first_run > div,img {
-            pointer-events: auto;
-        }
         body.firstrun #first_run .logo {
             width: 20em;
             margin: auto;
+            pointer-events: auto;
+
         }
         body.firstrun #first_run .blurb {
             width: 50vw;
+            pointer-events: auto;
         }
         body.firstrun #first_run .blurb  button {
             font-size: 1em;
         }
     }
-
-    @media only screen and (max-device-width: 760px) and  (orientation: landscape) {
-        body.firstrun #first_run {
-            flex-direction: row;
-        }
-        body.firstrun #first_run .logo {
-            width: auto;
-            height: 70vh;
-            margin: auto;
-        }
-    }
-
 
     @media only screen and (max-device-width: 760px) {
         #first_run {
@@ -56,6 +44,17 @@
 
         body.firstrun #first_run .logo {
             width: 70vw;
+            margin: auto;
+        }
+    }
+
+    @media only screen and (max-device-width: 760px) and  (orientation: landscape) {
+        body.firstrun #first_run {
+            flex-direction: row;
+        }
+        body.firstrun #first_run .logo {
+            width: auto;
+            height: 70vh;
             margin: auto;
         }
     }
