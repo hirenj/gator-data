@@ -1,12 +1,13 @@
 <!doctype html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, user-scalable = no">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <meta charset="utf-8" />
     <link rel="stylesheet" type="text/css" href="/css/style.css" />
     <link rel="stylesheet" type="text/css" href="/css/hint.css"/>
     <link rel="stylesheet" type="text/css" href="/css/autocomplete.css"/>
     <link rel="stylesheet" type="text/css" href="/css/flippant.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/first_run.css"/>
     <link rel="jsandbox" href="/js/jsandbox-worker.js" />
     <script src="/js/citation-0.3.4.min.js" type="text/javascript"></script>
     <script src="https://cdn.auth0.com/js/auth0/8.9.3/auth0.min.js"></script>
@@ -100,6 +101,13 @@
             <p>As usual, all source code for this site is available, with the main repository running at <a href="https://github.com/hirenj/gator-data">GitHub</a>. If you're interested in using this software for your own purposes, get in contact with Hiren Joshi (hirenj) at GitHub.
             </p>
             </div>
+        </div>
+    </div>
+    <div id="first_run">
+        <img class="logo" src="/img/gdv_logo.svg"/>
+        <div class="blurb">
+            <p>Welcome to the GlycoDomainViewer, a tool to help you answer the question of whether a protein you are interested in is glycosylated, and what that could mean for the function of the protein. To start, <button id="focus_uniprot">Enter a UniProt ID</button> or <button id="focus_genesearch">Search by Gene Name</button></p>
+            <p>For more help, including a key for interpretation of symbols, consult the <a onclick="show_help()">Help section</a> of the homepage</p>
         </div>
     </div>
     <script type="text/javascript" src="/js/mascp-jstools.js"></script>

@@ -1,0 +1,48 @@
+    @media only screen {
+        #first_run {
+            display: block;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 101;
+            background-color:rgba(255,255, 255, 0.8);
+        }
+        #first_run > div,img {
+            pointer-events: auto;
+            position: absolute;
+        }
+        #first_run .logo {
+            width: 20em;
+            top: 25%;
+            margin-top: -12em;
+            margin-left: -30vw;
+            left: 50%;
+        }
+        #first_run .blurb {
+            top: 20em;
+            left: 160px;
+            width: 50vw;
+        }
+        #first_run .blurb  button {
+            font-size: 1em;
+        }
+    }
+
+    @media only screen and (max-device-width: 760px) {
+        #first_run {
+        }
+
+        #first_run .blurb {
+            left: 10vw;
+            width: 85vw;
+        }
+
+        #first_run .logo {
+            width: 70vw;
+            margin-left: -35vw;
+            top: 30%;
+        }
+    }

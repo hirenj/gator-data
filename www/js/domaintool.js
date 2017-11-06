@@ -672,6 +672,21 @@
       }
     };
 
+    var wire_firstrun = function(renderer) {
+      document.getElementById('focus_uniprot').addEventListener('click',function() {
+        show_protein('Q14112',renderer);
+        document.getElementById('uniprot_id').focus();
+      },false);
+      document.getElementById('focus_genesearch').addEventListener('click',function() {
+        document.getElementById('searchGene').focus();
+        document.getElementById('searchGene').value = 'APOE';
+        // Create a new 'change' event
+        var event = new Event('input');
+        // Dispatch it.
+        document.getElementById('searchGene').dispatchEvent(event);
+      },false);
+    };
+
     var wire_clearsession = function(title,renderer) {
       document.getElementById('clearsession').textContent = title;
       document.getElementById('clearsession').style.display = 'block';
@@ -1565,7 +1580,7 @@
           }
         });
         if (all_ids.length > 1) {
-          handle_proteins(null,all_ids);
+          handle_proteins(null,all_ids.filter( id => id.toUpperCase().match(uprot_re1) || id.toUpperCase().match(uprot_re2) ));
         }
         var text_content = (all_ids[0] || "").toString().replace(/\s+/g,'');
         if (text_content.toUpperCase().match(uprot_re1) || text_content.toUpperCase().match(uprot_re2)) {
@@ -2181,6 +2196,8 @@
       if (window.matchMedia && window.matchMedia('screen and (max-device-width: 760px)').matches) {
         wire_smartphone_controls();
       }
+
+      wire_firstrun(renderer);
 
       if (window.location.toString().match(/uniprot/)) {
         var results = /uniprot\/(.*)/.exec(window.location);
