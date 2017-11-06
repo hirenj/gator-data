@@ -88,7 +88,7 @@ var seen_sites = {};
 
 var render_peptide = function(peptide) {
 	var depth = 0;
-	var base_offset = 25+4*(-2+depth);
+	var base_offset = 12+4*(-2+depth);
 
 	var pep_line = { "aa": peptide.start, "type" : "box" , "width" : (peptide.end - peptide.start), "options" : { "offset" : base_offset, "height_scale" : 0.1, "fill" : "#999", "merge" : false  }}
 
@@ -100,7 +100,7 @@ var render_peptide = function(peptide) {
 			return;
 		}
 		seen_sites[ peptide_key ] = true;
-		ambiguous_shapes[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
+		// ambiguous_shapes[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
 	(peptide.sites || []).forEach(function renderSite(site_block) {
@@ -148,10 +148,6 @@ var render_peptide = function(peptide) {
 		} else {
 			rendered_block.options.offset = base_offset - 9;
 			rendered_block.options.height = 16;
-			if (composition.indexOf(']') >= 0) {
-				rendered_block.options.offset = base_offset - 22;
-				rendered_block.options.height = 32;
-			}
 		}
 
 		if (glyphs_at_site[site]) {
@@ -167,7 +163,6 @@ var render_peptide = function(peptide) {
 			glyphs_at_site[site] = rendered_block;
 		}
 	});
-	// return_data.push({"aa" : peptide.end, "type" : "marker", "options" : {  "alt_content" : "#ui_revealmore", "content" :  peptide.source.split('_'), "stretch": "right", "height" : 6, "fill" : "#000", "text_fill" : "#fff", "border" : "none", "no_tracer" : true, "bare_element" : true, "zoom_level" : "text", "offset" : base_offset + 3 }});
 };
 
 var current = [];
