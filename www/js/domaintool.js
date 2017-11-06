@@ -686,11 +686,20 @@
         document.getElementById('searchGene').dispatchEvent(event);
       },false);
       document.getElementById('focus_help').addEventListener('click',function() {
-        show_help();
+        if (! document.getElementById('information').offsetParent) {
+          window.open('#information','_blank');
+        } else {
+          show_help();
+        }
       },false);
       document.body.addEventListener('click',function() {
         document.body.classList.remove('firstrun');
       });
+      console.log("Hash is ",window.location.hash);
+      if (window.location.hash == '#information') {
+        document.body.classList.remove('firstrun');
+        document.body.classList.add('information');
+      }
     };
 
     var wire_clearsession = function(title,renderer) {

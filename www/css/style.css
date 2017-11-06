@@ -726,6 +726,13 @@
         #information {
             display: none;
         }
+        .information #information {
+            display: block;
+            top: auto;
+        }
+        .information #page_canvas, #first_run {
+            display: none;
+        }
         #protein_list {
             left: -100px;
         }
