@@ -2007,6 +2007,32 @@
       });
     };
 
+    var fix_citation_links = function(element) {
+      let walker = document.createTreeWalker(
+          element,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+      );
+
+      let node;
+      let match;
+      let textNodes = [];
+      while(node = walker.nextNode()) {
+        textNodes.push(node);
+      }
+      for (let node of textNodes) {
+        if (match = node.nodeValue.match(/dx.doi.org\/[A-Za-z0-9\/\.]+/)){
+          let range = new Range();
+          range.setStart(node,match.index-8);
+          range.setEnd(node,match.index+match[0].length-1);
+          let anchor = document.createElement('a');
+          anchor.href = 'https://'+match[0].replace(/\.$/,'');
+          range.surroundContents(anchor);
+        }
+      }
+    };
+
     var show_available_citations = function() {
       read_doi_conf(null, function(err,conf) {
         let all_dois = Object.keys(conf).map( set => {
@@ -2018,6 +2044,7 @@
           return dat.get({format: 'real' , type: 'html', style: 'citation-harvard1' })
         }).then( element => {
           document.getElementById('citations').innerHTML = '';
+          fix_citation_links(element);
           document.getElementById('citations').appendChild(element);
         });
       });
