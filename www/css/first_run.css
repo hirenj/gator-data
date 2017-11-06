@@ -26,6 +26,7 @@
         body.firstrun #first_run .blurb {
             width: 50vw;
             pointer-events: auto;
+            margin: auto;
         }
         body.firstrun #first_run .blurb  button {
             font-size: 1em;

@@ -685,6 +685,9 @@
         // Dispatch it.
         document.getElementById('searchGene').dispatchEvent(event);
       },false);
+      document.getElementById('focus_help').addEventListener('click',function() {
+        show_help();
+      },false);
       document.body.addEventListener('click',function() {
         document.body.classList.remove('firstrun');
       });
