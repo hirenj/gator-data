@@ -152,6 +152,16 @@
               "title":"Combined",
               "type":"dataset",
               'autopopulate' : false
+            },
+            "glycodomain" : {
+              "render_options" : {
+                "offset" : 0,
+                "renderer" : "domains:packed",
+                "icons" : { "namespace" : "sugar" , "url" : "/sugars.svg" }
+              },
+              "inline" : "true",
+              "type" :"dataset",
+              "title" : "Domains"
             }
           };
           conf.specific.forEach(function(set) {
@@ -1045,6 +1055,37 @@
       return;
     };
 
+    var read_doi_conf = function(doi,callback) {
+      console.log("Checking for static doi conf file");
+      get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doi || 'none')),function(err,conf) {
+        if (err) {
+          console.log("DOI conf requires authorisation - authenticating");
+          MASCP.GatorDataReader.authenticate().then(function(url_base) {
+            var conf = {
+              'url' : url_base+'/doi/'+encodeURIComponent(doi || 'none'),
+              'auth' : MASCP.GATOR_AUTH_TOKEN,
+              'api_key' : MASCP.GATOR_CLIENT_ID,
+              'async' : true,
+              'type' : 'GET'
+            };
+            if ( doi ) {
+              get_preferences().useStaticPreferences(conf,callback);
+            } else {
+              get_preferences().getStaticConf( conf, callback );
+            }
+          });
+        } else {
+          console.log("No authentication required to retrieve the file - proceeeding with standard fetch");
+          if (doi) {
+            get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(encodeURIComponent(doi || 'none')),callback);
+          } else {
+            get_preferences().getStaticConf( conf, callback );
+          }
+        }
+      });
+    };
+
+
     var use_doi_conf = function(doc,callback) {
       if ( ! doc.match(/\b(10[.][0-9]{4,}(?:[.][0-9]+)*\/(?:(?!["&\'<>])\S)+)\b/)) {
         if (doc.match(/^[a-z\-]+$/)) {
@@ -1073,29 +1114,8 @@
         });
         return;
       }
-      console.log("Checking for static file");
-      get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doc)),function(err,conf) {
-        console.log("Checked for static file");
-        if (err) {
-          console.log("Waiting for an auth event for getting the doi conf");
-          MASCP.GatorDataReader.authenticate().then(function(url_base) {
-            var conf = {
-              'url' : url_base+'/doi/'+encodeURIComponent(doc),
-              'auth' : MASCP.GATOR_AUTH_TOKEN,
-              'api_key' : MASCP.GATOR_CLIENT_ID,
-              'async' : true,
-              'type' : 'GET'
-            };
-            if ( ! get_preferences().metadata ) {
-              debugger;
-            }
-            get_preferences().useStaticPreferences(conf,callback);
-          });
-        } else {
-          console.log("Getting data from static conf file");
-          get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(encodeURIComponent(doc)),callback);
-        }
-      });
+      read_doi_conf(doc,callback);
+
     };
 
     var create_renderer = function(container) {
@@ -1987,6 +2007,22 @@
       });
     };
 
+    var show_available_citations = function() {
+      read_doi_conf(null, function(err,conf) {
+        let all_dois = Object.keys(conf).map( set => {
+          return conf[set].dois;
+        });
+        let dois = [].concat.apply([], all_dois).filter( (v, i, a) => a.indexOf(v) === i && v );
+        let Cite = require('citation-js');
+        Cite.async(dois).then( dat => {
+          return dat.get({format: 'real' , type: 'html', style: 'citation-harvard1' })
+        }).then( element => {
+          document.getElementById('citations').innerHTML = '';
+          document.getElementById('citations').appendChild(element);
+        });
+      });
+    };
+
     var has_ready = MASCP.ready;
 
     init = function() {
@@ -2034,7 +2070,7 @@
 
         add_keyboard_navigation();
       };
-      fetch(window.location.hostname == 'localhost' ? 'https://test.glycocode.com/api/login/config' : '/api/login/config').then(function(response) {
+      let handled_login = fetch(window.location.hostname == 'localhost' ? 'https://test.glycocode.com/api/login/config' : '/api/login/config').then(function(response) {
         return response.json();
       }).then(function(config) {
         MASCP.AUTH0_AUDIENCE = config.API_AUDIENCE;
@@ -2043,20 +2079,29 @@
       });
 
       if (window.location.toString().match(/doi/)) {
-        var match = /doi\/(.*)\//.exec(window.location);
-        match.shift();
-        var actual_handle_proteins = handle_proteins;
-        get_preferences = function() {
-          if ( ! window.prefs ) {
-            window.prefs = (new DomaintoolPreferences());
-          }
-          return window.prefs;
-        };
-        use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
-        handle_proteins =  function() {};
+        console.log("Checking DOI data");
+        handled_login.then( () => {
+          var match = /doi\/(.*)\//.exec(window.location);
+          match.shift();
+          var actual_handle_proteins = handle_proteins;
+          get_preferences = function() {
+            if ( ! window.prefs ) {
+              window.prefs = (new DomaintoolPreferences());
+            }
+            return window.prefs;
+          };
+          use_doi_conf(match[0],function(err,prots) { actual_handle_proteins(null,prots); document.getElementById('drive_install').style.display = 'block'; document.getElementById('align').style.display = 'none';});
+          handle_proteins =  function() {};
+        });
       } else {
+        console.log("Getting prefs");
         get_preferences(handle_proteins);
       }
+
+      handled_login.then( () => {
+        show_available_citations();
+      });
+
 
       setup_visual_renderer(renderer);
       var wheel_fn = function(e) {
@@ -2084,30 +2129,6 @@
       wire_history(renderer,handle_proteins);
       if (window.matchMedia && window.matchMedia('screen and (max-device-width: 760px)').matches) {
         wire_smartphone_controls();
-      }
-
-      var state = get_passed_in_state();
-      var protein_doc_id = "0Ai48KKDu9leCdFRCT1Bza2JZUVB6MU4xbHc1UVJaYnc";
-
-      if (state.action && state.action == 'create') {
-
-        get_preferences(handle_proteins);
-        // Use a particular static conf, or something
-        // as the template configuration for loading up
-        // of session data
-        get_preferences().useStaticPreferences('/template.preferences',function() {});
-        var not = window.notify.info("Creating new user session");
-        get_preferences().copyToRealtime(state.folderId,function(err) {
-          not.hide();
-          if (err) {
-            window.notify.alert("Could not create new user session");
-            console.log(err);
-            return;
-          }
-          window.notify.info("Created new session").hideLater(1000);
-          wire_clearsession(get_preferences().getActiveSessionTitle(),renderer);
-        });
-        return;
       }
 
       if (window.location.toString().match(/uniprot/)) {
