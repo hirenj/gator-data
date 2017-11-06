@@ -856,7 +856,19 @@
             if (renderer.grow_container) {
               renderer.zoomCenter = 'center';
             }
+            var last_zoom = renderer.zoom;
             renderer.zoom = curr_zoom;
+            if (renderer.zoom === last_zoom) {
+              document.getElementById('zoomlabel').setAttribute('data-hint','Reached maximum zoom');
+              if (timeout) {
+                clearTimeout(timeout);
+                timeout = null;
+              }
+              timeout = setTimeout(function() {
+                start = null;
+                document.getElementById('zoomlabel').removeAttribute('data-hint');
+              },3000);
+            }
             renderer.zoomCenter = null;
             count++;
         }
@@ -886,7 +898,19 @@
             if (renderer.grow_container) {
               renderer.zoomCenter = 'center';
             }
+            var last_zoom = renderer.zoom;
             renderer.zoom = curr_zoom;
+            if (renderer.zoom === last_zoom) {
+              document.getElementById('zoomlabel').setAttribute('data-hint','Reached minimum zoom');
+              if (timeout) {
+                clearTimeout(timeout);
+                timeout = null;
+              }
+              timeout = setTimeout(function() {
+                start = null;
+                document.getElementById('zoomlabel').removeAttribute('data-hint');
+              },3000);
+            }
             renderer.zoomCenter = null;
             count++;
         }
@@ -2022,7 +2046,7 @@
         textNodes.push(node);
       }
       for (let node of textNodes) {
-        if (match = node.nodeValue.match(/dx.doi.org\/[A-Za-z0-9\/\.]+/)){
+        if (match = node.nodeValue.match(/dx.doi.org\/[A-Za-z0-9\-\/\.]+/)){
           let range = new Range();
           range.setStart(node,match.index-8);
           range.setEnd(node,match.index+match[0].length-1);
