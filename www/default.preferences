@@ -51,6 +51,18 @@
 			"title":"Combined",
 			"type":"dataset"
 		},
+		"swissvar_swissvar_9606":{
+			"render_options":{
+				"track" : "Swissvar",
+				"renderer":"variation:packed",
+				"icons" : {
+					"namespace" : "sugar",
+					"url" : "/sugars.svg"
+				}
+			},
+			"title":"Swissvar",
+			"type":"dataset"
+		},
 		"homology":{
 			"render_options":{
 				"track" : "homology",

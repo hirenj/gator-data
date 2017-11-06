@@ -943,6 +943,19 @@
       };
     };
 
+    var wire_swissvar_links = function(renderer) {
+      renderer._container.addEventListener('click',function(ev) {
+        if ( ! ev.event_data) {
+          return;
+        }
+        for (let rsid of ev.event_data) {
+          if (rsid.match(/^rs\d+$/)) {
+            window.open(`https://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs=${rsid}`,'_blank');
+          }
+        }
+      });
+    };
+
     var scale_text_elements = function(renderer) {
         renderer.text_els = [];
         bean.add(renderer,'zoomChange',function() {
@@ -1103,86 +1116,7 @@
 
     var setup_visual_renderer = function(renderer) {
       wire_renderer(renderer);
-
-      // wire_gatordisplay(renderer);
-      // wire_websockets('localhost:8880',function(socket) {
-      //   socket.onmessage = function(ev) {
-      //     if (! ev.data) {
-      //       return;
-      //     }
-      //     var data = JSON.parse(ev.data);
-      //     if (data.message == "showProtein") {
-      //       if (Array.isArray(data.data)) {
-      //         update_protein_list(data.data.map(function(up) {
-      //           var dat = { "id" : up, "name" : up };
-      //           dat.toString = function() {
-      //             return this.id;
-      //           };
-      //           return dat;
-      //         }),renderer);
-      //       } else {
-      //         show_protein(data.data,renderer);
-      //       }
-      //       return;
-      //     }
-      //     if (data.message == "compactRenderer") {
-      //       renderer.trackGap = -8;
-      //       var lay;
-      //       for (lay in MASCP.layers) {
-      //         if (lay.match("annotation")) {
-      //           renderer.hideLayer(lay);
-      //         }
-      //         renderer.refresh();
-      //       }
-      //     }
-      //     if (data.message == "upgradeConnection") {
-      //       get_preferences().getPreferences(function() {
-      //         if ( ! gapi || ! gapi.auth.getToken() ) {
-      //           console.log("No gapi");
-      //           return;
-      //         }
-      //         if ( ! data.data || ! sessionStorage.getItem("RConnectionKey") ) {
-      //           var caller = arguments.callee;
-      //           window.notify.ask_permission("Allow connection to R",function(granted) {
-      //             if (granted) {
-      //               var key = Math.random().toString(36).slice(2);
-      //               sessionStorage.setItem("RConnectionKey", key);
-      //               data.data = key;
-      //               caller();
-      //             }
-      //           }).hideLater(30000);
-      //         } else if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-      //           window.notify.info("Connected to R on local machine").hideLater(5000);
-      //           socket.send(JSON.stringify({
-      //             "message" : "token",
-      //             "data" : {  "authtoken": gapi.auth.getToken().access_token ,
-      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
-      //                       }
-      //                       }));
-      //         }
-      //       });
-      //     }
-      //     if (data.message == "retrieveSession") {
-      //       get_preferences().getPreferences(function(err,prefs) {
-      //         if ( ! gapi || ! gapi.auth.getToken() ) {
-      //           console.log("No gapi");
-      //           return;
-      //         }
-      //         if (err) {
-      //           return;
-      //         }
-      //         if (data.data === sessionStorage.getItem("RConnectionKey") ) {
-      //           socket.send(JSON.stringify({
-      //             "message" : "preferences",
-      //             "data" : {  "preferences": prefs ,
-      //                         "connectionkey" : sessionStorage.getItem("RConnectionKey")
-      //                       }
-      //                       }));
-      //         }
-      //       });
-      //     }
-      //   };
-      // });
+      wire_swissvar_links(renderer);
     };
 
     var domain_retriever;
@@ -1670,6 +1604,7 @@
     MASCP.msdata_packed_url = '/msdata.packed.renderer.js';
     MASCP.msdata_packed_homology_url = '/msdata.packed_homology.renderer.js';
     MASCP.msdata_packed_predictions_url = '/msdata.packed_predictions.renderer.js';
+    MASCP.msdata_packed_variation_url = '/packed_variation.renderer.js';
     MASCP.msdata_cleavage_url = '/cleavage.renderer.js';
     MASCP.domains_packed_url = '/glycodomain.packed.renderer.js';
 
@@ -1685,6 +1620,9 @@
       }
       if (renderer_url.match(/^msdata:packed_homology$/)) {
         renderer_url = MASCP.msdata_packed_homology_url;
+      }
+      if (renderer_url.match(/^variation:packed$/)) {
+        renderer_url = MASCP.msdata_packed_variation_url;
       }
       if (renderer_url.match(/^msdata:packed_predictions$/)) {
         renderer_url = MASCP.msdata_packed_predictions_url;
@@ -2065,7 +2003,6 @@
       window.svgns = 'http://www.w3.org/2000/svg';
 
       var renderer = create_renderer(document.getElementById('condensed_container'));
-
 
       var handle_proteins = function(err,prots,auth_func) {
         if (handle_proteins.disabled) {
