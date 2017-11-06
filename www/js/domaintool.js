@@ -685,6 +685,9 @@
         // Dispatch it.
         document.getElementById('searchGene').dispatchEvent(event);
       },false);
+      document.body.addEventListener('click',function() {
+        document.body.classList.remove('firstrun');
+      });
     };
 
     var wire_clearsession = function(title,renderer) {

@@ -1,6 +1,10 @@
+    #first_run {
+        display: none;
+    }
+
     @media only screen {
-        #first_run {
-            display: block;
+        body.firstrun #first_run {
+            display: flex;
             position: absolute;
             top: 0px;
             left: 0px;
@@ -9,40 +13,49 @@
             pointer-events: none;
             z-index: 101;
             background-color:rgba(255,255, 255, 0.8);
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: center;
         }
-        #first_run > div,img {
+        body.firstrun #first_run > div,img {
             pointer-events: auto;
-            position: absolute;
         }
-        #first_run .logo {
+        body.firstrun #first_run .logo {
             width: 20em;
-            top: 25%;
-            margin-top: -12em;
-            margin-left: -30vw;
-            left: 50%;
+            margin: auto;
         }
-        #first_run .blurb {
-            top: 20em;
-            left: 160px;
+        body.firstrun #first_run .blurb {
             width: 50vw;
         }
-        #first_run .blurb  button {
+        body.firstrun #first_run .blurb  button {
             font-size: 1em;
         }
     }
 
+    @media only screen and (max-device-width: 760px) and  (orientation: landscape) {
+        body.firstrun #first_run {
+            flex-direction: row;
+        }
+        body.firstrun #first_run .logo {
+            width: auto;
+            height: 70vh;
+            margin: auto;
+        }
+    }
+
+
     @media only screen and (max-device-width: 760px) {
         #first_run {
+            display: none;
         }
 
-        #first_run .blurb {
+        body.firstrun #first_run .blurb {
             left: 10vw;
             width: 85vw;
         }
 
-        #first_run .logo {
+        body.firstrun #first_run .logo {
             width: 70vw;
-            margin-left: -35vw;
-            top: 30%;
+            margin: auto;
         }
     }
