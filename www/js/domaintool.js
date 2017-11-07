@@ -1576,7 +1576,7 @@
       desired.forEach( function(track) {
         current_order.splice(current_order.indexOf(track),1);
       });
-      current_order = current_order.concat(desired);
+      current_order = desired.concat(current_order);
       return current_order;
     };
 
