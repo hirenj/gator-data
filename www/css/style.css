@@ -769,6 +769,11 @@
             right: 10px;
         }
 
+        #align {
+            right: 10px;
+        }
+
+
         #searchGeneLabel {
             display: block;
         }
