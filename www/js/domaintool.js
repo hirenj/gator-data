@@ -1049,6 +1049,7 @@
     };
 
     var show_protein = function(acc,renderer,success,force) {
+      console.log("Show_protein",acc);
       if ( ! acc ) {
         return;
       }
@@ -1262,7 +1263,7 @@
       bean.add(MASCP.GatorDataReader,'unauthorized', function() {
         if (localStorage.idToken) {
             console.log("Logging out before silent reauth after unauthorized event");
-            delete localStorage.idToken;
+            localStorage.removeItem('idToken');
             // Initiating our Auth0Lock
             var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
@@ -1276,8 +1277,8 @@
               if ((err && err.error === 'login_required') || (authResult.error && authResult.error === 'login_required')) {
                 show_lock({ type: 'error', text: 'You have been logged out, please log in again'});
                 lock.on('hide',(ev) => {
-                  delete localStorage.idToken;
-                  delete localStorage.profile;
+                  localStorage.removeItem('idToken');
+                  localStorage.removeItem('profile');
                   console.log("Lock hidden, doing anonymous login");
                   MASCP.GatorDataReader.anonymous = true;
                   MASCP.GatorDataReader.authenticate();
@@ -1306,8 +1307,8 @@
         MASCP.GatorDataReader.authenticate().catch(function(err) {
           if (err.message == 'Unauthorized') {
             console.log("Logging out before silent reauth");
-            delete localStorage.idToken;
-            delete localStorage.profile;
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('profile');
             // Initiating our Auth0Lock
             var webauth = new auth0.WebAuth({
               clientID: MASCP.AUTH0_CLIENT_ID,
