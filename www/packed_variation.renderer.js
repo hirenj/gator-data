@@ -29,6 +29,15 @@ let short_names = (res) => {
 	return mappings[res] || 'X';
 };
 
+let is_glyco_site = (site,seq) => {
+	// NXX, NX[ST], [STY]
+	let context = seq.substring(site-2-1,site+2);
+	if (context.match(/^N.[ST]/) || context.match(/..N.[ST]/) || context.match(/..[STY]../)) {
+		return true;
+	}
+	return false;
+}
+
 let return_data = {};
 
 let sites = [];
@@ -55,13 +64,14 @@ if (sites.length > 0) {
 
 for (let site of sites) {
 	let substitutions = variation_by_site[site].map( variant => variant.variant ).map( short_names );
+	let is_glyco = is_glyco_site(site,seq);
 	let rendered_block = { "aa" : site,
 												 "type" : "marker" ,
 												 "options" : {
 														"content" : substitutions,
 														"alt_content" : "#ui_revealmore",
 														"fill" : "none",
-														"text_fill" : "#000",
+														"text_fill" : is_glyco ? "#f00" : "#000",
 														"border" : "none",
 														"height": 8,
 														"offset" : -6,

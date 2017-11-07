@@ -100,7 +100,7 @@ var render_peptide = function(peptide) {
 			return;
 		}
 		seen_sites[ peptide_key ] = true;
-		// ambiguous_shapes[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
+		ambiguous_shapes[peptide.acc].push({ "aa" : Math.floor(0.5*peptide.start + 0.5*peptide.end), "type" : "marker" , "options" : { "content" : guess_composition(peptide.composition), "stretch": true, "height" : 10, "width": 3, "fill" : "none", "text_fill" : "#555", "border" : "#ddd", "no_tracer" : true, "bare_element" : false, "zoom_level" : "text", "offset" : base_offset + 2.5 }});
 	}
 	var has_site = false;
 	(peptide.sites || []).forEach(function renderSite(site_block) {
