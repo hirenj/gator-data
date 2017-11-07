@@ -250,6 +250,7 @@
 
         #search_container {
             font-size: 10px;
+            position: relative;
         }
 
         #information {
@@ -801,7 +802,7 @@
             position: absolute;
             top: 0px;
             right: 20%;
-            height: 1em;
+            height: 100%;
             font-size: 1em;
         }
 
