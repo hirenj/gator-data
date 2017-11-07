@@ -27,10 +27,40 @@
             width: 50vw;
             pointer-events: auto;
             margin: auto;
+            margin-bottom: 4rem;
         }
         body.firstrun #first_run .blurb  button {
             font-size: 1em;
         }
+        #first_run .sub_heading {
+            pointer-events: auto;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+        }
+        #first_run .sub_heading a {
+            background-color: #000;
+            background-image: url(/img/ccg_logo.svg);
+            background-size: auto 100%;
+            background-repeat: no-repeat;
+            background-position: left;
+            padding-left: 20vw;
+            padding-top: 0.5em;
+            padding-bottom: 1.2em;
+            text-transform: uppercase;
+            color: #eee;
+            font-family: 'Montserrat', Helvetica, Arial, sans-serif;
+            letter-spacing: 0.5vw;
+            font-size: 3vw;
+            height: 0.5em;
+            text-align: left;
+            display: block;
+        }
+        #first_run .sub_heading a {
+            text-decoration: none;
+            color: #eee;
+        }
+
     }
 
     @media only screen and (max-device-width: 760px) {
