@@ -1276,6 +1276,8 @@
               if ((err && err.error === 'login_required') || (authResult.error && authResult.error === 'login_required')) {
                 show_lock({ type: 'error', text: 'You have been logged out, please log in again'});
                 lock.on('hide',(ev) => {
+                  delete localStorage.idToken;
+                  delete localStorage.profile;
                   console.log("Lock hidden, doing anonymous login");
                   MASCP.GatorDataReader.anonymous = true;
                   MASCP.GatorDataReader.authenticate();
