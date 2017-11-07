@@ -1573,7 +1573,11 @@
       desired = desired.filter( function(track) {
         return (current_order.indexOf(track) >= 0) || MASCP.getGroup(track);
       });
-      desired.forEach( function(track) {
+      var grouped = desired.map( track => {
+        return MASCP.getGroup(track)? MASCP.getGroup(track)._layers.map( lay => lay.name )  : [track];
+      });
+      grouped = [].concat.apply( [], grouped );
+      desired.concat(grouped).forEach( function(track) {
         current_order.splice(current_order.indexOf(track),1);
       });
       current_order = desired.concat(current_order);
