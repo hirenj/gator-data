@@ -792,6 +792,7 @@
 
         #description.hidden_controls {
             position: absolute;
+            bottom: 100%;
         }
         .hidden_controls #searchGeneSpecies {
             display: none;
