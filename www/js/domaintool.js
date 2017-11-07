@@ -280,194 +280,6 @@
 
     };
 
-    DomaintoolPreferences.prototype.useDefaultPreferences = function(callback) {
-      throw new Error("I am not called");
-      var self = this;
-      var google_obj = new MASCP.GoogledataReader();
-      var domain = "Domaintool preferences";
-      var parser_function = function(datablock){
-        for (var key in datablock.data) {
-          if (key == "" || key.match(/\s/)) {
-            delete datablock.data[key];
-          } else {
-            var dat = datablock.data[key];
-            delete datablock.data[key];
-            datablock.data[key.toLowerCase()] = {
-              "data" : dat,
-              "retrieved" : datablock.retrieved,
-              "etag" : datablock.etag,
-              "title" : datablock.title
-            };
-          }
-        }
-        delete datablock.retrieved;
-        delete datablock.etag;
-        delete datablock.title;
-        return datablock.data;
-      };
-      bean.add(MASCP.GatorDataReader,'auth',function(url_base) {
-        var conf = {
-          'url' : url_base+'/metadata',
-          'auth' : MASCP.GATOR_AUTH_TOKEN,
-          'api_key' : MASCP.GATOR_CLIENT_ID,
-          'async' : true,
-          'type' : 'GET'
-        };
-        MASCP.Service.request(conf,function(metadata,err) {
-          if (err && err.status == 401) {
-            bean.fire(MASCP.GatorDataReader,'unauthorized');
-            return;
-          }
-          self.metadata = metadata;
-        });
-      });
-
-      this.prefs_object = {
-        "source" : domain,
-        addWatchedDocument : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-          google_obj.addWatchedDocument.apply(google_obj,args);
-        },
-        removeWatchedDocument : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-          google_obj.removeWatchedDocument.apply(google_obj,args);
-        },
-        readWatchedDocuments : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-
-          var readdocs = function(domain,callback) {
-            this.getPreferences(domain,function(err,prefs) {
-                if (err) {
-                  if (err.cause === "No user event") {
-                    console.log("Consuming no user event");
-                    return;
-                  }
-                  if (err.cause == "Browser not supported") {
-                    console.log("Consuming no browser support");
-                    return;
-                  }
-                  callback.call(null,{ "status" : "preferences", "original_error" : err });
-                  return;
-                }
-                var temp_prefs = JSON.parse(JSON.stringify(prefs.user_datasets));
-                Object.keys(temp_prefs).forEach(function(key) {
-                  if (! key.indexOf('http') >= 0 && key !== 'combined' && key !== 'homology' && key !== 'glycodomain') {
-                    if (temp_prefs[key].type == 'dataset') {
-                      if ( ! MASCP.getGroup('datasets')) {
-                        MASCP.registerGroup('datasets', { 'fullname' : 'Combined'});
-                      }
-                      if ( ! MASCP.getLayer('combined') ) {
-                        MASCP.registerLayer('combined', {'fullname' : 'Combined'});
-                      }
-                      console.log("Registering group for ",temp_prefs[key].title);
-                      MASCP.registerLayer(temp_prefs[key].title.replace(/\s+/g,'_'), {'fullname' : temp_prefs[key].title, 'group' : 'datasets'});
-                      return;
-                    }
-                    delete temp_prefs[key];
-                  }
-                });
-
-                var sets_by_cells = {};
-                var sets_by_tissue = {};
-                var taxids = {};
-                Object.keys(self.metadata || {}).forEach(function(set) {
-                  if (self.metadata[set].sample && self.metadata[set].mimetype === 'application/json+msdata') {
-                    if (self.metadata[set].sample.species) taxids[self.metadata[set].sample.species] = true;
-                    sets_by_cells[self.metadata[set].sample.cell_type || 'other'] = (sets_by_cells[self.metadata[set].sample.cell_type || 'other'] || []).concat(set)
-                    sets_by_tissue[self.metadata[set].sample.tissue || 'other'] = (sets_by_tissue[self.metadata[set].sample.tissue || 'other'] || []).concat(set)
-                  }
-                });
-                taxids = Object.keys(taxids);
-
-                if (! MASCP.getGroup('homology')) {
-                  MASCP.registerGroup('homology', { 'fullname' : 'Homologous data'});
-                }
-                taxids.forEach(function(taxid) {
-                  MASCP.registerLayer('tax'+taxid, {'fullname' : ''+taxid, 'group' : 'homology'});
-                });
-
-
-                if ( ! MASCP.getGroup('cell_lines')) {
-                  MASCP.registerGroup('cell_lines', { 'fullname' : 'Cell Lines'});
-                }
-                Object.keys(sets_by_cells).forEach(function(cell) {
-                  MASCP.registerLayer(cell.replace(/\s+/g,'_'), {'fullname' : cell, 'group' : 'cell_lines'});
-                  temp_prefs[sets_by_cells[cell].concat(['']).join(',')] = {
-                    "render_options":{
-                        "track" : cell.replace(/\s+/g,'_'),
-                        "renderer":"msdata:packed",
-                        "icons" : {
-                          "namespace" : "sugar",
-                          "url" : "/sugars.svg"
-                        }
-                      },
-                      "title":cell,
-                      "type":"dataset"
-                  };
-                });
-
-                temp_prefs['combined'] = {
-                  'type' : 'dataset',
-                  'title' : 'Combined',
-                  'parser_function' : parser_function.toString(),
-                  'render_options' : {
-                    'track' : 'combined',
-                    'renderer' : 'msdata:packed',
-                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
-                  }
-                };
-                temp_prefs['homology'] = {
-                  'type' : 'dataset',
-                  'title' : 'Homology',
-                  'parser_function' : parser_function.toString(),
-                  'render_options' : {
-                    'track' : 'homology',
-                    'renderer' : 'msdata:packed_homology',
-                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
-                  }
-                };
-                temp_prefs['glycodomain'] = {
-                  'type' : 'dataset',
-                  'inline' : 'true',
-                  'parser_function' : parser_function.toString(),
-                  'render_options' : {
-                    'offset' : 0,
-                    'renderer' : 'domains:packed',
-                    'icons' : { 'namespace' : 'sugar', 'url' : '/sugars.svg' }
-                  }
-                };
-                MASCP.IterateServicesFromConfig(temp_prefs,callback);
-            });
-          };
-
-          readdocs.apply(google_obj,args);
-        },
-        listWatchedDocuments : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-          google_obj.listWatchedDocuments.apply(google_obj,args);
-        },
-        getPreferences : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-          google_obj.getPreferences.apply(google_obj,args);
-        },
-        writePreferences : function() {
-          var args = Array.prototype.slice.call(arguments);
-          args.unshift(domain);
-          google_obj.writePreferences.apply(google_obj,args);
-        },
-        ifReady : function(callback) {
-          callback.call();
-        }
-      };
-      callback.call(null,null,[]);
-      bean.fire(self,'prefschange');
-    };
-
     DomaintoolPreferences.prototype.ifReady = function(callback) {
       if ( ! this.prefs_object ) {
         this.waiting.push( { "method" : "ifReady", "args" : Array.prototype.slice.call(arguments) });
@@ -1423,11 +1235,11 @@
         MASCP.AUTH0_DOMAIN,
         options
       );
-      var show_lock = function() {
-        lock.show();
+      var show_lock = function(message) {
+        lock.show(message ? { flashMessage: message } : {});
         document.getElementById('drive_install').classList.remove("drive_preferences");
       };
-      document.getElementById('drive_install').addEventListener('click', show_lock ,false);
+      document.getElementById('drive_install').addEventListener('click', show_lock.bind(null,null) ,false);
 
 
       // Listening for the authenticated event
@@ -1459,7 +1271,12 @@
             });
             webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if ((err && err.error === 'login_required') || (authResult.error && authResult.error === 'login_required')) {
-                show_lock();
+                show_lock({ type: 'error', text: 'You have been logged out, please log in again'});
+                lock.on('hide',(ev) => {
+                  console.log("Lock hidden, doing anonymous login");
+                  MASCP.GatorDataReader.anonymous = true;
+                  MASCP.GatorDataReader.authenticate();
+                });
                 return;
               }
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
@@ -1474,7 +1291,7 @@
               });
             });
         } else {
-          show_lock();
+          show_lock({ type: 'error', text: 'You need to be logged in to access this data'});
         }
       });
       var authorised = function(token) {
@@ -1497,7 +1314,12 @@
             });
             webauth.renewAuth({scope: MASCP.AUTH0_SCOPES, usePostMessage: true},function(err,authResult) {
               if (err && err.error === 'login_required') {
-                show_lock();
+                show_lock({ type: 'error', text: 'You have been logged out, please log in again'});
+                lock.on('hide',(ev) => {
+                  console.log("Lock hidden, doing anonymous login");
+                  MASCP.GatorDataReader.anonymous = true;
+                  MASCP.GatorDataReader.authenticate();
+                });
                 return;
               }
               lock.getUserInfo(authResult.accessToken, function(error, profile) {
@@ -1514,7 +1336,7 @@
             });
           }
         });
-        document.getElementById('drive_install').removeEventListener('click',show_lock);
+        document.getElementById('drive_install').removeEventListener('click',show_lock.bind(null,null));
         var flipped;
         document.getElementById('drive_install').classList.add("drive_preferences");
         document.getElementById('drive_install').setAttribute('data-hint','Data set preferences');
