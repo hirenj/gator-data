@@ -1596,6 +1596,7 @@
       var allowed = { "MASCP.DomainRetriever" : 1, "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
       console.log("About to get watched docs");
       renderer.desired_track_order = renderer.desired_track_order || [];
+      renderer.desired_track_order.splice(0,0,acc);
       var desired_track_order = renderer.desired_track_order;
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
