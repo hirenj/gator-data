@@ -1239,7 +1239,10 @@
         lock.show(message ? { flashMessage: message } : {});
         document.getElementById('drive_install').classList.remove("drive_preferences");
       };
-      document.getElementById('drive_install').addEventListener('click', show_lock.bind(null,null) ,false);
+
+      var show_default_lock = show_lock.bind(null,null);
+
+      document.getElementById('drive_install').addEventListener('click', show_default_lock ,false);
 
 
       // Listening for the authenticated event
@@ -1336,7 +1339,7 @@
             });
           }
         });
-        document.getElementById('drive_install').removeEventListener('click',show_lock.bind(null,null));
+        document.getElementById('drive_install').removeEventListener('click',show_default_lock);
         var flipped;
         document.getElementById('drive_install').classList.add("drive_preferences");
         document.getElementById('drive_install').setAttribute('data-hint','Data set preferences');
