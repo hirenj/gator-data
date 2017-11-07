@@ -1261,7 +1261,7 @@
         });
       });
       bean.add(MASCP.GatorDataReader,'unauthorized', function() {
-        if (localStorage.idToken) {
+        if (localStorage.getItem('idToken')) {
             console.log("Logging out before silent reauth after unauthorized event");
             localStorage.removeItem('idToken');
             // Initiating our Auth0Lock
@@ -1950,8 +1950,9 @@
         MASCP.ready = ready_func;
       }
     };
-
-    window.addEventListener("DOMContentLoaded", init);
+    if ( ! has_ready ) {
+      window.addEventListener("DOMContentLoaded", init);
+    }
 
     var ready_func = function() {
       window.svgns = 'http://www.w3.org/2000/svg';
