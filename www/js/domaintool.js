@@ -1593,7 +1593,8 @@
 
       var allowed = { "MASCP.DomainRetriever" : 1, "MASCP.PrideRunner" : 1, "MASCP.HydropathyRunner" : 1, "MASCP.UniprotSecondaryStructureReader" : 1 };
       console.log("About to get watched docs");
-      var desired_track_order = [];
+      renderer.desired_track_order = renderer.desired_track_order || [];
+      var desired_track_order = renderer.desired_track_order;
       get_preferences().readWatchedDocuments(function(err,pref,reader) {
         if (err) {
           // Errs if : No user event / getting preferences
@@ -1836,8 +1837,11 @@
           runner.bind('resultReceived',function() {
             var self = this;
             console.log("Got result from clustal");
+            renderer.desired_track_order = renderer.desired_track_order || [];
+            renderer.desired_track_order.push('isoforms');
             end_clustal = function() {
               self.result = null;
+              renderer.desired_track_order.splice(renderer.desired_track_order.indexOf('isoforms'),1);
             };
           });
         }
