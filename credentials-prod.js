@@ -4,5 +4,5 @@ if ( ! window.MASCP ) {
 }
 
 MASCP.AUTH0_CLIENT_ID='fNED1UGvPaP0XlrcEvWsHXIODIKy6WVB';
-MASCP.AUTH0_DOMAIN='glycocode.auth0.com';
-MASCP.AUTH0_SCOPES='openid name email';
+MASCP.GATOR_CLIENT_ID = MASCP.AUTH0_CLIENT_ID;
+MASCP.AUTH0_SCOPES='openid profile email query:all';
