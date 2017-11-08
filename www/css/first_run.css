@@ -86,10 +86,10 @@
             margin: auto;
         }
         body.firstrun #first_run .sub_heading a {
-            padding-left: 22vw;
-            padding-top: 1.8em;
-            padding-bottom: 1.2em;
-            height: 2em;
+            padding-left: 20vw;
+            padding-top: 1.6em;
+            padding-bottom: 1em;
+            height: 1.5em;
         }
     }
 
