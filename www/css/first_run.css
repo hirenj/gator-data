@@ -18,7 +18,8 @@
             align-items: center;
         }
         body.firstrun #first_run .logo {
-            width: 20em;
+            width: 50%;
+            max-width: 20em;
             margin: auto;
             pointer-events: auto;
 
@@ -27,7 +28,11 @@
             width: 50vw;
             pointer-events: auto;
             margin: auto;
-            margin-bottom: 4rem;
+            margin-top: 0.5em;
+            margin-bottom: 3em;
+            padding-bottom: 3em;
+            max-height: 40%;
+            overflow-y: auto;
         }
         body.firstrun #first_run .blurb  button {
             font-size: 1em;
@@ -80,15 +85,30 @@
             width: 50vw;
             margin: auto;
         }
+        body.firstrun #first_run .sub_heading a {
+            padding-left: 22vw;
+            padding-top: 1.8em;
+            padding-bottom: 1.2em;
+            height: 2em;
+        }
     }
 
     @media only screen and (max-device-width: 760px) and  (orientation: landscape) {
         body.firstrun #first_run {
             flex-direction: row;
         }
+        body.firstrun #first_run .blurb {
+            margin-bottom: 4rem;
+        }
         body.firstrun #first_run .logo {
             width: auto;
             height: 70vh;
             margin: auto;
+        }
+        body.firstrun #first_run .sub_heading a {
+            padding-left: 15vw;
+            padding-top: 0.2em;
+            padding-bottom: 0.3em;
+            height: 1em;
         }
     }
