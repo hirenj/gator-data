@@ -103,10 +103,4 @@
             height: 70vh;
             margin: auto;
         }
-        body.firstrun #first_run .sub_heading a {
-            padding-left: 15vw;
-            padding-top: 0.2em;
-            padding-bottom: 0.3em;
-            height: 1em;
-        }
     }
