@@ -42,13 +42,13 @@
             position: absolute;
             bottom: 0px;
             width: 100%;
-        }
-        #first_run .sub_heading a {
             background-color: #000;
             background-image: url(/img/ccg_logo.svg);
             background-size: auto 100%;
             background-repeat: no-repeat;
             background-position: left;
+        }
+        #first_run .sub_heading a {
             padding-left: 20vw;
             padding-top: 0.5em;
             padding-bottom: 1.2em;
@@ -56,9 +56,9 @@
             color: #eee;
             font-family: 'Montserrat', Helvetica, Arial, sans-serif;
             letter-spacing: 0.5vw;
-            font-size: 3vw;
+            font-size: 1.5rem;
             height: 0.5em;
-            text-align: left;
+            text-align: center;
             display: block;
         }
         #first_run .sub_heading a {
@@ -86,10 +86,8 @@
             margin: auto;
         }
         body.firstrun #first_run .sub_heading a {
-            padding-left: 20vw;
-            padding-top: 1.6em;
-            padding-bottom: 1em;
-            height: 1.5em;
+            font-size: 0.7rem;
+            margin-left: 2rem;
         }
     }
 
