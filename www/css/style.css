@@ -666,24 +666,23 @@
         cursor: pointer;
         position: relative;
     }
-    #protein_list:before {
+    #protein_list_label:before {
         display: block;
         background: #2c2e6c;
         color: #ffffff;
         cursor: pointer;
-        position: relative;
+        position: absolute;
         content: 'O-GalNAc Glycoproteins';
         height: 2.5em;
         padding-left: 5px;
         font-size: 0.9em;
         overflow-wrap: break-word;
-        position: fixed;
         top: 0px;
         left: 0px;
         width: 95px;
         z-index: 1;
     }
-    #protein_list.custom:before {
+    #protein_list_label.custom:before {
         display: block;
         background: #2c2e6c;
         color: #ffffff;
@@ -694,7 +693,7 @@
         padding-left: 5px;
         font-size: 0.9em;
         overflow-wrap: break-word;
-        position: fixed;
+        position: absolute;
         top: 0px;
         left: 0px;
         width: 95px;
@@ -772,7 +771,7 @@
         #protein_list {
             left: -100px;
         }
-        #protein_list:before {
+        #protein_list_label:before {
             display: none;
         }
         #viewer {
