@@ -642,6 +642,7 @@
         bottom: 0px;
         overflow-x: hidden;
         overflow-y: auto;
+        padding-top: 2.5em;
     }
     .hint--inline:before, .hint--inline:after {
         right: 10px !important;
@@ -664,6 +665,23 @@
         color: #ffffff;
         cursor: pointer;
         position: relative;
+    }
+    #protein_list:before {
+        display: block;
+        background: #2c2e6c;
+        color: #ffffff;
+        cursor: pointer;
+        position: relative;
+        content: 'O-GalNAc Glycoproteins';
+        height: 2.5em;
+        padding-left: 5px;
+        font-size: 0.9em;
+        overflow-wrap: break-word;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 95px;
+        z-index: 1;
     }
     #protein_list div.selected, #protein_list div.selected:hover {
         background: #4444ff;
@@ -736,6 +754,9 @@
         }
         #protein_list {
             left: -100px;
+        }
+        #protein_list:before {
+            display: none;
         }
         #viewer {
             left: 10px;
