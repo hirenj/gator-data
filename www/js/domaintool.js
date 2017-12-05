@@ -1092,7 +1092,7 @@
         delete MASCP.getLayer(ucacc).group;
       }
 
-      MASCP.Service.CacheService(a_reader);
+      // MASCP.Service.CacheService(a_reader);
       bean.add(renderer,'sequenceChange',function() {
         bean.remove(renderer,'sequenceChange',arguments.callee);
         console.log("Retrieving data");
@@ -1426,7 +1426,7 @@
           }
         });
         if (all_ids.length > 1) {
-          handle_proteins(null,all_ids.filter( id => id.toUpperCase().match(uprot_re1) || id.toUpperCase().match(uprot_re2) ));
+          handle_proteins(null,all_ids.filter( id => id.toString().toUpperCase().match(uprot_re1) || id.toString().toUpperCase().match(uprot_re2) ));
         }
         var text_content = (all_ids[0] || "").toString().replace(/\s+/g,'');
         if (text_content.toUpperCase().match(uprot_re1) || text_content.toUpperCase().match(uprot_re2)) {
@@ -1859,7 +1859,7 @@
       var acc = prots.shift();
       var caller = collect_sequences;
       var a_reader = new MASCP.UniprotReader();
-      MASCP.Service.CacheService(a_reader);
+      // MASCP.Service.CacheService(a_reader);
       a_reader.retrieve(acc.toString(),function(e) {
         var organism_name = this.result.getDescription().replace(/.*_/,'').replace(/\s.+/,'');
         if (organism_name == "HUMAN") {
