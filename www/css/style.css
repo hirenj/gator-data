@@ -683,6 +683,23 @@
         width: 95px;
         z-index: 1;
     }
+    #protein_list.custom:before {
+        display: block;
+        background: #2c2e6c;
+        color: #ffffff;
+        cursor: pointer;
+        position: relative;
+        content: 'Custom protein list';
+        height: 2.5em;
+        padding-left: 5px;
+        font-size: 0.9em;
+        overflow-wrap: break-word;
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 95px;
+        z-index: 1;
+    }
     #protein_list div.selected, #protein_list div.selected:hover {
         background: #4444ff;
     }

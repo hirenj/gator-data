@@ -1426,6 +1426,7 @@
           }
         });
         if (all_ids.length > 1) {
+          document.getElementById('protein_list').classList.add('custom')
           handle_proteins(null,all_ids.filter( id => id.toString().toUpperCase().match(uprot_re1) || id.toString().toUpperCase().match(uprot_re2) ));
         }
         var text_content = (all_ids[0] || "").toString().replace(/\s+/g,'');
