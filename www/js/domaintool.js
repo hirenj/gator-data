@@ -560,7 +560,7 @@
       var seq_change_func = function() {
         MASCP.Service.request("/icons.svg",function(err,doc) {
           if (doc) {
-            renderer.importIcons("ui",doc.documentElement);
+            renderer.importIcons("ui",doc.documentElement,"/icons.svg");
             console.log("Imported UI icons");
           }
         },"xml");
@@ -1637,7 +1637,7 @@
           var icon_block = pref.icons || (pref.render_options || {}).icons;
           MASCP.Service.request(icon_block.url,function(err,doc) {
             if (doc) {
-              renderer.importIcons(icon_block.namespace,doc.documentElement);
+              renderer.importIcons(icon_block.namespace,doc.documentElement,icon_block.url);
               console.log("Imported icons");
             }
           },"xml");
@@ -1993,7 +1993,8 @@
 
         add_keyboard_navigation();
       };
-      let handled_login = fetch(window.location.hostname == 'localhost' ? 'https://test.glycocode.com/api/login/config' : '/api/login/config').then(function(response) {
+      let localhosts = ['localhost','10.0.2.2'];
+      let handled_login = fetch((localhosts.indexOf(window.location.hostname) >= 0) ? 'https://test.glycocode.com/api/login/config' : '/api/login/config').then(function(response) {
         return response.json();
       }).then(function(config) {
         MASCP.AUTH0_AUDIENCE = config.API_AUDIENCE;
