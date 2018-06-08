@@ -923,7 +923,7 @@
 
     var read_doi_conf = function(doi,callback) {
       console.log("Checking for static doi conf file");
-      get_preferences().getStaticConf('/doi/'+encodeURIComponent(encodeURIComponent(doi || 'none')),function(err,conf) {
+      get_preferences().getStaticConf('/doi/'+encodeURIComponent(doi || 'none'),function(err,conf) {
         if (err) {
           console.log("DOI conf requires authorisation - authenticating");
           MASCP.GatorDataReader.authenticate().then(function(url_base) {
@@ -934,6 +934,7 @@
               'async' : true,
               'type' : 'GET'
             };
+            console.log(doi,conf);
             if ( doi ) {
               get_preferences().useStaticPreferences(conf,callback);
             } else {
@@ -943,7 +944,7 @@
         } else {
           console.log("No authentication required to retrieve the file - proceeeding with standard fetch");
           if (doi) {
-            get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(encodeURIComponent(doi || 'none')),callback);
+            get_preferences().useStaticPreferences('/doi/'+encodeURIComponent(doi || 'none'),callback);
           } else {
             get_preferences().getStaticConf( conf, callback );
           }
