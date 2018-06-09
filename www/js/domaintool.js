@@ -1050,6 +1050,13 @@
     };
 
     var show_protein = function(acc,renderer,success,force) {
+      if ( ! MASCP.GATOR_AUTH_TOKEN ) {
+        console.log('Deferring show_protein until we get an auth token');
+        MASCP.GatorDataReader.authenticate().then(() => {
+          show_protein(acc,renderer,success,force);
+        });
+        return;
+      }
       console.log("Show_protein",acc);
       if ( ! acc ) {
         return;
@@ -2077,6 +2084,7 @@
             }
           }
           // show_protein(prots[0],renderer);
+          console.log(prots);
           handle_proteins(null,prots,renderer);
           if (prots.length > 1) {
             handle_proteins.disabled = true;
