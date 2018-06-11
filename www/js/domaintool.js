@@ -1103,6 +1103,7 @@
       // MASCP.Service.CacheService(a_reader);
       bean.add(renderer,'sequenceChange',function() {
         bean.remove(renderer,'sequenceChange',arguments.callee);
+        renderer.fitZoom();
         console.log("Retrieving data");
         retrieve_data(ucacc,renderer);
       });
