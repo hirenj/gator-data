@@ -2083,9 +2083,11 @@
               history.replaceState({"uniprot_ids" : results[1] },prots.join(','),window.location);
             }
           }
-          // show_protein(prots[0],renderer);
+          show_protein(prots[0],renderer);
           console.log(prots);
-          handle_proteins(null,prots,renderer);
+          if (prots.length > 1) {
+            handle_proteins(null,prots,renderer);
+          }
           if (prots.length > 1) {
             handle_proteins.disabled = true;
             return;
